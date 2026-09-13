@@ -1,0 +1,20 @@
+name: ${COMPOSE_PROJECT_NAME:-aequvg-frontend}
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-http://localhost:3000/api/v1}
+    ports:
+      - "${FRONTEND_PORT:-3001}:3000"
+    volumes:
+      - .:/app
+      - frontend_modules:/app/node_modules
+
+volumes:
+  frontend_modules:
