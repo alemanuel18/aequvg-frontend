@@ -16,3 +16,4 @@ proyecto, instala las dependencias y ejecuta automáticamente el script `dev`.
 `NUXT_PUBLIC_API_BASE_URL` es la URL visible para el navegador y
 `NUXT_API_BASE_URL` es la URL que podrá usar Nuxt durante el renderizado del
 lado del servidor dentro del contenedor.
+ 
