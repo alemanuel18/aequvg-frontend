@@ -1,0 +1,2 @@
+<script setup lang="ts">import type { ContactMethod } from '~/types/api'; defineProps<{ method: ContactMethod }>()</script>
+<template><div class="contact-method"><span>{{ method.label }}</span><a v-if="method.url" :href="method.url" :target="method.url.startsWith('http') ? '_blank' : undefined" :rel="method.url.startsWith('http') ? 'noopener noreferrer' : undefined"><strong>{{ method.value }}</strong></a><strong v-else>{{ method.value }}</strong></div></template>
