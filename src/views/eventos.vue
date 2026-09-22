@@ -1,0 +1,1 @@
+<template><UnderConstructionPage title="Eventos" description="Charlas, convivencias, conferencias y actividades académicas." /></template><script setup lang="ts">useSeoMeta({ title: 'Eventos' })</script>

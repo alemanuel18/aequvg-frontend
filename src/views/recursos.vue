@@ -1,0 +1,1 @@
+<template><UnderConstructionPage title="Recursos para estudiantes" description="Materiales, documentos y enlaces útiles para la comunidad estudiantil." /></template><script setup lang="ts">useSeoMeta({ title: 'Recursos' })</script>
