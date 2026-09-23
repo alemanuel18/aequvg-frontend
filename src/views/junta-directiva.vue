@@ -6,13 +6,11 @@ const { data: members, status, error, refresh } = await useAsyncData('board-memb
 </script>
 <template>
   <div>
-    <header class="page-hero">
-      <div class="container">
-        <span class="eyebrow">Nuestra Asociación</span>
-        <h1>Junta directiva</h1>
-        <p>Conoce a las personas que representan a la comunidad estudiantil y los medios autorizados para comunicarte con ellas.</p>
-      </div>
-    </header>
+    <PageHero
+      eyebrow="Nuestra Asociación"
+      title="Junta directiva"
+      description="Conoce a las personas que representan a la comunidad estudiantil y los medios autorizados para comunicarte con ellas."
+    />
     <AppSection title="Integrantes actuales" lead="Los datos mostrados corresponden únicamente a integrantes activos publicados por la Asociación.">
       <StatePanel v-if="status === 'pending'" title="Cargando junta directiva" message="Consultando la información vigente." />
       <StatePanel v-else-if="error" role="alert" title="No pudimos cargar la junta" message="Intenta nuevamente en unos momentos.">

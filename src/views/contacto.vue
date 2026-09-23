@@ -6,13 +6,11 @@ const { data: methods, status, error } = await useAsyncData('contact-methods', (
 </script>
 <template>
   <div>
-    <header class="page-hero">
-      <div class="container">
-        <span class="eyebrow">Hablemos</span>
-        <h1>Contacto</h1>
-        <p>Consulta nuestros medios oficiales o envía una solicitud. Para reuniones, indícanos una fecha tentativa.</p>
-      </div>
-    </header>
+    <PageHero
+      eyebrow="Hablemos"
+      title="Contacto"
+      description="Consulta nuestros medios oficiales o envía una solicitud. Para reuniones, indícanos una fecha tentativa."
+    />
     <AppSection title="Comunícate con la Asociación">
       <div class="contact-page-stack">
         <section aria-labelledby="contact-methods-title">
@@ -28,7 +26,7 @@ const { data: methods, status, error } = await useAsyncData('contact-methods', (
           <div class="contact-form-shell__intro">
             <span class="contact-form-shell__icon" aria-hidden="true"><AppIcon name="mail" :size="26" /></span>
             <div>
-              <p class="eyebrow">Formulario de contacto</p>
+              <EyebrowBadge text="Formulario de contacto" />
               <h2 id="contact-form-title">Envíanos un mensaje</h2>
               <p>Completa tus datos y cuéntanos cómo podemos ayudarte.</p>
             </div>
