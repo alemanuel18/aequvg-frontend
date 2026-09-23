@@ -9,7 +9,8 @@ export default defineNuxtConfig({
     apiBaseUrl: process.env.NUXT_API_BASE_URL || 'http://localhost:3000/api/v1',
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1',
-      privacyVersion: process.env.NUXT_PUBLIC_PRIVACY_VERSION || 'pendiente-validacion'
+      privacyVersion: process.env.NUXT_PUBLIC_PRIVACY_VERSION || 'pendiente-validacion',
+      logLevel: process.env.NUXT_PUBLIC_LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'warn' : 'debug')
     }
   },
   app: {
