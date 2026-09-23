@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: development
     restart: unless-stopped
     init: true
     environment:
@@ -14,6 +15,8 @@ services:
       NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-http://localhost:3000/api/v1}
       NUXT_API_BASE_URL: ${NUXT_API_BASE_URL:-http://host.docker.internal:3000/api/v1}
       NUXT_PUBLIC_PRIVACY_VERSION: ${NUXT_PUBLIC_PRIVACY_VERSION:-pendiente-validacion}
+      NUXT_PUBLIC_LOG_LEVEL: ${NUXT_PUBLIC_LOG_LEVEL:-debug}
+      NUXT_LOG_LEVEL: ${NUXT_LOG_LEVEL:-debug}
     ports:
       - "${FRONTEND_PORT:-3001}:3000"
     volumes:

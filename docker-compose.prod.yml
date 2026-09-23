@@ -1,0 +1,32 @@
+name: ${COMPOSE_PROJECT_NAME:-aequvg-frontend-prod}
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: 3000
+      NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:?Define NUXT_PUBLIC_API_BASE_URL}
+      NUXT_API_BASE_URL: ${NUXT_API_BASE_URL:?Define NUXT_API_BASE_URL}
+      NUXT_PUBLIC_PRIVACY_VERSION: ${NUXT_PUBLIC_PRIVACY_VERSION:?Define NUXT_PUBLIC_PRIVACY_VERSION}
+      NUXT_PUBLIC_LOG_LEVEL: ${NUXT_PUBLIC_LOG_LEVEL:-warn}
+      NUXT_LOG_LEVEL: ${NUXT_LOG_LEVEL:-info}
+    ports:
+      - "${FRONTEND_PORT:-3001}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
