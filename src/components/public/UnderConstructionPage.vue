@@ -1,0 +1,2 @@
+<script setup lang="ts">defineProps<{ title: string; description: string }>()</script>
+<template><div><PageHero eyebrow="Próximamente" :title="title" :description="description" /><AppSection title="Estamos preparando esta sección"><StatePanel title="Contenido en desarrollo" message="La navegación ya está disponible. El equipo responsable incorporará aquí el contenido aprobado en un próximo sprint." /></AppSection></div></template>

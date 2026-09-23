@@ -1,8 +1,11 @@
 .env
 .env.*
 !.env.example
+!.env.production.example
 node_modules/
 .nuxt/
 .output/
 coverage/
+test-results/
+playwright-report/
 *.log
