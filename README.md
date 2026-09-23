@@ -34,6 +34,8 @@ src/
   services/                     # Cliente HTTP y servicios
   types/api.ts                  # Contratos TypeScript
   views/                        # Páginas enrutadas
+server/
+  plugins/request-logger.ts     # Logs de solicitudes SSR de Nitro
 tests/
   unit/                         # Vitest
   e2e/                          # Playwright
@@ -53,6 +55,8 @@ cp .env.example .env
 | `NUXT_PUBLIC_API_BASE_URL` | URL de API visible para el navegador. |
 | `NUXT_API_BASE_URL` | URL usada por Nuxt durante SSR. |
 | `NUXT_PUBLIC_PRIVACY_VERSION` | Versión oficial del aviso aceptado en el formulario. |
+| `NUXT_PUBLIC_LOG_LEVEL` | Nivel mínimo de logs visibles en el navegador. |
+| `NUXT_LOG_LEVEL` | Nivel mínimo de logs HTTP del servidor Nuxt/Nitro. |
 
 `NUXT_PUBLIC_PRIVACY_VERSION` permanece como `pendiente-validacion` hasta que UVG confirme el identificador oficial. Actualízala antes de usar el formulario en producción.
 
@@ -67,6 +71,11 @@ cd ../../Back/aequvg-backend
 cp .env.example .env
 docker compose up --build -d
 docker compose exec backend bun run migrate:deploy
+```
+
+La seed no se ejecuta al arrancar. Si necesitas los datos iniciales, cárgalos manualmente:
+
+```bash
 docker compose exec backend bun run db:seed
 ```
 
@@ -117,10 +126,62 @@ Abre `http://localhost:3001`.
 
 ```bash
 bun run build
-bun run preview --port 3001
+bun run start
 ```
 
 El artefacto se genera en `.output/`.
+
+## Logs
+
+El frontend registra de forma controlada:
+
+- Fallos al consultar la API, sin registrar cuerpos ni datos enviados.
+- Errores de Vue/Nuxt usando únicamente el tipo y contexto técnico seguro.
+- Solicitudes SSR con `requestId`, método, ruta sin query string, estado y duración.
+
+Desarrollo recomendado:
+
+```env
+NUXT_PUBLIC_LOG_LEVEL=debug
+NUXT_LOG_LEVEL=debug
+```
+
+Producción recomendada:
+
+```env
+NUXT_PUBLIC_LOG_LEVEL=warn
+NUXT_LOG_LEVEL=info
+```
+
+Los niveles válidos son `debug`, `info`, `warn`, `error` y `silent`. No deben añadirse formularios, correos, teléfonos, tokens ni respuestas completas al contexto de un log.
+
+Con Docker:
+
+```bash
+docker compose logs -f frontend
+```
+
+## Preparación de producción con Docker
+
+- `docker-compose.yml` ejecuta Nuxt en desarrollo con recarga automática.
+- `docker-compose.prod.yml` ejecuta únicamente el artefacto `.output`, sin montar el código ni incluir dependencias de desarrollo.
+- `.env.production.example` documenta las variables requeridas sin contener secretos reales.
+
+Prepara y revisa la configuración:
+
+```bash
+cp .env.production.example .env.production
+# Sustituye example.org y la versión de privacidad antes de desplegar.
+```
+
+Construye e inicia:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml build
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+```
+
+La imagen utiliza un usuario sin privilegios, healthcheck y rotación local de logs. Antes de publicar todavía deben definirse dominio, TLS/proxy inverso, observabilidad centralizada y la infraestructura definitiva del backend.
 
 ## Seed y datos mostrados
 
@@ -145,6 +206,8 @@ bun run db:seed
 ```
 
 PostgreSQL debe estar disponible y las migraciones aplicadas. El README del backend explica cómo agregar integrantes, medios y bloques institucionales de forma repetible.
+
+La ejecución del frontend o backend nunca dispara este comando automáticamente.
 
 Cuando no hay datos publicados, la interfaz muestra un estado vacío; no sustituye información oficial con mocks. Noticias, eventos, recursos e investigación mantienen navegación y un aviso de contenido en desarrollo.
 

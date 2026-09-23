@@ -7,6 +7,7 @@ interface RequestTiming {
 }
 
 const priorities = { debug: 10, info: 20, warn: 30, error: 40 } as const
+const requestIdPattern = /^[a-zA-Z0-9._-]{8,100}$/
 
 export default defineNitroPlugin((nitroApp) => {
   const configured = process.env.NUXT_LOG_LEVEL ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug')
@@ -15,7 +16,7 @@ export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('request', (event) => {
     const path = getRequestURL(event).pathname
     const incomingId = event.headers.get('x-request-id')
-    const requestId = incomingId?.slice(0, 100) || crypto.randomUUID()
+    const requestId = incomingId && requestIdPattern.test(incomingId) ? incomingId : crypto.randomUUID()
     event.context.requestLogging = { requestId, startedAt: performance.now(), path } satisfies RequestTiming
     event.node.res.setHeader('x-request-id', requestId)
   })
