@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  name: 'arrow-up-right' | 'facebook' | 'instagram' | 'link' | 'mail' | 'map-pin' | 'phone' | 'send'
+  name: 'arrow-up-right' | 'atom' | 'facebook' | 'instagram' | 'link' | 'mail' | 'map-pin' | 'phone' | 'send'
   size?: number
 }>()
 </script>
@@ -18,7 +18,13 @@ defineProps<{
     stroke-linejoin="round"
     aria-hidden="true"
   >
-    <template v-if="name === 'mail'">
+    <template v-if="name === 'atom'">
+      <ellipse cx="12" cy="12" rx="9" ry="3.5" />
+      <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(60 12 12)" />
+      <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(120 12 12)" />
+      <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none" />
+    </template>
+    <template v-else-if="name === 'mail'">
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m3 7 9 6 9-6" />
     </template>
