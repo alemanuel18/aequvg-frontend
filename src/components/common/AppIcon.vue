@@ -57,3 +57,10 @@ defineProps<{
     </template>
   </svg>
 </template>
+
+<style scoped>
+.app-icon {
+  display: block;
+  flex: 0 0 auto;
+}
+</style>

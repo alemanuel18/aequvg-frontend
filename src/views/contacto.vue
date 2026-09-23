@@ -37,3 +37,62 @@ const { data: methods, status, error } = await useAsyncData('contact-methods', (
     </AppSection>
   </div>
 </template>
+
+<style scoped>
+.contact-page-stack {
+  display: grid;
+  gap: 2rem;
+}
+
+.contact-methods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.contact-form-shell {
+  display: grid;
+  grid-template-columns: minmax(13rem, .55fr) minmax(0, 1.45fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  background: var(--color-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.contact-form-shell__intro {
+  display: flex;
+  align-items: flex-start;
+  gap: .9rem;
+}
+
+.contact-form-shell__intro h2 {
+  margin-top: .85rem;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.contact-form-shell__intro p:last-child {
+  margin-top: .75rem;
+  color: var(--color-muted);
+}
+
+.contact-form-shell__icon {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  color: white;
+  background: var(--color-primary);
+  border-radius: 1rem;
+}
+
+@media (max-width: 900px) {
+  .contact-form-shell { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .contact-methods { grid-template-columns: 1fr; }
+  .contact-form-shell__intro { flex-direction: column; }
+}
+</style>

@@ -49,3 +49,49 @@ const submit = async () => {
     </div>
   </form>
 </template>
+
+<style scoped>
+.form-card {
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 28px rgb(26 43 24 / 7%);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field { display: grid; align-content: start; gap: .35rem; }
+.field--full { grid-column: 1 / -1; }
+.field label { font-weight: 800; }
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: .65rem .75rem;
+  color: var(--color-ink);
+  background: white;
+  border: 1px solid #9ca397;
+  border-radius: .55rem;
+}
+
+.field textarea { min-height: 9rem; resize: vertical; }
+.field-error { color: var(--color-danger); font-size: .85rem; font-weight: 700; }
+.checkbox { display: grid; grid-template-columns: 1.2rem 1fr; gap: .65rem; align-items: start; }
+.checkbox input { width: 1.15rem; height: 1.15rem; margin-top: .25rem; }
+.honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.form-status { padding: .9rem; background: white; border: 1px solid var(--color-border); border-radius: .6rem; }
+.form-status--error { color: var(--color-danger); border-color: var(--color-danger); }
+
+@media (max-width: 620px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .field--full { grid-column: auto; }
+}
+</style>
