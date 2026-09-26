@@ -1,11 +1,5 @@
 import { expect, test } from '@playwright/test'
 
-test.beforeEach(async ({ page }) => {
-  await page.route('**/api/v1/institutional-content', route => route.fulfill({ json: [] }))
-  await page.route('**/api/v1/board-members', route => route.fulfill({ json: [] }))
-  await page.route('**/api/v1/contact-methods', route => route.fulfill({ json: [] }))
-})
-
 test('la navegación principal funciona con teclado', async ({ page }) => {
   await page.goto('/')
   await page.keyboard.press('Tab')
@@ -40,4 +34,24 @@ test('el formulario anuncia validaciones y exige consentimiento', async ({ page 
   await page.getByRole('button', { name: 'Enviar solicitud' }).click()
   await expect(page.getByText('El consentimiento es obligatorio.')).toBeVisible()
   await expect(page.getByRole('checkbox')).not.toBeChecked()
+})
+
+test('lista, busca, pagina y muestra estados de noticias', async ({ page }) => {
+  await page.goto('/noticias')
+  await expect(page.getByRole('heading', { name: 'Noticias y anuncios', level: 1 })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Leer noticia: Convocatoria de laboratorio/ })).toBeVisible()
+  await page.goto('/noticias?page=2')
+  await expect(page.getByRole('link', { name: /Leer noticia: Anuncio de segunda página/ })).toBeVisible()
+  await page.goto('/noticias?q=sin-resultados')
+  await expect(page.getByRole('heading', { name: 'No hay publicaciones para esta búsqueda', level: 2 })).toBeVisible()
+  await page.goto('/noticias?q=error-prueba')
+  await expect(page.getByRole('heading', { name: 'No pudimos cargar las noticias', level: 2 })).toBeVisible()
+})
+
+test('muestra el detalle público y el estado de publicación no encontrada', async ({ page }) => {
+  await page.goto('/noticias/7')
+  await expect(page.getByRole('heading', { name: 'Convocatoria de laboratorio', level: 1 })).toBeVisible()
+  await expect(page.getByText('La actividad se realizará en el laboratorio central.')).toBeVisible()
+  await page.goto('/noticias/999')
+  await expect(page.getByRole('heading', { name: 'No encontramos esta publicación', level: 2 })).toBeVisible()
 })
