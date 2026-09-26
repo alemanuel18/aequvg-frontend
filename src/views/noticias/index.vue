@@ -4,17 +4,28 @@ import type { PublicNewsList } from '~/types/api'
 
 useSeoMeta({ title: 'Noticias y anuncios', description: 'Noticias y anuncios publicados por AsoQuímica UVG.' })
 const service = usePublicContentService()
-const searchInput = ref('')
-const appliedSearch = ref('')
-const selectedCategory = ref<number | undefined>()
-const currentPage = ref(1)
+const route = useRoute()
+const queryNumber = (value: unknown) => {
+  const number = Number(value)
+  return Number.isSafeInteger(number) && number > 0 ? number : undefined
+}
+const searchInput = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const appliedSearch = ref(searchInput.value)
+const selectedCategory = ref(queryNumber(route.query.categoryId))
+const currentPage = ref(queryNumber(route.query.page) || 1)
 const pageSize = 9
+const requestError = ref<unknown>(null)
 const { data: categories, status: categoriesStatus, error: categoriesError, refresh: refreshCategories } = await useAsyncData('news-categories', () => service.newsCategories(), { default: () => [] })
-const { data: result, status, error, refresh } = await useAsyncData('public-news', () => service.news({ q: appliedSearch.value || undefined, categoryId: selectedCategory.value, page: currentPage.value, pageSize }), { default: (): PublicNewsList => ({ items: [], pagination: { page: 1, pageSize, total: 0 } }) })
+const loadNews = () => service.news({ q: appliedSearch.value || undefined, categoryId: selectedCategory.value, page: currentPage.value, pageSize })
+const { data: result, status, error, refresh } = await useAsyncData('public-news', loadNews, { default: (): PublicNewsList => ({ items: [], pagination: { page: 1, pageSize, total: 0 } }) })
 const totalPages = computed(() => Math.max(1, Math.ceil(result.value.pagination.total / pageSize)))
-const submitSearch = () => { appliedSearch.value = searchInput.value.trim(); currentPage.value = 1 }
-const goToPage = (page: number) => { currentPage.value = page }
-watch([appliedSearch, selectedCategory, currentPage], () => { void refresh() })
+const updateNews = async () => {
+  requestError.value = null
+  try { result.value = await loadNews() }
+  catch (requestFailure) { requestError.value = requestFailure }
+}
+const submitSearch = async () => { appliedSearch.value = searchInput.value.trim(); currentPage.value = 1; await updateNews() }
+const goToPage = async (page: number) => { currentPage.value = page; await updateNews() }
 </script>
 
 <template>
@@ -29,7 +40,7 @@ watch([appliedSearch, selectedCategory, currentPage], () => { void refresh() })
       <StatePanel v-if="categoriesStatus === 'pending'" class="news-filter-state" title="Cargando categorías" message="Preparando los filtros disponibles." />
       <StatePanel v-else-if="categoriesError" class="news-filter-state" role="alert" title="No pudimos cargar las categorías" message="Puedes buscar por texto o intentar cargar las categorías nuevamente."><button @click="() => refreshCategories()">Reintentar</button></StatePanel>
       <StatePanel v-if="status === 'pending'" title="Cargando noticias" message="Consultando las publicaciones activas." />
-      <StatePanel v-else-if="error" role="alert" title="No pudimos cargar las noticias" message="Verifica tu conexión e inténtalo nuevamente."><button @click="() => refresh()">Reintentar</button></StatePanel>
+      <StatePanel v-else-if="error || requestError" role="alert" title="No pudimos cargar las noticias" message="Verifica tu conexión e inténtalo nuevamente."><button @click="() => refresh()">Reintentar</button></StatePanel>
       <StatePanel v-else-if="!result.items.length" title="No hay publicaciones para esta búsqueda" message="Prueba con otras palabras o selecciona una categoría diferente." />
       <template v-else>
         <p class="news-count" aria-live="polite">{{ result.pagination.total }} {{ result.pagination.total === 1 ? 'publicación encontrada' : 'publicaciones encontradas' }}.</p>
