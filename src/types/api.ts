@@ -16,3 +16,16 @@ export interface ContactMethod { id: number; type: 'EMAIL' | 'TELEFONO' | 'UBICA
 export interface ContactRequestInput { name: string; email: string; phone: string; type: 'CONSULTA' | 'REUNION'; subject: string; message: string; preferredAt?: string | null; consent: true; privacyVersion: string; website?: string }
 
 export interface ApiError { error?: { code?: string; message?: string; details?: Record<string, string> } }
+
+export interface NewsCategory { id: number; name: string; active?: boolean }
+
+export interface PublicNews {
+  id: number; categoryId: number; imageId: number | null; title: string; summary: string; content: string; status: 'PUBLICADO'
+  createdAt: string; updatedAt: string; publishedAt: string | null; category: NewsCategory
+  image: { id: number; originalName: string; mimeType: string } | null
+  createdBy: { id: number; name: string }
+}
+
+export interface Pagination { page: number; pageSize: number; total: number }
+export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }
+export interface PublicNewsQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
