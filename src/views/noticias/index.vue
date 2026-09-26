@@ -12,8 +12,9 @@ const pageSize = 9
 const { data: categories, status: categoriesStatus, error: categoriesError, refresh: refreshCategories } = await useAsyncData('news-categories', () => service.newsCategories(), { default: () => [] })
 const { data: result, status, error, refresh } = await useAsyncData('public-news', () => service.news({ q: appliedSearch.value || undefined, categoryId: selectedCategory.value, page: currentPage.value, pageSize }), { default: (): PublicNewsList => ({ items: [], pagination: { page: 1, pageSize, total: 0 } }) })
 const totalPages = computed(() => Math.max(1, Math.ceil(result.value.pagination.total / pageSize)))
-const submitSearch = async () => { appliedSearch.value = searchInput.value.trim(); currentPage.value = 1; await refresh() }
-const goToPage = async (page: number) => { currentPage.value = page; await refresh() }
+const submitSearch = () => { appliedSearch.value = searchInput.value.trim(); currentPage.value = 1 }
+const goToPage = (page: number) => { currentPage.value = page }
+watch([appliedSearch, selectedCategory, currentPage], () => { void refresh() })
 </script>
 
 <template>
