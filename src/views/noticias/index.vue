@@ -30,12 +30,12 @@ const goToPage = async (page: number) => { currentPage.value = page; await updat
 
 <template>
   <div>
-    <PageHero eyebrow="Actualidad" title="Noticias y anuncios" description="Consulta las novedades, actividades y comunicados publicados por AsoQuímica UVG." />
-    <AppSection title="Publicaciones recientes" lead="Busca por tema o filtra por categoría para encontrar información publicada.">
+    <PageHero eyebrow="▣ Mantente al día" title="Noticias y Eventos" description="Anuncios, eventos, actividades, charlas, conferencias, viajes académicos y convivencias de AsoQuímica UVG." />
+    <AppSection title="Explora nuestras publicaciones" lead="">
       <form class="news-filters" role="search" @submit.prevent="submitSearch">
-        <label class="news-filters__field" for="news-search"><span>Buscar noticias</span><input id="news-search" v-model="searchInput" name="q" type="search" placeholder="Ej. laboratorio, convocatoria" autocomplete="off"></label>
-        <label class="news-filters__field" for="news-category"><span>Categoría</span><select id="news-category" v-model="selectedCategory" name="categoryId"><option :value="undefined">Todas las categorías</option><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></label>
-        <button class="news-filters__submit" type="submit">Buscar</button>
+        <strong>▼ Filtrar por categoría:</strong>
+        <div class="news-filters__chips"><button type="button" :class="{ 'is-active': !selectedCategory }" @click="selectedCategory = undefined; submitSearch()">Todas las noticias</button><button v-for="category in categories" :key="category.id" type="button" :class="{ 'is-active': selectedCategory === category.id }" @click="selectedCategory = category.id; submitSearch()">{{ category.name }}</button></div>
+        <label class="sr-only" for="news-search">Buscar noticias</label><input id="news-search" v-model="searchInput" name="q" type="search" placeholder="Buscar noticias" autocomplete="off"><button class="news-filters__submit" type="submit">Buscar</button>
       </form>
       <StatePanel v-if="categoriesStatus === 'pending'" class="news-filter-state" title="Cargando categorías" message="Preparando los filtros disponibles." />
       <StatePanel v-else-if="categoriesError" class="news-filter-state" role="alert" title="No pudimos cargar las categorías" message="Puedes buscar por texto o intentar cargar las categorías nuevamente."><button @click="() => refreshCategories()">Reintentar</button></StatePanel>
@@ -52,10 +52,9 @@ const goToPage = async (page: number) => { currentPage.value = page; await updat
 </template>
 
 <style scoped>
-.news-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(13rem, .45fr) auto; align-items: end; gap: 1rem; margin-bottom: 2rem; }
-.news-filters__field { display: grid; gap: .35rem; font-weight: 800; }
-.news-filters input, .news-filters select { width: 100%; min-height: 2.85rem; padding: .65rem .8rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.news-filters { display: grid; gap: .75rem; margin-bottom: 2rem; padding: 1.35rem; background: var(--color-soft); border: 1px solid var(--color-border); border-radius: var(--radius-md); }.news-filters__chips { display: flex; flex-wrap: wrap; gap: .6rem; }.news-filters__chips button { padding: .55rem .9rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: 999px; cursor: pointer; font-weight: 800; }.news-filters__chips .is-active { color: white; background: var(--color-primary); border-color: var(--color-primary); }
+.news-filters input { min-height: 2.65rem; padding: .6rem .8rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
 .news-filters__submit, .pagination button { min-height: 2.85rem; padding: .65rem 1rem; color: white; background: var(--color-primary); border: 1px solid var(--color-primary); border-radius: var(--radius-sm); cursor: pointer; font-weight: 800; }
 .pagination button:disabled { cursor: not-allowed; opacity: .55; }.news-filter-state { margin-bottom: 1.25rem; }.news-count { margin-bottom: 1rem; color: var(--color-muted); }.news-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }.pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem; margin-top: 2rem; }
-@media (max-width: 900px) { .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 620px) { .news-filters, .news-grid { grid-template-columns: 1fr; } .news-filters__submit { width: 100%; } }
+@media (max-width: 900px) { .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 620px) { .news-grid { grid-template-columns: 1fr; } .news-filters__submit { width: 100%; } }
 </style>
