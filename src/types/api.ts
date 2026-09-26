@@ -29,3 +29,26 @@ export interface PublicNews {
 export interface Pagination { page: number; pageSize: number; total: number }
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }
 export interface PublicNewsQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
+
+export interface PublicEvent {
+  id: number
+  name: string
+  description: string
+  startsAt: string
+  location: string
+  maximumCapacity: number
+  additionalInformation: string | null
+  status: 'PUBLICADO'
+  image: { id: number; originalName: string; mimeType: string } | null
+}
+
+export interface PublicEventList {
+  items: PublicEvent[]
+  pagination: Pagination
+}
+
+export interface PublicEventQuery {
+  q?: string
+  page?: number
+  pageSize?: number
+}
