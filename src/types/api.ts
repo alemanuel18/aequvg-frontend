@@ -37,6 +37,7 @@ export interface PublicEvent {
   startsAt: string
   location: string
   maximumCapacity: number
+  availableCapacity: number
   additionalInformation: string | null
   status: 'PUBLICADO'
   image: { id: number; originalName: string; mimeType: string } | null
