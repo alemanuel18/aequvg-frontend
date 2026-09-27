@@ -29,3 +29,14 @@ export interface PublicNews {
 export interface Pagination { page: number; pageSize: number; total: number }
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }
 export interface PublicNewsQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
+
+export interface ResourceCategory { id: number; name: string; active?: boolean }
+export interface ResourceFile { id: number; originalName: string; mimeType: string; downloadUrl?: string | null }
+export interface ResourceLink { id: number; label: string; url: string; displayOrder: number }
+export interface PublicResource {
+  id: number; categoryId: number; fileId: number | null; title: string; description: string; status: 'PUBLICADO'
+  createdAt: string; publishedAt: string | null; category: ResourceCategory; file: ResourceFile | null; links: ResourceLink[]
+  createdBy: { id: number; name: string }
+}
+export interface PublicResourceList { items: PublicResource[]; pagination: Pagination }
+export interface PublicResourceQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }

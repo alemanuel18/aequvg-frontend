@@ -38,7 +38,7 @@ test('el formulario anuncia validaciones y exige consentimiento', async ({ page 
 
 test('lista, busca, pagina y muestra estados de noticias', async ({ page }) => {
   await page.goto('/noticias')
-  await expect(page.getByRole('heading', { name: 'Noticias y anuncios', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Noticias y Eventos', level: 1 })).toBeVisible()
   await expect(page.getByRole('link', { name: /Leer noticia: Convocatoria de laboratorio/ })).toBeVisible()
   await page.goto('/noticias?page=2')
   await expect(page.getByRole('link', { name: /Leer noticia: Anuncio de segunda página/ })).toBeVisible()
@@ -54,4 +54,22 @@ test('muestra el detalle público y el estado de publicación no encontrada', as
   await expect(page.getByText('La actividad se realizará en el laboratorio central.')).toBeVisible()
   await page.goto('/noticias/999')
   await expect(page.getByRole('heading', { name: 'No encontramos esta publicación', level: 2 })).toBeVisible()
+})
+
+test('lista, busca, pagina y protege las acciones de recursos', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await page.goto('/recursos')
+  await expect(page.getByRole('heading', { name: 'Recursos para estudiantes', level: 1 })).toBeVisible()
+  const externalLink = page.getByRole('link', { name: 'Referencia UVG: se abre en una nueva pestaña' })
+  await expect(externalLink).toHaveAttribute('target', '_blank')
+  await expect(externalLink).toHaveAttribute('rel', 'noopener noreferrer')
+  await expect(page.getByRole('link', { name: 'Descargar guia-seguridad.pdf' })).toHaveAttribute('download', 'guia-seguridad.pdf')
+  const sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }))
+  expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
+  await page.goto('/recursos?page=2')
+  await expect(page.getByRole('heading', { name: 'Manual de segunda página', level: 3 })).toBeVisible()
+  await page.goto('/recursos?q=sin-resultados')
+  await expect(page.getByRole('heading', { name: 'No hay recursos para esta búsqueda', level: 2 })).toBeVisible()
+  await page.goto('/recursos?q=error-prueba')
+  await expect(page.getByRole('heading', { name: 'No pudimos cargar los recursos', level: 2 })).toBeVisible()
 })

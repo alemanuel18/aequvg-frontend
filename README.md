@@ -209,7 +209,7 @@ PostgreSQL debe estar disponible y las migraciones aplicadas. El README del back
 
 La ejecución del frontend o backend nunca dispara este comando automáticamente.
 
-Cuando no hay datos publicados, la interfaz muestra un estado vacío; no sustituye información oficial con mocks. Noticias, eventos, recursos e investigación mantienen navegación y un aviso de contenido en desarrollo.
+Cuando no hay datos publicados, la interfaz muestra un estado vacío; no sustituye información oficial con mocks. Noticias y recursos consumen su catálogo público; eventos e investigación mantienen navegación y un aviso de contenido en desarrollo.
 
 ## Pruebas y calidad
 
@@ -238,7 +238,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/contacto` | Medios y formulario conectados a la API. |
 | `/noticias` | Navegación lista; contenido en desarrollo. |
 | `/eventos` | Navegación lista; contenido en desarrollo. |
-| `/recursos` | Navegación lista; contenido en desarrollo. |
+| `/recursos` | Catálogo público de recursos con categorías, búsqueda, paginación, enlaces y materiales disponibles. |
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
 
 ## Solución de problemas
