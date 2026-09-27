@@ -8,6 +8,11 @@ const props = defineProps<{
   eventId: number
   eventName: string
   startsAt: string
+  availableCapacity?: number
+}>()
+
+const emit = defineEmits<{
+  (e: 'full'): void
 }>()
 
 const service = usePublicContentService()
@@ -46,6 +51,10 @@ const isAlreadyStarted = computed(() => {
   if (!mounted.value || !props.startsAt) return false
   const time = new Date(props.startsAt).getTime()
   return !Number.isNaN(time) && time <= Date.now()
+})
+
+const isPreventivelyFull = computed(() => {
+  return typeof props.availableCapacity === 'number' && props.availableCapacity <= 0
 })
 
 const validate = () => {
@@ -97,6 +106,7 @@ const submit = async () => {
         case 'EVENT_FULL':
           eventClosed.value = true
           closedMessage.value = 'Este evento ha alcanzado su capacidad máxima.'
+          emit('full')
           clearForm()
           break
         case 'EVENT_NOT_OPEN':
@@ -159,13 +169,13 @@ const submit = async () => {
       </div>
     </div>
 
-    <div v-else-if="isAlreadyStarted || eventClosed" class="registration-status-card registration-status-card--closed" role="status">
+    <div v-else-if="isAlreadyStarted || isPreventivelyFull || eventClosed" class="registration-status-card registration-status-card--closed" role="status">
       <div class="status-card__header">
         <span class="status-icon status-icon--neutral" aria-hidden="true">ℹ</span>
         <h3>Inscripciones no disponibles</h3>
       </div>
       <p class="status-card__message">
-        {{ closedMessage || 'Este evento ya inició. Las inscripciones se encuentran cerradas.' }}
+        {{ closedMessage || (isAlreadyStarted ? 'Este evento ya inició. Las inscripciones se encuentran cerradas.' : (isPreventivelyFull ? 'Este evento ha alcanzado su capacidad máxima.' : 'Este evento ya inició. Las inscripciones se encuentran cerradas.')) }}
       </p>
       <div class="status-card__actions">
         <AppButton to="/eventos" variant="secondary">← Ver otros eventos</AppButton>
