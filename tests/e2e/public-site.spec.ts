@@ -66,6 +66,7 @@ test('navega desde /eventos al detalle público de evento', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis', level: 1 })).toBeVisible()
   await expect(page.getByText('Capacidad máxima:')).toBeVisible()
   await expect(page.getByText('30 asistentes')).toBeVisible()
+  await expect(page.getByText('12 cupos disponibles')).toBeVisible()
 })
 
 test('muestra error 404 al consultar un evento inexistente', async ({ page }) => {
@@ -127,6 +128,17 @@ test('maneja error cuando el evento ha alcanzado el cupo máximo', async ({ page
 
   await page.getByRole('button', { name: 'Inscribirme al evento' }).click()
 
+  await expect(page.getByRole('heading', { name: 'Inscripciones no disponibles' })).toBeVisible()
+  await expect(page.getByText('Este evento ha alcanzado su capacidad máxima.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Inscribirme al evento' })).not.toBeVisible()
+  await expect(page.getByText('Cupo lleno')).toBeVisible()
+})
+
+test('muestra preventivamente estado de cupo lleno en eventos con availableCapacity === 0', async ({ page }) => {
+  await page.goto('/eventos/12')
+  await expect(page.getByRole('heading', { name: 'Taller Agotado', level: 1 })).toBeVisible()
+  await expect(page.getByText('Cupo lleno')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Inscribirme a este evento ↓' })).not.toBeVisible()
   await expect(page.getByRole('heading', { name: 'Inscripciones no disponibles' })).toBeVisible()
   await expect(page.getByText('Este evento ha alcanzado su capacidad máxima.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Inscribirme al evento' })).not.toBeVisible()

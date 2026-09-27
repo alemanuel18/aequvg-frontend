@@ -44,6 +44,30 @@ const isEventPast = computed(() => {
   return !Number.isNaN(time) && time <= Date.now()
 })
 
+const localAvailableCapacity = ref<number | null>(null)
+
+watch(
+  () => event.value?.availableCapacity,
+  (val) => {
+    if (typeof val === 'number') {
+      localAvailableCapacity.value = val
+    }
+  },
+  { immediate: true }
+)
+
+const currentAvailableCapacity = computed(() => {
+  return localAvailableCapacity.value ?? event.value?.availableCapacity ?? 0
+})
+
+const isFull = computed(() => {
+  return currentAvailableCapacity.value <= 0
+})
+
+const onEventFull = () => {
+  localAvailableCapacity.value = 0
+}
+
 const formatEventDate = (value: string | null | undefined) => {
   if (!value) return 'Fecha por confirmar'
   try {
@@ -88,8 +112,22 @@ const formatEventDate = (value: string | null | undefined) => {
           </div>
           <h1>{{ event.name }}</h1>
           <div class="event-detail__capacity">
-            <span class="capacity-label">Capacidad máxima:</span>
-            <span class="capacity-value">{{ event.maximumCapacity }} asistentes</span>
+            <div class="capacity-item">
+              <span class="capacity-label">Capacidad máxima:</span>
+              <span class="capacity-value">{{ event.maximumCapacity }} asistentes</span>
+            </div>
+            <div class="capacity-item capacity-availability" aria-live="polite">
+              <span class="capacity-label">Disponibilidad:</span>
+              <span v-if="isEventPast" class="availability-status availability-status--closed">
+                Este evento ya inició. Las inscripciones se encuentran cerradas.
+              </span>
+              <span v-else-if="isFull" class="availability-status availability-status--full">
+                Cupo lleno
+              </span>
+              <span v-else class="availability-status availability-status--available">
+                {{ currentAvailableCapacity === 1 ? '1 cupo disponible' : `${currentAvailableCapacity} cupos disponibles` }}
+              </span>
+            </div>
           </div>
           <div class="event-detail__description">
             {{ event.description }}
@@ -100,7 +138,7 @@ const formatEventDate = (value: string | null | undefined) => {
           </div>
           <div class="event-detail__actions">
             <AppButton
-              v-if="!isEventPast"
+              v-if="!isEventPast && !isFull"
               href="#formulario-inscripcion"
               variant="primary"
             >
@@ -119,6 +157,8 @@ const formatEventDate = (value: string | null | undefined) => {
             :event-id="event.id"
             :event-name="event.name"
             :starts-at="event.startsAt"
+            :available-capacity="currentAvailableCapacity"
+            @full="onEventFull"
           />
         </section>
       </div>
@@ -169,13 +209,21 @@ const formatEventDate = (value: string | null | undefined) => {
 
 .event-detail__capacity {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: .5rem;
-  padding: .75rem 1rem;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .85rem 1.15rem;
   background: var(--color-soft);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: .95rem;
+}
+
+.capacity-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
 }
 
 .capacity-label {
@@ -186,6 +234,31 @@ const formatEventDate = (value: string | null | undefined) => {
 .capacity-value {
   color: var(--color-primary);
   font-weight: 700;
+}
+
+.availability-status {
+  font-weight: 700;
+  padding: .2rem .55rem;
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+}
+
+.availability-status--available {
+  color: #1e5922;
+  background: #eef7ee;
+  border: 1px solid #c2e2c2;
+}
+
+.availability-status--full {
+  color: #9c2727;
+  background: #fdf0f0;
+  border: 1px solid #f5c2c2;
+}
+
+.availability-status--closed {
+  color: var(--color-muted);
+  background: #f0f0f0;
+  border: 1px solid var(--color-border);
 }
 
 .event-detail__description {
