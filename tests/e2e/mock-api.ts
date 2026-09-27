@@ -23,6 +23,7 @@ const event = {
   startsAt: '2030-04-20T16:00:00.000Z',
   location: 'Laboratorio de Química Analítica (E-302)',
   maximumCapacity: 30,
+  availableCapacity: 12,
   additionalInformation: 'Se requiere bata de laboratorio y lentes de seguridad.',
   status: 'PUBLICADO',
   image: null
@@ -32,7 +33,18 @@ const secondEvent = {
   ...event,
   id: 11,
   name: 'Simposio de Química Verde',
-  description: 'Conferencias sobre sostenibilidad y procesos químicos industriales.'
+  description: 'Conferencias sobre sostenibilidad y procesos químicos industriales.',
+  maximumCapacity: 50,
+  availableCapacity: 1
+}
+
+const fullEvent = {
+  ...event,
+  id: 12,
+  name: 'Taller Agotado',
+  description: 'Evento con cupos totalmente llenos.',
+  maximumCapacity: 20,
+  availableCapacity: 0
 }
 
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'access-control-allow-origin': '*' } })
@@ -79,6 +91,7 @@ Bun.serve({
       return json({ items: page === 2 ? [secondEvent] : [event], pagination: { page, pageSize: Number(url.searchParams.get('pageSize') || 9), total: 10 } })
     }
     if (url.pathname === '/api/v1/events/10') return json(event)
+    if (url.pathname === '/api/v1/events/12') return json(fullEvent)
     if (url.pathname.startsWith('/api/v1/events/')) return json({ error: { code: 'EVENT_NOT_FOUND', message: 'El evento solicitado no existe.' } }, 404)
     return json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } }, 404)
   }
