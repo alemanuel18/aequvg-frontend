@@ -32,6 +32,18 @@ useSeoMeta({
   description: () => event.value?.description || 'Consulta la información de este evento de AsoQuímica UVG.'
 })
 
+const mounted = ref(false)
+
+onMounted(() => {
+  mounted.value = true
+})
+
+const isEventPast = computed(() => {
+  if (!mounted.value || !event.value?.startsAt) return false
+  const time = new Date(event.value.startsAt).getTime()
+  return !Number.isNaN(time) && time <= Date.now()
+})
+
 const formatEventDate = (value: string | null | undefined) => {
   if (!value) return 'Fecha por confirmar'
   try {
@@ -68,37 +80,64 @@ const formatEventDate = (value: string | null | undefined) => {
         <AppButton to="/eventos" variant="secondary">Volver a eventos</AppButton>
         <button @click="() => refresh()">Reintentar</button>
       </StatePanel>
-      <article v-else-if="event" class="event-detail">
-        <div class="event-detail__meta">
-          <time :datetime="event.startsAt">📅 {{ formatEventDate(event.startsAt) }}</time>
-          <span class="event-detail__location">📍 {{ event.location }}</span>
-        </div>
-        <h1>{{ event.name }}</h1>
-        <div class="event-detail__capacity">
-          <span class="capacity-label">Capacidad máxima:</span>
-          <span class="capacity-value">{{ event.maximumCapacity }} asistentes</span>
-        </div>
-        <div class="event-detail__description">
-          {{ event.description }}
-        </div>
-        <div v-if="event.additionalInformation" class="event-detail__additional">
-          <h3>Información adicional</h3>
-          <p>{{ event.additionalInformation }}</p>
-        </div>
-        <div class="event-detail__actions">
-          <AppButton to="/eventos" variant="secondary">← Ver todos los eventos</AppButton>
-        </div>
-      </article>
+      <div v-else-if="event" class="event-detail-wrapper">
+        <article class="event-detail">
+          <div class="event-detail__meta">
+            <time :datetime="event.startsAt">📅 {{ formatEventDate(event.startsAt) }}</time>
+            <span class="event-detail__location">📍 {{ event.location }}</span>
+          </div>
+          <h1>{{ event.name }}</h1>
+          <div class="event-detail__capacity">
+            <span class="capacity-label">Capacidad máxima:</span>
+            <span class="capacity-value">{{ event.maximumCapacity }} asistentes</span>
+          </div>
+          <div class="event-detail__description">
+            {{ event.description }}
+          </div>
+          <div v-if="event.additionalInformation" class="event-detail__additional">
+            <h3>Información adicional</h3>
+            <p>{{ event.additionalInformation }}</p>
+          </div>
+          <div class="event-detail__actions">
+            <AppButton
+              v-if="!isEventPast"
+              href="#formulario-inscripcion"
+              variant="primary"
+            >
+              Inscribirme a este evento ↓
+            </AppButton>
+            <AppButton to="/eventos" variant="secondary">← Ver todos los eventos</AppButton>
+          </div>
+        </article>
+
+        <section
+          id="formulario-inscripcion"
+          class="event-registration-section"
+          aria-labelledby="registration-heading"
+        >
+          <EventRegistrationForm
+            :event-id="event.id"
+            :event-name="event.name"
+            :starts-at="event.startsAt"
+          />
+        </section>
+      </div>
     </AppSection>
   </div>
 </template>
 
 <style scoped>
+.event-detail-wrapper {
+  display: grid;
+  gap: 2rem;
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
 .event-detail {
   display: grid;
   gap: 1.4rem;
-  max-width: 52rem;
-  margin-inline: auto;
+  width: 100%;
   padding: clamp(1.25rem, 4vw, 2.5rem);
   background: white;
   border: 1px solid var(--color-border);
@@ -178,6 +217,10 @@ const formatEventDate = (value: string | null | undefined) => {
 }
 
 .event-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
   margin-top: .5rem;
 }
 
