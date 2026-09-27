@@ -1,7 +1,14 @@
 import type { ApiError } from '~/types/api'
 
 export class PublicApiError extends Error {
-  constructor(message: string, public readonly code = 'REQUEST_FAILED', public readonly fields?: Record<string, string>) { super(message) }
+  constructor(
+    message: string,
+    public readonly code = 'REQUEST_FAILED',
+    public readonly fields?: Record<string, string>,
+    public readonly status?: number
+  ) {
+    super(message)
+  }
 }
 
 export const useApi = () => {
@@ -13,13 +20,19 @@ export const useApi = () => {
     catch (error) {
       const apiError = error as { data?: ApiError; status?: number; statusCode?: number }
       const data = apiError.data
+      const status = apiError.statusCode ?? apiError.status ?? undefined
       logger.warn('api_request_failed', {
         path,
         method: String(options.method ?? 'GET'),
-        status: apiError.statusCode ?? apiError.status ?? null,
+        status: status ?? null,
         code: data?.error?.code ?? 'REQUEST_FAILED',
       })
-      throw new PublicApiError(data?.error?.message ?? 'No pudimos comunicarnos con el servicio. Intenta nuevamente.', data?.error?.code, data?.error?.details)
+      throw new PublicApiError(
+        data?.error?.message ?? 'No pudimos comunicarnos con el servicio. Intenta nuevamente.',
+        data?.error?.code,
+        data?.error?.details,
+        status
+      )
     }
   }
 }

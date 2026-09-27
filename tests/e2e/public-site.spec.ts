@@ -55,3 +55,22 @@ test('muestra el detalle público y el estado de publicación no encontrada', as
   await page.goto('/noticias/999')
   await expect(page.getByRole('heading', { name: 'No encontramos esta publicación', level: 2 })).toBeVisible()
 })
+
+test('navega desde /eventos al detalle público de evento', async ({ page }) => {
+  await page.goto('/eventos')
+  await expect(page.getByRole('heading', { name: 'Eventos', level: 1 })).toBeVisible()
+  const eventLink = page.getByRole('link', { name: /Ver evento: Taller de Espectrometría UV-Vis/ })
+  await expect(eventLink).toBeVisible()
+  await eventLink.click()
+  await expect(page).toHaveURL(/\/eventos\/10$/)
+  await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis', level: 1 })).toBeVisible()
+  await expect(page.getByText('Capacidad máxima:')).toBeVisible()
+  await expect(page.getByText('30 asistentes')).toBeVisible()
+})
+
+test('muestra error 404 al consultar un evento inexistente', async ({ page }) => {
+  const response = await page.goto('/eventos/999')
+  expect(response?.status()).toBe(404)
+  await expect(page.getByText('404')).toBeVisible()
+  await expect(page.getByText('Evento no encontrado')).toBeVisible()
+})
