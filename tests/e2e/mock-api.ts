@@ -39,9 +39,27 @@ const json = (body: unknown, status = 200) => Response.json(body, { status, head
 
 Bun.serve({
   port: 3002,
-  fetch(request) {
+  async fetch(request) {
     const url = new URL(request.url)
     if (url.pathname === '/health') return json({ status: 'ok' })
+    if (request.method === 'POST' && url.pathname === '/api/v1/events/10/registrations') {
+      const body = await request.json() as Record<string, unknown>
+      if (body.website) {
+        return json({ error: { code: 'INVALID_REQUEST', message: 'La solicitud no es válida.' } }, 400)
+      }
+      if (body.email === 'duplicado@uvg.edu.gt') {
+        return json({ error: { code: 'ALREADY_REGISTERED', message: 'Ya existe una inscripción registrada con este correo electrónico para este evento.' } }, 409)
+      }
+      if (body.email === 'lleno@uvg.edu.gt') {
+        return json({ error: { code: 'EVENT_FULL', message: 'Este evento ha alcanzado su capacidad máxima.' } }, 409)
+      }
+      return json({
+        id: 101,
+        eventId: 10,
+        status: 'CONFIRMADA',
+        registeredAt: new Date().toISOString()
+      }, 201)
+    }
     if (url.pathname === '/api/v1/institutional-content' || url.pathname === '/api/v1/board-members' || url.pathname === '/api/v1/contact-methods') return json([])
     if (url.pathname === '/api/v1/news/categories') return json([{ id: 2, name: 'Convocatorias' }])
     if (url.pathname === '/api/v1/news') {

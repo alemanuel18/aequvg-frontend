@@ -52,3 +52,19 @@ export interface PublicEventQuery {
   page?: number
   pageSize?: number
 }
+
+export interface EventRegistrationInput {
+  fullName: string
+  email: string
+  phone: string
+  consent: true
+  privacyVersion: string
+  website?: string
+}
+
+export interface EventRegistrationResponse {
+  id: number
+  eventId: number
+  status: 'CONFIRMADA'
+  registeredAt: string
+}
