@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  name: 'arrow-up-right' | 'atom' | 'facebook' | 'instagram' | 'link' | 'mail' | 'map-pin' | 'phone' | 'send'
+  name: 'arrow-up-right' | 'atom' | 'facebook' | 'flask' | 'graduation-cap' | 'instagram' | 'link' | 'mail' | 'map-pin' | 'messages' | 'phone' | 'send'
   size?: number
 }>()
 </script>
@@ -23,6 +23,20 @@ defineProps<{
       <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(60 12 12)" />
       <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(120 12 12)" />
       <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none" />
+    </template>
+    <template v-else-if="name === 'flask'">
+      <path d="M9 3h6" />
+      <path d="M10 3v6l-5.4 8.2A2.5 2.5 0 0 0 6.7 21h10.6a2.5 2.5 0 0 0 2.1-3.8L14 9V3" />
+      <path d="M7.5 15h9" />
+    </template>
+    <template v-else-if="name === 'graduation-cap'">
+      <path d="m2 9 10-5 10 5-10 5Z" />
+      <path d="M6 11.5V16c3.3 2.7 8.7 2.7 12 0v-4.5" />
+      <path d="M22 9v6" />
+    </template>
+    <template v-else-if="name === 'messages'">
+      <path d="M20 12a7 7 0 0 1-7 7H8l-4 3v-6a7 7 0 0 1-1-4 7 7 0 0 1 7-7h3a7 7 0 0 1 7 7Z" />
+      <path d="M8 12h.01M12 12h.01M16 12h.01" />
     </template>
     <template v-else-if="name === 'mail'">
       <rect x="3" y="5" width="18" height="14" rx="2" />
