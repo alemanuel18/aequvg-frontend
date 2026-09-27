@@ -56,6 +56,27 @@ test('muestra el detalle público y el estado de publicación no encontrada', as
   await expect(page.getByRole('heading', { name: 'No encontramos esta publicación', level: 2 })).toBeVisible()
 })
 
+test('lista, busca, pagina y protege las acciones de recursos', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await page.goto('/recursos')
+  await expect(page.getByRole('heading', { name: 'Recursos para estudiantes', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Explora las áreas principales', level: 2 })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Investigación estudiantil/ })).toHaveAttribute('href', '/investigacion')
+  await expect(page.getByRole('link', { name: /Contacto directo/ })).toHaveAttribute('href', '/contacto')
+  const externalLink = page.getByRole('link', { name: 'Referencia UVG: se abre en una nueva pestaña' })
+  await expect(externalLink).toHaveAttribute('target', '_blank')
+  await expect(externalLink).toHaveAttribute('rel', 'noopener noreferrer')
+  await expect(page.getByRole('link', { name: 'Descargar guia-seguridad.pdf' })).toHaveAttribute('download', 'guia-seguridad.pdf')
+  const sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }))
+  expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
+  await page.goto('/recursos?page=2')
+  await expect(page.getByRole('heading', { name: 'Manual de segunda página', level: 3 })).toBeVisible()
+  await page.goto('/recursos?q=sin-resultados')
+  await expect(page.getByRole('heading', { name: 'No hay recursos para esta búsqueda', level: 2 })).toBeVisible()
+  await page.goto('/recursos?q=error-prueba')
+  await expect(page.getByRole('heading', { name: 'No pudimos cargar los recursos', level: 2 })).toBeVisible()
+})
+
 test('navega desde /eventos al detalle público de evento', async ({ page }) => {
   await page.goto('/eventos')
   await expect(page.getByRole('heading', { name: 'Eventos', level: 1 })).toBeVisible()

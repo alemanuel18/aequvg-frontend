@@ -16,6 +16,14 @@ const news = {
 
 const secondNews = { ...news, id: 8, title: 'Anuncio de segunda página', summary: 'Contenido para validar la paginación.' }
 
+const resource = {
+  id: 9, categoryId: 3, fileId: 4, title: 'Guía de seguridad de laboratorio', description: 'Material para preparar prácticas de laboratorio de forma segura.', status: 'PUBLICADO',
+  createdAt: '2026-01-15T12:00:00.000Z', publishedAt: '2026-01-15T12:00:00.000Z', category: { id: 3, name: 'Laboratorio', active: true },
+  file: { id: 4, originalName: 'guia-seguridad.pdf', mimeType: 'application/pdf', downloadUrl: 'http://localhost:3002/materials/guia-seguridad.pdf' },
+  links: [{ id: 1, label: 'Referencia UVG', url: 'https://www.uvg.edu.gt/', displayOrder: 1 }], createdBy: { id: 1, name: 'Contenido de desarrollo' }
+}
+const secondResource = { ...resource, id: 10, file: null, title: 'Manual de segunda página', description: 'Contenido para validar la paginación de recursos.' }
+
 const event = {
   id: 10,
   name: 'Taller de Espectrometría UV-Vis',
@@ -83,6 +91,14 @@ Bun.serve({
     }
     if (url.pathname === '/api/v1/news/7') return json(news)
     if (url.pathname.startsWith('/api/v1/news/')) return json({ error: { code: 'NEWS_NOT_FOUND', message: 'La noticia solicitada no existe.' } }, 404)
+    if (url.pathname === '/api/v1/resources/categories') return json([{ id: 3, name: 'Laboratorio' }])
+    if (url.pathname === '/api/v1/resources') {
+      const query = url.searchParams.get('q')?.toLowerCase() || ''
+      if (query === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0 } })
+      if (query === 'error-prueba') return json({ error: { code: 'REQUEST_FAILED', message: 'Error simulado.' } }, 503)
+      const page = Number(url.searchParams.get('page') || 1)
+      return json({ items: page === 2 ? [secondResource] : [resource], pagination: { page, pageSize: Number(url.searchParams.get('pageSize') || 9), total: 10 } })
+    }
     if (url.pathname === '/api/v1/events') {
       const query = url.searchParams.get('q')?.toLowerCase() || ''
       if (query === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0 } })
