@@ -237,7 +237,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/junta-directiva` | Integrantes activos conectados a la API. |
 | `/contacto` | Medios y formulario conectados a la API. |
 | `/noticias` | Navegación lista; contenido en desarrollo. |
-| `/eventos` | Navegación lista; contenido en desarrollo. |
+| `/eventos` | Conectado a la API: listado, detalle, disponibilidad e inscripción pública. |
 | `/recursos` | Catálogo público de recursos con categorías, búsqueda, paginación, enlaces y materiales disponibles. |
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
 

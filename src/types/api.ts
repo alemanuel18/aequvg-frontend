@@ -40,3 +40,43 @@ export interface PublicResource {
 }
 export interface PublicResourceList { items: PublicResource[]; pagination: Pagination }
 export interface PublicResourceQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
+
+export interface PublicEvent {
+  id: number
+  name: string
+  description: string
+  startsAt: string
+  location: string
+  maximumCapacity: number
+  availableCapacity: number
+  additionalInformation: string | null
+  status: 'PUBLICADO'
+  image: { id: number; originalName: string; mimeType: string } | null
+}
+
+export interface PublicEventList {
+  items: PublicEvent[]
+  pagination: Pagination
+}
+
+export interface PublicEventQuery {
+  q?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface EventRegistrationInput {
+  fullName: string
+  email: string
+  phone: string
+  consent: true
+  privacyVersion: string
+  website?: string
+}
+
+export interface EventRegistrationResponse {
+  id: number
+  eventId: number
+  status: 'CONFIRMADA'
+  registeredAt: string
+}

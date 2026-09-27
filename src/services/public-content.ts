@@ -1,4 +1,4 @@
-import type { BoardMember, ContactMethod, ContactRequestInput, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
+import type { BoardMember, ContactMethod, ContactRequestInput, EventRegistrationInput, EventRegistrationResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
 import { useApi } from './api'
 
 export const usePublicContentService = () => {
@@ -10,6 +10,10 @@ export const usePublicContentService = () => {
     news: (query: PublicNewsQuery = {}) => api<PublicNewsList>('/news', { query }),
     newsCategories: () => api<NewsCategory[]>('/news/categories'),
     newsById: (id: number) => api<PublicNews>(`/news/${id}`),
+    events: (query: PublicEventQuery = {}) => api<PublicEventList>('/events', { query }),
+    eventById: (id: number) => api<PublicEvent>(`/events/${id}`),
+    registerForEvent: (eventId: number, body: EventRegistrationInput) =>
+      api<EventRegistrationResponse>(`/events/${eventId}/registrations`, { method: 'POST', body }),
     resources: (query: PublicResourceQuery = {}) => api<PublicResourceList>('/resources', { query }),
     resourceCategories: () => api<ResourceCategory[]>('/resources/categories'),
     sendContactRequest: (body: ContactRequestInput) => api<{ id: number; status: string; sentAt: string }>('/contact-requests', { method: 'POST', body })
