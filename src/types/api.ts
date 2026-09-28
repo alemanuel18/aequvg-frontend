@@ -80,3 +80,34 @@ export interface EventRegistrationResponse {
   status: 'CONFIRMADA'
   registeredAt: string
 }
+
+export type ProjectType = 'TESIS' | 'PROYECTO'
+
+export interface PublicProject {
+  id: number
+  title: string
+  slug: string
+  description: string
+  repositoryUrl: string | null
+  liveUrl: string | null
+  type: ProjectType
+  status: 'APROBADO'
+  createdAt: string
+  author: { id: number; name: string }
+  coverImage: { id: number; originalName: string; storageKey: string } | null
+}
+
+export interface PublicProjectList {
+  items: PublicProject[]
+  pagination: Pagination & { totalPages: number }
+}
+
+export interface PublicProjectQuery {
+  search?: string
+  year?: number
+  type?: ProjectType
+  sortBy?: 'createdAt' | 'title' | 'author'
+  sortOrder?: 'asc' | 'desc'
+  page?: number
+  pageSize?: number
+}

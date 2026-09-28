@@ -1,1 +1,0 @@
-<template><UnderConstructionPage title="Investigación" description="Papers derivados de tesis y proyectos de investigación aprobados." /></template><script setup lang="ts">useSeoMeta({ title: 'Investigación' })</script>

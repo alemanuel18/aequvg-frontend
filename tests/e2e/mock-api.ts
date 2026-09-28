@@ -55,6 +55,22 @@ const fullEvent = {
   availableCapacity: 0
 }
 
+const project = {
+  id: 20,
+  title: 'Análisis de microplásticos en fuentes hídricas urbanas',
+  slug: 'analisis-microplasticos-fuentes-hidricas',
+  description: 'Investigación para identificar microplásticos en muestras de agua mediante espectroscopía y clasificación de datos.',
+  repositoryUrl: null,
+  liveUrl: null,
+  type: 'PROYECTO',
+  status: 'APROBADO',
+  createdAt: '2026-01-15T12:00:00.000Z',
+  author: { id: 1, name: 'Contenido de desarrollo' },
+  coverImage: null
+}
+
+const secondProject = { ...project, id: 21, title: 'Tesis de segunda página', slug: 'tesis-segunda-pagina', type: 'TESIS' }
+
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'access-control-allow-origin': '*' } })
 
 Bun.serve({
@@ -109,6 +125,15 @@ Bun.serve({
     if (url.pathname === '/api/v1/events/10') return json(event)
     if (url.pathname === '/api/v1/events/12') return json(fullEvent)
     if (url.pathname.startsWith('/api/v1/events/')) return json({ error: { code: 'EVENT_NOT_FOUND', message: 'El evento solicitado no existe.' } }, 404)
+    if (url.pathname === '/api/v1/projects') {
+      const search = url.searchParams.get('search')?.toLowerCase() || ''
+      if (search === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0, totalPages: 0 } })
+      if (search === 'error-prueba') return json({ error: { code: 'REQUEST_FAILED', message: 'Error simulado.' } }, 503)
+      const page = Number(url.searchParams.get('page') || 1)
+      return json({ items: page === 2 ? [secondProject] : [project], pagination: { page, pageSize: Number(url.searchParams.get('pageSize') || 9), total: 10, totalPages: 2 } })
+    }
+    if (url.pathname === '/api/v1/projects/20') return json(project)
+    if (url.pathname.startsWith('/api/v1/projects/')) return json({ error: { code: 'PROJECT_NOT_FOUND', message: 'El proyecto solicitado no existe.' } }, 404)
     return json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } }, 404)
   }
 })

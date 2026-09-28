@@ -56,6 +56,22 @@ test('muestra el detalle público y el estado de publicación no encontrada', as
   await expect(page.getByRole('heading', { name: 'No encontramos esta publicación', level: 2 })).toBeVisible()
 })
 
+test('lista y muestra el detalle de investigaciones publicadas', async ({ page }) => {
+  await page.goto('/investigacion')
+  await expect(page.getByRole('heading', { name: 'Investigación', level: 1 })).toBeVisible()
+  const projectLink = page.getByRole('link', { name: /Ver investigación: Análisis de microplásticos/ })
+  await expect(projectLink).toBeVisible()
+  await projectLink.click()
+  await expect(page).toHaveURL(/\/investigacion\/20$/)
+  await expect(page.getByRole('heading', { name: 'Análisis de microplásticos en fuentes hídricas urbanas', level: 1 })).toBeVisible()
+  await expect(page.getByText('Desarrollado por Contenido de desarrollo')).toBeVisible()
+})
+
+test('muestra el estado de investigación no encontrada', async ({ page }) => {
+  await page.goto('/investigacion/999')
+  await expect(page.getByRole('heading', { name: 'No encontramos esta investigación', level: 2 })).toBeVisible()
+})
+
 test('lista, busca, pagina y protege las acciones de recursos', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await page.goto('/recursos')
