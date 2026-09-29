@@ -1,0 +1,31 @@
+name: ${COMPOSE_PROJECT_NAME:-aequvg-frontend}
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: development
+      NUXT_HOST: 0.0.0.0
+      NUXT_PORT: 3000
+      NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-http://localhost:3000/api/v1}
+      NUXT_API_BASE_URL: ${NUXT_API_BASE_URL:-http://host.docker.internal:3000/api/v1}
+      NUXT_PUBLIC_PRIVACY_VERSION: ${NUXT_PUBLIC_PRIVACY_VERSION:-pendiente-validacion}
+      NUXT_PUBLIC_LOG_LEVEL: ${NUXT_PUBLIC_LOG_LEVEL:-debug}
+      NUXT_LOG_LEVEL: ${NUXT_LOG_LEVEL:-debug}
+    ports:
+      - "${FRONTEND_PORT:-3001}:3000"
+    volumes:
+      - .:/app
+      - frontend_modules:/app/node_modules
+      - frontend_nuxt:/app/.nuxt
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  frontend_modules:
+  frontend_nuxt:
