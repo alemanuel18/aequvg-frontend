@@ -12,6 +12,7 @@ const errors = ref<AdminLoginErrors>({})
 const requestError = ref('')
 const statusMessage = ref('')
 const submitting = ref(false)
+const checkingSession = ref(true)
 const emailInput = ref<HTMLInputElement | null>(null)
 const passwordInput = ref<HTMLInputElement | null>(null)
 
@@ -21,8 +22,12 @@ const safeReturnTo = computed(() => {
 })
 
 onMounted(async () => {
-  const currentUser = await session.load()
-  if (currentUser) await navigateTo(safeReturnTo.value, { replace: true })
+  try {
+    const currentUser = await session.load()
+    if (currentUser) await navigateTo(safeReturnTo.value, { replace: true })
+  } finally {
+    checkingSession.value = false
+  }
 })
 
 const submit = async () => {
@@ -90,7 +95,7 @@ const submit = async () => {
             maxlength="254"
             :aria-invalid="Boolean(errors.email)"
             :aria-describedby="errors.email ? 'admin-email-error' : undefined"
-            :disabled="submitting"
+            :disabled="submitting || checkingSession"
           >
           <p v-if="errors.email" id="admin-email-error" class="field__error">{{ errors.email }}</p>
         </div>
@@ -107,16 +112,16 @@ const submit = async () => {
             maxlength="256"
             :aria-invalid="Boolean(errors.password)"
             :aria-describedby="errors.password ? 'admin-password-error' : undefined"
-            :disabled="submitting"
+            :disabled="submitting || checkingSession"
           >
           <p v-if="errors.password" id="admin-password-error" class="field__error">{{ errors.password }}</p>
         </div>
 
         <p v-if="requestError" class="form-message form-message--error" role="alert">{{ requestError }}</p>
-        <p class="sr-only" aria-live="polite">{{ statusMessage }}</p>
+        <p class="sr-only" aria-live="polite">{{ checkingSession ? 'Comprobando sesión administrativa.' : statusMessage }}</p>
 
-        <AppButton type="submit" :disabled="submitting">
-          {{ submitting ? 'Verificando acceso…' : 'Iniciar sesión' }}
+        <AppButton type="submit" :disabled="submitting || checkingSession">
+          {{ checkingSession ? 'Comprobando sesión…' : submitting ? 'Verificando acceso…' : 'Iniciar sesión' }}
         </AppButton>
       </form>
     </main>
