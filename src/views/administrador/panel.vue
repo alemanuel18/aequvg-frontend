@@ -5,6 +5,7 @@ definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 useSeoMeta({ title: 'Panel administrativo', robots: 'noindex, nofollow' })
 
 const session = useAdminSession()
+const panelReady = computed(() => session.checked.value && !session.loading.value && Boolean(session.user.value))
 const modules = computed(() => adminNavigation.filter(item =>
   item.to
   && item.to !== '/administrador/panel'
@@ -15,31 +16,39 @@ const modules = computed(() => adminNavigation.filter(item =>
 
 <template>
   <div class="dashboard">
-    <AdminPageHeader
-      eyebrow="Panel administrativo"
-      :title="`Bienvenido${session.user.value?.name ? `, ${session.user.value.name.split(' ')[0]}` : ''}`"
-      description="Accede a los módulos habilitados para tu cuenta. Cada sección mantiene separadas las operaciones internas del sitio público."
+    <StatePanel
+      v-if="!panelReady"
+      title="Cargando panel"
+      message="Estamos verificando tu sesión y los módulos disponibles para tu cuenta."
     />
 
-    <section aria-labelledby="modules-title">
-      <div class="dashboard__section-heading">
-        <div><p>Accesos directos</p><h2 id="modules-title">Módulos disponibles</h2></div>
-        <span>{{ modules.length }} {{ modules.length === 1 ? 'módulo' : 'módulos' }}</span>
-      </div>
-      <div v-if="modules.length" class="dashboard__grid">
-        <AdminModuleCard v-for="item in modules" :key="item.label" :item="item" />
-      </div>
-      <StatePanel
-        v-else
-        title="No hay módulos asignados"
-        message="Tu sesión está activa, pero la cuenta no tiene permisos de gestión. Solicita la revisión de tu rol a una persona administradora."
+    <template v-else>
+      <AdminPageHeader
+        eyebrow="Panel administrativo"
+        :title="`Bienvenido${session.user.value?.name ? `, ${session.user.value.name.split(' ')[0]}` : ''}`"
+        description="Accede a los módulos habilitados para tu cuenta. Cada sección mantiene separadas las operaciones internas del sitio público."
       />
-    </section>
 
-    <section class="dashboard__notice" aria-labelledby="pending-title">
-      <span><AppIcon name="file-text" :size="22" /></span>
-      <div><h2 id="pending-title">Tesis aún no está disponible</h2><p>El módulo se mantiene visible como referencia, pero no tiene un enlace activo en este sprint.</p></div>
-    </section>
+      <section aria-labelledby="modules-title">
+        <div class="dashboard__section-heading">
+          <div><p>Accesos directos</p><h2 id="modules-title">Módulos disponibles</h2></div>
+          <span>{{ modules.length }} {{ modules.length === 1 ? 'módulo' : 'módulos' }}</span>
+        </div>
+        <div v-if="modules.length" class="dashboard__grid">
+          <AdminModuleCard v-for="item in modules" :key="item.label" :item="item" />
+        </div>
+        <StatePanel
+          v-else
+          title="No hay módulos asignados"
+          message="Tu sesión está activa, pero la cuenta no tiene permisos de gestión. Solicita la revisión de tu rol a una persona administradora."
+        />
+      </section>
+
+      <section class="dashboard__notice" aria-labelledby="pending-title">
+        <span><AppIcon name="file-text" :size="22" /></span>
+        <div><h2 id="pending-title">Tesis aún no está disponible</h2><p>El módulo se mantiene visible como referencia, pero no tiene un enlace activo en este sprint.</p></div>
+      </section>
+    </template>
   </div>
 </template>
 

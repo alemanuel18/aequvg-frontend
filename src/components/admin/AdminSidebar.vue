@@ -23,9 +23,6 @@ onBeforeUnmount(() => mediaQuery?.removeEventListener('change', updateViewport))
         <span class="admin-sidebar__mark"><AppIcon name="atom" :size="28" /></span>
         <span><strong>AsoQuímica</strong><small>Panel administrativo</small></span>
       </NuxtLink>
-      <button class="admin-sidebar__close" type="button" aria-label="Cerrar menú administrativo" @click="$emit('close')">
-        <AppIcon name="close" :size="24" />
-      </button>
     </div>
 
     <nav class="admin-nav" aria-label="Navegación administrativa">
@@ -61,7 +58,6 @@ onBeforeUnmount(() => mediaQuery?.removeEventListener('change', updateViewport))
 .admin-sidebar__mark { display: grid; width: 2.55rem; height: 2.55rem; flex: 0 0 auto; place-items: center; color: white; background: var(--admin-primary); border-radius: .75rem; }
 .admin-sidebar__brand strong, .admin-sidebar__brand small { display: block; }
 .admin-sidebar__brand small { color: #aad0cd; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; }
-.admin-sidebar__close { display: none; }
 .admin-nav { flex: 1; overflow-y: auto; padding: 1rem .75rem; }
 .admin-nav__label { padding: 0 .65rem .55rem; color: #8dbbb8; font-size: .7rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
 .admin-nav ul { display: grid; gap: .22rem; padding: 0; margin: 0; list-style: none; }
@@ -82,6 +78,5 @@ onBeforeUnmount(() => mediaQuery?.removeEventListener('change', updateViewport))
 @media (max-width: 900px) {
   .admin-sidebar { width: min(19rem, calc(100% - 2rem)); box-shadow: 18px 0 48px rgb(3 34 32 / 35%); transform: translateX(-105%); transition: transform .2s ease; }
   .admin-sidebar--open { transform: none; }
-  .admin-sidebar__close { display: grid; }
 }
 </style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  name: 'arrow-up-right' | 'atom' | 'calendar' | 'close' | 'dashboard' | 'facebook' | 'file-text' | 'flask' | 'folder' | 'graduation-cap' | 'instagram' | 'link' | 'log-out' | 'mail' | 'map-pin' | 'menu' | 'messages' | 'newspaper' | 'phone' | 'send' | 'users'
+  name: 'arrow-up-right' | 'atom' | 'calendar' | 'dashboard' | 'facebook' | 'file-text' | 'flask' | 'folder' | 'graduation-cap' | 'instagram' | 'link' | 'log-out' | 'mail' | 'map-pin' | 'menu' | 'messages' | 'newspaper' | 'phone' | 'send' | 'users'
   size?: number
 }>()
 </script>
@@ -89,9 +89,6 @@ defineProps<{
     </template>
     <template v-else-if="name === 'menu'">
       <path d="M4 7h16M4 12h16M4 17h16" />
-    </template>
-    <template v-else-if="name === 'close'">
-      <path d="m6 6 12 12M18 6 6 18" />
     </template>
     <template v-else-if="name === 'log-out'">
       <path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />

@@ -7,6 +7,4 @@
 </template>
 <style scoped>
 .admin-placeholder { display: grid; gap: 2rem; }
-.admin-placeholder :deep(.state-panel) { background: var(--admin-soft); border-color: var(--admin-border); }
-.admin-placeholder :deep(.state-panel__mark) { background: var(--admin-primary); }
 </style>

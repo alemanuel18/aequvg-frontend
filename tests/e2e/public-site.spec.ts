@@ -49,6 +49,15 @@ test('protege el panel y valida el inicio de sesión administrativo', async ({ p
   await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toBeVisible()
   await expect(page.getByText('Tesis aún no está disponible')).toBeVisible()
   await expect(page.getByRole('link', { name: /Tesis/ })).toHaveCount(0)
+
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    await route.continue()
+  })
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).not.toBeVisible()
 })
 
 test('el panel administrativo funciona con teclado y a 320 px', async ({ page }) => {
@@ -63,6 +72,7 @@ test('el panel administrativo funciona con teclado y a 320 px', async ({ page })
   await menuButton.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('navigation', { name: 'Navegación administrativa' })).toBeVisible()
+  await expect(page.locator('#admin-sidebar').getByRole('button', { name: 'Cerrar menú administrativo' })).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: 'Abrir menú administrativo' })).toBeVisible()
 

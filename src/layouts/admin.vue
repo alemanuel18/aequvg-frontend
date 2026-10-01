@@ -60,6 +60,10 @@ const logout = async () => {
   --admin-primary-dark: #0b3d3a;
   --admin-soft: #e3f2f0;
   --admin-border: #bfd8d5;
+  --color-primary: var(--admin-primary);
+  --color-primary-dark: var(--admin-primary-dark);
+  --color-soft: var(--admin-soft);
+  --color-border: var(--admin-border);
   min-height: 100vh;
   color: var(--color-ink);
   background: #f5f8f7;
