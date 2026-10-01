@@ -80,6 +80,19 @@ test('el panel administrativo funciona con teclado y a 320 px', async ({ page })
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
 })
 
+test('cerrar sesión invalida acciones posteriores y protege el acceso directo', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador$/)
+  await page.goto('/administrador/panel')
+  await expect(page).toHaveURL(/\/administrador\?returnTo=/)
+})
+
 test('el formulario anuncia validaciones y exige consentimiento', async ({ page }) => {
   await page.goto('/contacto')
   await page.getByLabel('Nombre completo').fill('Persona de prueba')
