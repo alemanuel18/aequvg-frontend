@@ -71,13 +71,67 @@ const project = {
 
 const secondProject = { ...project, id: 21, title: 'Tesis de segunda página', slug: 'tesis-segunda-pagina', type: 'TESIS' }
 
-const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'access-control-allow-origin': '*' } })
+const allowedOrigin = `http://127.0.0.1:${process.env.PLAYWRIGHT_FRONTEND_PORT || 3001}`
+const adminUser = {
+  id: 1,
+  name: 'Administración de prueba',
+  email: 'admin@uvg.edu.gt',
+  status: 'ACTIVO',
+  role: 'Administrador',
+  permissions: ['ADMIN_ACCESS', 'BOARD_MANAGE', 'CONTACT_MANAGE', 'EVENTS_MANAGE', 'INSTITUTIONAL_MANAGE', 'NEWS_MANAGE', 'PROJECTS_MANAGE', 'RESOURCES_MANAGE', 'USERS_MANAGE']
+}
+
+const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => Response.json(body, {
+  status,
+  headers: {
+    'access-control-allow-origin': allowedOrigin,
+    'access-control-allow-credentials': 'true',
+    ...extraHeaders,
+  }
+})
 
 Bun.serve({
   port: 3002,
   async fetch(request) {
     const url = new URL(request.url)
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: {
+        'access-control-allow-origin': allowedOrigin,
+        'access-control-allow-credentials': 'true',
+        'access-control-allow-headers': 'content-type,x-csrf-token',
+        'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+      } })
+    }
     if (url.pathname === '/health') return json({ status: 'ok' })
+    if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') {
+      const body = await request.json() as { email?: string; password?: string }
+      if (body.email !== 'admin@uvg.edu.gt' || body.password !== 'Acceso123!') {
+        return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
+      }
+      const response = json({ user: adminUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
+      response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
+      response.headers.append('set-cookie', 'aequvg_device=device-e2e; Path=/; HttpOnly; SameSite=Lax')
+      response.headers.append('set-cookie', 'aequvg_csrf=csrf-e2e; Path=/; SameSite=Lax')
+      return response
+    }
+    if (request.method === 'GET' && url.pathname === '/api/v1/auth/me') {
+      return request.headers.get('cookie')?.includes('aequvg_session=session-e2e')
+        ? json({ user: adminUser })
+        : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/auth/logout') {
+      if (!request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) {
+        return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      }
+      if (request.headers.get('x-csrf-token') !== 'csrf-e2e') {
+        return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      }
+      return new Response(null, { status: 204, headers: {
+        'access-control-allow-origin': allowedOrigin,
+        'access-control-allow-credentials': 'true',
+        'set-cookie': 'aequvg_session=; Max-Age=0; Path=/',
+      } })
+    }
     if (request.method === 'POST' && url.pathname === '/api/v1/events/10/registrations') {
       const body = await request.json() as Record<string, unknown>
       if (body.website) {
