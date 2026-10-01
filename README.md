@@ -240,6 +240,20 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/eventos` | Conectado a la API: listado, detalle, disponibilidad e inscripción pública. |
 | `/recursos` | Catálogo público de recursos con categorías, búsqueda, paginación, enlaces y materiales disponibles. |
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
+| `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
+| `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
+
+### Acceso al panel administrativo
+
+El acceso administrativo se mantiene separado de la navegación pública y no aparece en el encabezado ni en el pie del sitio. En desarrollo, abre directamente:
+
+```text
+http://localhost:3001/administrador
+```
+
+Inicia sesión con una cuenta institucional activa creada en el backend. Después de validar la sesión, el frontend redirige a `/administrador/panel`; si se intenta abrir directamente una ruta protegida sin sesión, se vuelve a `/administrador` y se conserva el destino solicitado.
+
+Los módulos visibles dependen de los permisos devueltos por el backend. Las credenciales, sesiones y permisos no se configuran ni se almacenan en el frontend.
 
 ## Solución de problemas
 
