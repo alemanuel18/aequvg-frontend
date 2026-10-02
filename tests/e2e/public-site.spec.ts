@@ -24,6 +24,75 @@ test('no genera desplazamiento horizontal a 320 px', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Abrir menú de navegación' })).toBeVisible()
 })
 
+test('protege el panel y valida el inicio de sesión administrativo', async ({ page }) => {
+  await page.goto('/administrador/panel')
+  await expect(page).toHaveURL(/\/administrador\?returnTo=/)
+  await expect(page.getByRole('heading', { name: 'Panel administrativo', level: 1 })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page.getByText('Escribe tu correo institucional.')).toBeVisible()
+  await expect(page.getByLabel('Correo institucional')).toBeFocused()
+
+  await page.getByLabel('Correo institucional').fill('persona@example.com')
+  await page.getByLabel('Contraseña').fill('incorrecta')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page.getByText('Usa tu correo institucional de UVG.')).toBeVisible()
+
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page.getByRole('alert')).toContainText('El correo o la contraseña no son válidos.')
+
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+  await expect(page.getByRole('heading', { name: 'Módulos disponibles', level: 2 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toBeVisible()
+  await expect(page.getByText('Tesis aún no está disponible')).toBeVisible()
+  await expect(page.getByRole('link', { name: /Tesis/ })).toHaveCount(0)
+
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    await route.continue()
+  })
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).not.toBeVisible()
+})
+
+test('el panel administrativo funciona con teclado y a 320 px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  const menuButton = page.getByRole('button', { name: 'Abrir menú administrativo' })
+  await menuButton.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('navigation', { name: 'Navegación administrativa' })).toBeVisible()
+  await expect(page.locator('#admin-sidebar').getByRole('button', { name: 'Cerrar menú administrativo' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: 'Abrir menú administrativo' })).toBeVisible()
+
+  const sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }))
+  expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
+})
+
+test('cerrar sesión invalida acciones posteriores y protege el acceso directo', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador$/)
+  await page.goto('/administrador/panel')
+  await expect(page).toHaveURL(/\/administrador\?returnTo=/)
+})
+
 test('el formulario anuncia validaciones y exige consentimiento', async ({ page }) => {
   await page.goto('/contacto')
   await page.getByLabel('Nombre completo').fill('Persona de prueba')

@@ -17,6 +17,26 @@ export interface ContactRequestInput { name: string; email: string; phone: strin
 
 export interface ApiError { error?: { code?: string; message?: string; details?: Record<string, string> } }
 
+export interface AdminUser {
+  id: number
+  name: string
+  email: string
+  status: string
+  role: string
+  permissions: string[]
+}
+
+export interface AdminSessionResponse {
+  user: AdminUser
+  csrfToken?: string
+  expiresAt?: string
+}
+
+export interface AdminLoginInput {
+  email: string
+  password: string
+}
+
 export interface NewsCategory { id: number; name: string; active?: boolean }
 
 export interface PublicNews {

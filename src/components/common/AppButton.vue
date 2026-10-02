@@ -1,10 +1,10 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ to?: string; href?: string; variant?: 'primary' | 'secondary' }>(), { variant: 'primary' })
+withDefaults(defineProps<{ to?: string; href?: string; variant?: 'primary' | 'secondary'; type?: 'button' | 'submit' | 'reset'; disabled?: boolean }>(), { variant: 'primary', type: 'button', disabled: false })
 </script>
 <template>
   <NuxtLink v-if="to" :to="to" class="button" :class="`button--${variant}`"><slot /></NuxtLink>
   <a v-else-if="href" :href="href" class="button" :class="`button--${variant}`"><slot /></a>
-  <button v-else class="button" :class="`button--${variant}`"><slot /></button>
+  <button v-else :type="type" :disabled="disabled" class="button" :class="`button--${variant}`"><slot /></button>
 </template>
 
 <style scoped>
