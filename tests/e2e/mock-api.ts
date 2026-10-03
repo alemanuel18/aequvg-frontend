@@ -153,6 +153,7 @@ Bun.serve({
         registeredAt: new Date().toISOString()
       }, 201)
     }
+    if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [], events: [] })
     if (url.pathname === '/api/v1/institutional-content' || url.pathname === '/api/v1/board-members' || url.pathname === '/api/v1/contact-methods') return json([])
     if (url.pathname === '/api/v1/news/categories') return json([{ id: 2, name: 'Convocatorias' }])
     if (url.pathname === '/api/v1/news') {
