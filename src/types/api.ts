@@ -6,6 +6,28 @@ export interface InstitutionalBlock {
   actionLabel: string | null; actionUrl: string | null; displayOrder: number; status: ContentStatus
 }
 
+export interface BlockInput {
+  type: BlockType
+  title: string
+  subtitle?: string | null
+  body: string
+  imageUrl?: string | null
+  actionLabel?: string | null
+  actionUrl?: string | null
+  displayOrder?: number
+  status?: ContentStatus
+}
+
+export interface FeaturedContentResponse {
+  news: PublicNews[]
+  events: PublicEvent[]
+}
+
+export interface AdminFeaturedResponse {
+  newsIds: number[]
+  eventIds: number[]
+}
+
 export interface BoardMember {
   id: number; name: string; position: string; description: string | null; institutionalEmail: string; term: string
   termStartsAt: string | null; termEndsAt: string | null; displayOrder: number; status: 'ACTIVO' | 'INACTIVO'
