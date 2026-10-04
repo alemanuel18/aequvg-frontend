@@ -7,19 +7,20 @@ import {
   type AnnouncementFormState,
   type HeroFormState
 } from '~/composables/institutional-validation'
+import { useToast } from '~/composables/use-toast'
 import { useAdminContentService } from '~/services/admin-content'
 import { PublicApiError } from '~/services/api'
-import type { BlockType, ContentStatus, InstitutionalBlock, PublicEvent, PublicNews } from '~/types/api'
+import type { BlockType, InstitutionalBlock, PublicEvent, PublicNews } from '~/types/api'
 
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 useSeoMeta({ title: 'Contenido institucional · Administración', robots: 'noindex, nofollow' })
 
 const service = useAdminContentService()
+const toast = useToast()
 
 // Lifecycle & data state
 const loading = ref(true)
 const loadError = ref('')
-const feedback = ref<{ type: 'success' | 'error'; message: string } | null>(null)
 
 // Raw data
 const blocks = ref<InstitutionalBlock[]>([])
@@ -71,19 +72,51 @@ const heroTitleInput = ref<HTMLInputElement | null>(null)
 const announcementTypeSelect = ref<HTMLSelectElement | null>(null)
 const announcementTitleInput = ref<HTMLInputElement | null>(null)
 
-const setFeedback = (type: 'success' | 'error', message: string) => {
-  feedback.value = { type, message }
-  if (type === 'success') {
-    setTimeout(() => {
-      if (feedback.value?.message === message) feedback.value = null
-    }, 6000)
+// Modular Confirmation Modal State
+const confirmModal = reactive({
+  open: false,
+  title: '',
+  message: '',
+  confirmLabel: 'Confirmar',
+  cancelLabel: 'Cancelar',
+  variant: 'primary' as 'primary' | 'danger' | 'warning',
+  loading: false,
+  action: (() => {}) as () => Promise<void> | void
+})
+
+const openConfirmDialog = (options: {
+  title: string
+  message: string
+  confirmLabel?: string
+  cancelLabel?: string
+  variant?: 'primary' | 'danger' | 'warning'
+  action: () => Promise<void> | void
+}) => {
+  confirmModal.title = options.title
+  confirmModal.message = options.message
+  confirmModal.confirmLabel = options.confirmLabel ?? 'Confirmar'
+  confirmModal.cancelLabel = options.cancelLabel ?? 'Cancelar'
+  confirmModal.variant = options.variant ?? 'primary'
+  confirmModal.loading = false
+  confirmModal.action = options.action
+  confirmModal.open = true
+}
+
+const handleConfirmAction = async () => {
+  confirmModal.loading = true
+  try {
+    await confirmModal.action()
+    confirmModal.open = false
+  } catch (err) {
+    // If an error occurs, error toast will already have been fired by the action
+  } finally {
+    confirmModal.loading = false
   }
 }
 
 const loadData = async () => {
   loading.value = true
   loadError.value = ''
-  feedback.value = null
 
   try {
     const [blocksData, featuredData, newsData, eventsData] = await Promise.all([
@@ -131,14 +164,25 @@ onMounted(() => {
   loadData()
 })
 
-// Section 1: Hero Save
-const saveHero = async () => {
+// Section 1: Hero Save flow with modal confirmation
+const requestSaveHero = () => {
   heroErrors.value = validateHeroForm(heroForm)
   if (Object.keys(heroErrors.value).length > 0) {
     heroTitleInput.value?.focus()
+    toast.error('Revisa los campos del formulario de Inicio antes de continuar.')
     return
   }
 
+  openConfirmDialog({
+    title: '¿Guardar sección de Inicio?',
+    message: '¿Deseas actualizar el contenido principal de inicio (Hero)? Los cambios se aplicarán inmediatamente en el sitio público.',
+    confirmLabel: 'Guardar cambios',
+    variant: 'primary',
+    action: executeSaveHero
+  })
+}
+
+const executeSaveHero = async () => {
   submittingHero.value = true
   try {
     const payload = {
@@ -161,15 +205,17 @@ const saveHero = async () => {
       blocks.value.unshift(created)
     }
 
-    setFeedback('success', 'La sección de Inicio (Hero) se guardó correctamente.')
+    toast.success('La sección de Inicio (Hero) se guardó correctamente.')
   } catch (error) {
-    setFeedback('error', error instanceof PublicApiError ? error.message : 'Error al guardar la sección de Inicio.')
+    const message = error instanceof PublicApiError ? error.message : 'Error al guardar la sección de Inicio.'
+    toast.error(message)
+    throw error
   } finally {
     submittingHero.value = false
   }
 }
 
-// Section 2: Announcement Edit & Save
+// Section 2: Announcement Edit & Save flow with modal confirmation
 const startEditingAnnouncement = (block: InstitutionalBlock) => {
   editingAnnouncementId.value = block.id
   announcementForm.type = block.type
@@ -180,6 +226,7 @@ const startEditingAnnouncement = (block: InstitutionalBlock) => {
   announcementForm.status = block.status
   announcementErrors.value = {}
   announcementTitleInput.value?.focus()
+  toast.info(`Editando anuncio: "${block.title}"`)
 }
 
 const cancelEditingAnnouncement = () => {
@@ -193,7 +240,7 @@ const cancelEditingAnnouncement = () => {
   announcementErrors.value = {}
 }
 
-const saveAnnouncement = async () => {
+const requestSaveAnnouncement = () => {
   const isEditing = editingAnnouncementId.value !== null
   announcementErrors.value = validateAnnouncementForm(announcementForm, activeCount.value, isEditing)
   if (Object.keys(announcementErrors.value).length > 0) {
@@ -202,10 +249,33 @@ const saveAnnouncement = async () => {
     } else {
       announcementTitleInput.value?.focus()
     }
+    toast.error('Corrige los errores del formulario de anuncio antes de guardar.')
     return
   }
 
+  if (isEditing) {
+    openConfirmDialog({
+      title: '¿Actualizar anuncio?',
+      message: `¿Deseas guardar los cambios del anuncio "${announcementForm.title}" en la categoría ${getTypeLabel(announcementForm.type)}?`,
+      confirmLabel: 'Actualizar anuncio',
+      variant: 'primary',
+      action: executeSaveAnnouncement
+    })
+  } else {
+    openConfirmDialog({
+      title: '¿Crear nuevo anuncio?',
+      message: `¿Deseas crear y publicar el anuncio "${announcementForm.title}" en la categoría ${getTypeLabel(announcementForm.type)}?`,
+      confirmLabel: 'Crear anuncio',
+      variant: 'primary',
+      action: executeSaveAnnouncement
+    })
+  }
+}
+
+const executeSaveAnnouncement = async () => {
+  const isEditing = editingAnnouncementId.value !== null
   submittingAnnouncement.value = true
+
   try {
     const payload = {
       type: announcementForm.type,
@@ -220,26 +290,34 @@ const saveAnnouncement = async () => {
       const updated = await service.updateBlock(editingAnnouncementId.value!, payload)
       const index = blocks.value.findIndex(b => b.id === editingAnnouncementId.value)
       if (index !== -1) blocks.value[index] = updated
-      setFeedback('success', `El anuncio "${updated.title}" se actualizó correctamente.`)
+      toast.success(`El anuncio "${updated.title}" se actualizó correctamente.`)
     } else {
       const created = await service.createBlock(payload)
       blocks.value.push(created)
-      setFeedback('success', `El anuncio "${created.title}" se creó exitosamente.`)
+      toast.success(`El anuncio "${created.title}" se creó exitosamente.`)
     }
 
     cancelEditingAnnouncement()
   } catch (error) {
-    setFeedback('error', error instanceof PublicApiError ? error.message : 'Error al guardar el anuncio.')
+    const message = error instanceof PublicApiError ? error.message : 'Error al guardar el anuncio.'
+    toast.error(message)
+    throw error
   } finally {
     submittingAnnouncement.value = false
   }
 }
 
-const archiveAnnouncement = async (block: InstitutionalBlock) => {
-  if (!confirm(`¿Deseas retirar el anuncio "${block.title}"? Dejará de mostrarse en la sección pública.`)) {
-    return
-  }
+const requestArchiveAnnouncement = (block: InstitutionalBlock) => {
+  openConfirmDialog({
+    title: '¿Retirar anuncio de la carrera?',
+    message: `¿Confirmas que deseas retirar el anuncio "${block.title}"? Dejará de mostrarse en la sección pública y liberará un cupo de los 3 permitidos.`,
+    confirmLabel: 'Sí, retirar anuncio',
+    variant: 'danger',
+    action: () => executeArchiveAnnouncement(block)
+  })
+}
 
+const executeArchiveAnnouncement = async (block: InstitutionalBlock) => {
   archivingAnnouncementId.value = block.id
   try {
     await service.archiveBlock(block.id)
@@ -250,21 +328,25 @@ const archiveAnnouncement = async (block: InstitutionalBlock) => {
     if (editingAnnouncementId.value === block.id) {
       cancelEditingAnnouncement()
     }
-    setFeedback('success', `El anuncio "${block.title}" fue retirado correctamente.`)
+    toast.success(`El anuncio "${block.title}" fue retirado exitosamente.`)
   } catch (error) {
-    setFeedback('error', error instanceof PublicApiError ? error.message : 'Error al archivar el anuncio.')
+    const message = error instanceof PublicApiError ? error.message : 'Error al retirar el anuncio.'
+    toast.error(message)
+    throw error
   } finally {
     archivingAnnouncementId.value = null
   }
 }
 
-// Section 3: Featured selection helpers
+// Section 3: Featured selection flow with modal confirmation
 const toggleNewsSelection = (id: number) => {
   const index = selectedNewsIds.value.indexOf(id)
   if (index !== -1) {
     selectedNewsIds.value.splice(index, 1)
   } else if (selectedNewsIds.value.length < 3) {
     selectedNewsIds.value.push(id)
+  } else {
+    toast.warning('Solo puedes seleccionar hasta 3 noticias destacadas.')
   }
 }
 
@@ -274,22 +356,39 @@ const toggleEventSelection = (id: number) => {
     selectedEventIds.value.splice(index, 1)
   } else if (selectedEventIds.value.length < 3) {
     selectedEventIds.value.push(id)
+  } else {
+    toast.warning('Solo puedes seleccionar hasta 3 eventos destacados.')
   }
 }
 
-const saveFeaturedSelection = async () => {
+const requestSaveFeatured = () => {
   featuredErrors.value = validateFeaturedSelection(selectedNewsIds.value, selectedEventIds.value)
-  if (Object.keys(featuredErrors.value).length > 0) return
+  if (Object.keys(featuredErrors.value).length > 0) {
+    toast.error('Revisa la cantidad de noticias o eventos seleccionados.')
+    return
+  }
 
+  openConfirmDialog({
+    title: '¿Guardar destacados de inicio?',
+    message: `Se configurarán ${selectedNewsIds.value.length} noticias y ${selectedEventIds.value.length} eventos como elementos destacados en la página principal.`,
+    confirmLabel: 'Guardar destacados',
+    variant: 'primary',
+    action: executeSaveFeatured
+  })
+}
+
+const executeSaveFeatured = async () => {
   submittingFeatured.value = true
   try {
     await service.saveFeatured({
       newsIds: selectedNewsIds.value,
       eventIds: selectedEventIds.value
     })
-    setFeedback('success', 'La selección de noticias y eventos destacados se guardó correctamente.')
+    toast.success('La selección de noticias y eventos destacados se guardó correctamente.')
   } catch (error) {
-    setFeedback('error', error instanceof PublicApiError ? error.message : 'Error al guardar los destacados.')
+    const message = error instanceof PublicApiError ? error.message : 'Error al guardar los destacados.'
+    toast.error(message)
+    throw error
   } finally {
     submittingFeatured.value = false
   }
@@ -307,18 +406,6 @@ const getTypeLabel = (type: BlockType) => {
       title="Contenido institucional"
       description="Actualiza la sección de inicio, administra los anuncios de la carrera y selecciona las noticias y eventos destacados."
     />
-
-    <!-- Global feedback banner -->
-    <div
-      v-if="feedback"
-      :class="['alert-banner', `alert-banner--${feedback.type}`]"
-      role="status"
-      aria-live="polite"
-    >
-      <AppIcon :name="feedback.type === 'success' ? 'file-text' : 'messages'" :size="20" />
-      <span>{{ feedback.message }}</span>
-      <button class="alert-banner__close" type="button" aria-label="Cerrar aviso" @click="feedback = null">×</button>
-    </div>
 
     <!-- Loading state -->
     <StatePanel
@@ -351,7 +438,7 @@ const getTypeLabel = (type: BlockType) => {
           <p>Define el mensaje de bienvenida y el llamado a la acción que verán los visitantes al ingresar al sitio.</p>
         </header>
 
-        <form class="admin-form" @submit.prevent="saveHero">
+        <form class="admin-form" @submit.prevent="requestSaveHero">
           <div class="form-group">
             <label for="hero-title">Título principal <span class="required">*</span></label>
             <input
@@ -494,7 +581,7 @@ const getTypeLabel = (type: BlockType) => {
                   type="button"
                   class="action-btn action-btn--danger"
                   :disabled="archivingAnnouncementId === announcement.id"
-                  @click="archiveAnnouncement(announcement)"
+                  @click="requestArchiveAnnouncement(announcement)"
                 >
                   {{ archivingAnnouncementId === announcement.id ? 'Retirando...' : '🗑️ Retirar' }}
                 </button>
@@ -511,7 +598,7 @@ const getTypeLabel = (type: BlockType) => {
               </p>
             </div>
 
-            <form class="admin-form" @submit.prevent="saveAnnouncement">
+            <form class="admin-form" @submit.prevent="requestSaveAnnouncement">
               <div v-if="announcementErrors.general" class="field-error field-error--banner" role="alert">
                 {{ announcementErrors.general }}
               </div>
@@ -735,7 +822,7 @@ const getTypeLabel = (type: BlockType) => {
               class="primary-btn"
               type="button"
               :disabled="submittingFeatured"
-              @click="saveFeaturedSelection"
+              @click="requestSaveFeatured"
             >
               {{ submittingFeatured ? 'Guardando destacados...' : 'Guardar selección de destacados' }}
             </button>
@@ -743,6 +830,19 @@ const getTypeLabel = (type: BlockType) => {
         </div>
       </section>
     </div>
+
+    <!-- Reusable confirmation modal -->
+    <AppConfirmModal
+      :open="confirmModal.open"
+      :title="confirmModal.title"
+      :message="confirmModal.message"
+      :confirm-label="confirmModal.confirmLabel"
+      :cancel-label="confirmModal.cancelLabel"
+      :variant="confirmModal.variant"
+      :loading="confirmModal.loading"
+      @confirm="handleConfirmAction"
+      @cancel="confirmModal.open = false"
+    />
   </div>
 </template>
 
@@ -756,38 +856,6 @@ const getTypeLabel = (type: BlockType) => {
 .content-workspace {
   display: grid;
   gap: 2.5rem;
-}
-
-/* Alert banners */
-.alert-banner {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  padding: .9rem 1.25rem;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: .95rem;
-}
-
-.alert-banner--success {
-  background: #e8f5e9;
-  color: #1b5e20;
-  border: 1px solid #a5d6a7;
-}
-
-.alert-banner--error {
-  background: #ffebee;
-  color: #b71c1c;
-  border: 1px solid #ef9a9a;
-}
-
-.alert-banner__close {
-  margin-left: auto;
-  background: transparent;
-  border: 0;
-  font-size: 1.3rem;
-  color: inherit;
-  cursor: pointer;
 }
 
 /* Card containers */
