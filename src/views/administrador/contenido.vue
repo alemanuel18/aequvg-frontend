@@ -323,7 +323,7 @@ const executeArchiveAnnouncement = async (block: InstitutionalBlock) => {
     await service.archiveBlock(block.id)
     const index = blocks.value.findIndex(b => b.id === block.id)
     if (index !== -1) {
-      blocks.value[index] = { ...blocks.value[index], status: 'ARCHIVADO' }
+      blocks.value[index] = { ...block, status: 'ARCHIVADO' }
     }
     if (editingAnnouncementId.value === block.id) {
       cancelEditingAnnouncement()
