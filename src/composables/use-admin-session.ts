@@ -48,5 +48,5 @@ export const useAdminSession = () => {
     checked.value = true
   }
 
-  return { user, checked, loading, load, login, logout, clear }
+  return { user, checked, loading, load, login, logout, clear, csrfToken }
 }
