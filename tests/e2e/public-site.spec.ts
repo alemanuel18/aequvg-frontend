@@ -249,3 +249,56 @@ test('muestra preventivamente estado de cupo lleno en eventos con availableCapac
   await expect(page.getByText('Este evento ha alcanzado su capacidad máxima.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Inscribirme al evento' })).not.toBeVisible()
 })
+
+test('la página de inicio muestra el Hero dinámico, la sección Conocer la Licenciatura con hasta 3 anuncios y destacados', async ({ page }) => {
+  await page.goto('/')
+  // Valida el Hero dinámico
+  await expect(page.getByRole('heading', { name: 'Licenciatura en Química Farmacéutica y Pura', level: 1 })).toBeVisible()
+  await expect(page.getByText('Excelencia científica e investigación con impacto social.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Conocer la carrera' })).toBeVisible()
+
+  // Valida la sección unificada de anuncios (máximo 3)
+  await expect(page.getByRole('heading', { name: 'Conocer la Licenciatura de Química', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Laboratorios Especializados', level: 3 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Oportunidades Laborales', level: 3 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Experiencia de Estudiantes', level: 3 })).toBeVisible()
+
+  // Valida que no se pierden las secciones de noticias y eventos destacados
+  await expect(page.getByRole('heading', { name: 'Próximos eventos destacados', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis' })).toBeVisible()
+
+  await expect(page.getByRole('heading', { name: 'Noticias destacadas', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Convocatoria de laboratorio' })).toBeVisible()
+
+  // Valida que los enlaces hacia otras secciones se mantienen íntegros
+  await expect(page.getByRole('link', { name: 'Ver todos los eventos →' })).toHaveAttribute('href', '/eventos')
+  await expect(page.getByRole('link', { name: 'Ver todas las noticias →' })).toHaveAttribute('href', '/noticias')
+})
+
+test('el módulo administrativo de contenido institucional interactúa con modal de confirmación y toasts', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  await page.goto('/administrador/contenido')
+  await expect(page.getByRole('heading', { name: 'Contenido Institucional', level: 1 })).toBeVisible()
+
+  // Verifica que cargue el Hero y los bloques de anuncios
+  await expect(page.getByLabel('Título del Hero')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
+  await expect(page.getByText('3 / 3 cupos utilizados')).toBeVisible()
+
+  // Intenta guardar el Hero: debe levantar el modal de confirmación primero
+  await page.getByRole('button', { name: 'Guardar sección de Inicio' }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await expect(page.getByRole('heading', { name: '¿Guardar cambios del Hero?' })).toBeVisible()
+
+  // Confirma en el modal
+  await page.getByRole('button', { name: 'Confirmar' }).click()
+  await expect(page.getByRole('dialog')).not.toBeVisible()
+
+  // Verifica que se muestre el toast flotante de éxito
+  await expect(page.locator('.toast-card--success')).toBeVisible()
+  await expect(page.getByText('Sección de inicio actualizada exitosamente.')).toBeVisible()
+})
