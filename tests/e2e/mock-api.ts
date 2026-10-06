@@ -71,6 +71,61 @@ const project = {
 
 const secondProject = { ...project, id: 21, title: 'Tesis de segunda página', slug: 'tesis-segunda-pagina', type: 'TESIS' }
 
+const institutionalBlocks = [
+  {
+    id: 1,
+    type: 'HERO',
+    title: 'Licenciatura en Química Farmacéutica y Pura',
+    subtitle: 'Excelencia científica e investigación con impacto social.',
+    body: 'Formamos profesionales con capacidad analítica, ética y liderazgo para innovar en la ciencia.',
+    imageUrl: null,
+    actionLabel: 'Conocer la carrera',
+    actionUrl: '#conocer-carrera',
+    displayOrder: 0,
+    status: 'PUBLICADO',
+    publishedAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 2,
+    type: 'LABORATORIO',
+    title: 'Laboratorios Especializados',
+    subtitle: 'Espacios de alta tecnología',
+    body: 'Instalaciones equipadas para cromatografía, espectrometría y síntesis orgánica.',
+    imageUrl: null,
+    actionLabel: null,
+    actionUrl: null,
+    displayOrder: 1,
+    status: 'PUBLICADO',
+    publishedAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 3,
+    type: 'CAMPO_LABORAL',
+    title: 'Oportunidades Laborales',
+    subtitle: 'Impacto en la industria',
+    body: 'Nuestros graduados destacan en control de calidad, investigación aplicada y docencia.',
+    imageUrl: null,
+    actionLabel: null,
+    actionUrl: null,
+    displayOrder: 2,
+    status: 'PUBLICADO',
+    publishedAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 4,
+    type: 'TESTIMONIO',
+    title: 'Experiencia de Estudiantes',
+    subtitle: 'Comunidad activa',
+    body: 'La carrera brinda un balance único entre formación teórica rigurosa y aplicación práctica.',
+    imageUrl: null,
+    actionLabel: null,
+    actionUrl: null,
+    displayOrder: 3,
+    status: 'PUBLICADO',
+    publishedAt: '2026-01-01T00:00:00.000Z'
+  }
+]
+
 const allowedOrigin = `http://127.0.0.1:${process.env.PLAYWRIGHT_FRONTEND_PORT || 3001}`
 const adminUser = {
   id: 1,
@@ -153,7 +208,33 @@ Bun.serve({
         registeredAt: new Date().toISOString()
       }, 201)
     }
-    if (url.pathname === '/api/v1/institutional-content' || url.pathname === '/api/v1/board-members' || url.pathname === '/api/v1/contact-methods') return json([])
+    if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
+    if (url.pathname === '/api/v1/institutional-content') return json(institutionalBlocks)
+    if (url.pathname === '/api/v1/board-members' || url.pathname === '/api/v1/contact-methods') return json([])
+    if (url.pathname === '/api/v1/admin/institutional-content/featured') {
+      if (request.method === 'GET') return json({ newsIds: [7], eventIds: [10] })
+      if (request.method === 'PUT') {
+        const body = await request.json()
+        return json(body)
+      }
+    }
+    if (url.pathname === '/api/v1/admin/institutional-content') {
+      if (request.method === 'GET') return json(institutionalBlocks)
+      if (request.method === 'POST') {
+        const body = await request.json()
+        return json({ id: 99, ...body, status: body.status || 'PUBLICADO', publishedAt: new Date().toISOString() }, 201)
+      }
+    }
+    if (url.pathname.match(/^\/api\/v1\/admin\/institutional-content\/\d+$/)) {
+      const id = Number(url.pathname.split('/').pop())
+      if (request.method === 'PUT') {
+        const body = await request.json()
+        return json({ id, ...body })
+      }
+      if (request.method === 'DELETE') {
+        return json({ id, status: 'ARCHIVADO' })
+      }
+    }
     if (url.pathname === '/api/v1/news/categories') return json([{ id: 2, name: 'Convocatorias' }])
     if (url.pathname === '/api/v1/news') {
       const query = url.searchParams.get('q')?.toLowerCase() || ''

@@ -1,10 +1,11 @@
-import type { BoardMember, ContactMethod, ContactRequestInput, EventRegistrationInput, EventRegistrationResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
+import type { BoardMember, ContactMethod, ContactRequestInput, EventRegistrationInput, EventRegistrationResponse, FeaturedContentResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
 import { useApi } from './api'
 
 export const usePublicContentService = () => {
   const api = useApi()
   return {
     institutionalContent: () => api<InstitutionalBlock[]>('/institutional-content'),
+    featuredContent: () => api<FeaturedContentResponse>('/institutional-content/featured'),
     boardMembers: () => api<BoardMember[]>('/board-members'),
     contactMethods: () => api<ContactMethod[]>('/contact-methods'),
     news: (query: PublicNewsQuery = {}) => api<PublicNewsList>('/news', { query }),
