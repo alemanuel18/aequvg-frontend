@@ -33,7 +33,9 @@ export interface BoardMember {
   termStartsAt: string | null; termEndsAt: string | null; displayOrder: number; status: 'ACTIVO' | 'INACTIVO'
 }
 
-export interface ContactMethod { id: number; type: 'EMAIL' | 'TELEFONO' | 'UBICACION' | 'INSTAGRAM' | 'FACEBOOK' | 'OTRO'; label: string; value: string; url: string | null; displayOrder: number }
+export type ContactMethodType = 'EMAIL' | 'TELEFONO' | 'UBICACION' | 'INSTAGRAM' | 'FACEBOOK' | 'OTRO'
+export interface ContactMethod { id: number; type: ContactMethodType; label: string; value: string; url: string | null; displayOrder: number; active: boolean }
+export interface ContactMethodInput { type: ContactMethodType; label: string; value: string; url?: string | null; displayOrder?: number; active?: boolean }
 
 export interface ContactRequestInput { name: string; email: string; phone: string; type: 'CONSULTA' | 'REUNION'; subject: string; message: string; preferredAt?: string | null; consent: true; privacyVersion: string; website?: string }
 

@@ -1,9 +1,33 @@
+<script setup lang="ts">
+import { usePublicContentService } from '~/services/public-content'
+import { contactMethodIcon } from '~/utils/contact-methods'
+const service = usePublicContentService()
+const { data: methods, status } = await useAsyncData('contact-methods', () => service.contactMethods(), { default: () => [] })
+</script>
+
 <template>
   <footer class="site-footer">
     <div class="container footer-grid">
       <div><strong class="footer-title">AsoQuímica UVG</strong><p>Asociación de Estudiantes de Química de la Universidad del Valle de Guatemala.</p></div>
       <nav aria-label="Enlaces del pie"><strong class="footer-title">Explora</strong><NuxtLink to="/junta-directiva">Junta directiva</NuxtLink><NuxtLink to="/contacto">Contacto</NuxtLink><NuxtLink to="/investigacion">Investigación</NuxtLink></nav>
-      <div><strong class="footer-title">Contacto</strong><a href="mailto:asoquimica@uvg.edu.gt">asoquimica@uvg.edu.gt</a><a href="tel:+50223688000">+502 2368-8000</a><p>Campus Central UVG, zona 15, Ciudad de Guatemala</p></div>
+      <div>
+        <strong class="footer-title">Contacto</strong>
+        <span v-if="status === 'pending'" class="footer-state" role="status">Cargando medios…</span>
+        <template v-else-if="methods.length">
+          <a
+            v-for="method in methods"
+            :key="method.id"
+            class="footer-contact"
+            :href="method.url || undefined"
+            :target="method.url?.startsWith('http') ? '_blank' : undefined"
+            :rel="method.url?.startsWith('http') ? 'noopener noreferrer' : undefined"
+          >
+            <AppIcon :name="contactMethodIcon(method)" :size="17" />
+            <span>{{ method.value }}</span>
+          </a>
+        </template>
+        <NuxtLink v-else to="/contacto" class="footer-contact"><AppIcon name="mail" :size="17" /> Consultar medios oficiales</NuxtLink>
+      </div>
     </div>
     <div class="container footer-bottom"><span>© {{ new Date().getFullYear() }} AsoQuímica UVG</span><span>Contenido sujeto a validación institucional.</span></div>
   </footer>
@@ -40,6 +64,9 @@
 .footer-grid a { text-decoration: none; }
 .footer-grid a:hover,
 .footer-grid a:focus-visible { text-decoration: underline; text-decoration-thickness: .08em; }
+.footer-contact { display: inline-flex; align-items: flex-start; gap: .45rem; overflow-wrap: anywhere; }
+.footer-contact :deep(.app-icon) { margin-top: .15rem; }
+.footer-state { color: #d9ddd5; }
 
 .footer-bottom {
   display: flex;

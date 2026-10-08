@@ -3,6 +3,8 @@ import { usePublicContentService } from '~/services/public-content'
 useSeoMeta({ title: 'Contacto', description: 'Consulta los medios oficiales o envía una consulta o solicitud de reunión a AsoQuímica UVG.' })
 const service = usePublicContentService()
 const { data: methods, status, error } = await useAsyncData('contact-methods', () => service.contactMethods(), { default: () => [] })
+const location = computed(() => methods.value.find(method => method.type === 'UBICACION'))
+const nonLocationMethods = computed(() => methods.value.filter(method => method.type !== 'UBICACION'))
 </script>
 <template>
   <div>
@@ -15,8 +17,11 @@ const { data: methods, status, error } = await useAsyncData('contact-methods', (
       <div class="contact-page-stack">
         <section aria-labelledby="contact-methods-title">
           <h2 id="contact-methods-title" class="sr-only">Medios oficiales</h2>
-          <div v-if="methods.length" class="contact-methods">
-            <ContactMethodCard v-for="method in methods" :key="method.id" :method="method" />
+          <div v-if="methods.length" class="contact-methods-stack">
+            <div v-if="nonLocationMethods.length" class="contact-methods">
+              <ContactMethodCard v-for="method in nonLocationMethods" :key="method.id" :method="method" />
+            </div>
+            <ContactLocationMap v-if="location" :method="location" />
           </div>
           <StatePanel v-else-if="status === 'pending'" title="Cargando medios" message="Consultando los canales oficiales." />
           <StatePanel v-else-if="error" role="alert" title="Medios no disponibles" message="Puedes utilizar el formulario; no mostraremos datos que no hayan sido validados." />
@@ -49,6 +54,7 @@ const { data: methods, status, error } = await useAsyncData('contact-methods', (
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
 }
+.contact-methods-stack { display: grid; gap: 1.5rem; }
 
 .contact-form-shell {
   display: grid;
