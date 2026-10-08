@@ -107,7 +107,7 @@ test('el formulario anuncia validaciones y exige consentimiento', async ({ page 
 
 test('lista, busca, pagina y muestra estados de noticias', async ({ page }) => {
   await page.goto('/noticias')
-  await expect(page.getByRole('heading', { name: 'Noticias y anuncios', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Noticias', level: 1 })).toBeVisible()
   await expect(page.getByRole('link', { name: /Leer noticia: Convocatoria de laboratorio/ })).toBeVisible()
   await page.goto('/noticias?page=2')
   await expect(page.getByRole('link', { name: /Leer noticia: Anuncio de segunda página/ })).toBeVisible()
