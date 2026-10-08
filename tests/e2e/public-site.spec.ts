@@ -60,6 +60,12 @@ test('protege el panel y valida el inicio de sesión administrativo', async ({ p
   await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).not.toBeVisible()
 })
 
+test('protege el acceso directo al módulo de noticias', async ({ page }) => {
+  await page.goto('/administrador/noticias')
+  await expect(page).toHaveURL(/\/administrador\?returnTo=\/administrador\/noticias/)
+  await expect(page.getByRole('heading', { name: 'Panel administrativo', level: 1 })).toBeVisible()
+})
+
 test('el panel administrativo funciona con teclado y a 320 px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await page.goto('/administrador')
