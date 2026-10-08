@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   dir: { pages: 'views' },
   components: [{ path: '~/components', pathPrefix: false }],
   devtools: { enabled: false },
+  routeRules: { '/administrador/**': { ssr: false } },
   css: ['~/assets/styles/main.css'],
   runtimeConfig: {
     apiBaseUrl: process.env.NUXT_API_BASE_URL || 'http://localhost:3000/api/v1',

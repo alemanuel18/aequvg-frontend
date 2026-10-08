@@ -242,6 +242,15 @@ Bun.serve({
         return json({ id: 99, ...body, status: body.status || 'PUBLICADO', publishedAt: new Date().toISOString() }, 201)
       }
     }
+    if (url.pathname === '/api/v1/admin/resources' || url.pathname.match(/^\/api\/v1\/admin\/resources\/\d+$/)) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      if (request.method === 'GET') return json({ items: [resource], pagination: { page: 1, pageSize: 9, total: 1 } })
+      const id = Number(url.pathname.split('/').pop())
+      if (request.method === 'POST') return json({ ...resource, id: 30, ...(await request.json()) }, 201)
+      if (request.method === 'PUT') return json({ ...resource, id, ...(await request.json()) })
+      if (request.method === 'DELETE') return json({ ...resource, id, status: 'ARCHIVADO' })
+    }
     if (url.pathname.match(/^\/api\/v1\/admin\/institutional-content\/\d+$/)) {
       const id = Number(url.pathname.split('/').pop())
       if (request.method === 'PUT') {
