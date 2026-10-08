@@ -80,6 +80,33 @@ test('el panel administrativo funciona con teclado y a 320 px', async ({ page })
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
 })
 
+test('administra noticias con filtros, previsualización y confirmación', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+  await page.goto('/administrador/noticias')
+
+  await expect(page.getByRole('heading', { name: 'Listado administrativo', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Convocatoria de laboratorio', level: 3 })).toBeVisible()
+  await page.getByRole('button', { name: 'Previsualizar' }).click()
+  await expect(page.getByRole('heading', { name: 'Título de la noticia', level: 3 })).toBeVisible()
+
+  await page.getByLabel('Título').fill('Nueva noticia de prueba')
+  await page.getByLabel('Resumen').fill('Resumen suficientemente descriptivo.')
+  await page.getByLabel('Contenido').fill('Contenido suficientemente extenso para publicar una noticia.')
+  await page.getByLabel('Categoría', { exact: true }).selectOption('2')
+  await page.getByRole('button', { name: 'Guardar noticia' }).click()
+  await expect(page.getByRole('heading', { name: '¿Crear noticia?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Crear noticia' }).click()
+  await expect(page.getByText('La noticia se creó correctamente.')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Eliminar' }).first().click()
+  await expect(page.getByRole('heading', { name: '¿Eliminar noticia permanentemente?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Eliminar permanentemente' }).click()
+})
+
 test('cerrar sesión invalida acciones posteriores y protege el acceso directo', async ({ page }) => {
   await page.goto('/administrador')
   await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')

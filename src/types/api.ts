@@ -68,6 +68,25 @@ export interface PublicNews {
   createdBy: { id: number; name: string }
 }
 
+export interface AdminNews extends Omit<PublicNews, 'status'> {
+  status: ContentStatus
+}
+
+export interface AdminNewsList {
+  items: AdminNews[]
+  pagination: Pagination
+}
+
+export interface NewsInput {
+  categoryId: number
+  imageId?: number | null
+  title: string
+  summary: string
+  content: string
+  status?: ContentStatus
+  publishedAt?: string | null
+}
+
 export interface Pagination { page: number; pageSize: number; total: number }
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }
 export interface PublicNewsQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
