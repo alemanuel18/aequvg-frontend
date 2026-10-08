@@ -137,6 +137,12 @@ const adminUser = {
   permissions: ['ADMIN_ACCESS', 'BOARD_MANAGE', 'CONTACT_MANAGE', 'EVENTS_MANAGE', 'INSTITUTIONAL_MANAGE', 'NEWS_MANAGE', 'PROJECTS_MANAGE', 'RESOURCES_MANAGE', 'USERS_MANAGE']
 }
 let adminSessionActive = false
+let contactMethods = [
+  { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
+  { id: 2, type: 'UBICACION', label: 'Campus Central UVG', value: 'Campus Central UVG, zona 15, Ciudad de Guatemala', url: 'https://www.google.com/maps/search/?api=1&query=Universidad+del+Valle+de+Guatemala', displayOrder: 2, active: true },
+  { id: 3, type: 'OTRO', label: 'TikTok', value: '@aeq_uvg', url: 'https://www.tiktok.com/@aeq_uvg', displayOrder: 3, active: true }
+]
+let nextContactMethodId = 4
 
 const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => Response.json(body, {
   status,
@@ -227,7 +233,28 @@ Bun.serve({
     }
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
     if (url.pathname === '/api/v1/institutional-content') return json(institutionalBlocks)
-    if (url.pathname === '/api/v1/board-members' || url.pathname === '/api/v1/contact-methods') return json([])
+    if (url.pathname === '/api/v1/board-members') return json([])
+    if (request.method === 'GET' && url.pathname === '/api/v1/contact-methods') return json(contactMethods.filter(method => method.active))
+    if (request.method === 'POST' && url.pathname === '/api/v1/contact-requests') return json({ accepted: true }, 202)
+    if (url.pathname === '/api/v1/admin/contact-methods') {
+      if (request.method === 'GET') return json(contactMethods)
+      if (request.method === 'POST') {
+        const body = await request.json() as Record<string, unknown>
+        const created = { id: nextContactMethodId++, ...body }
+        contactMethods.push(created as typeof contactMethods[number])
+        return json(created, 201)
+      }
+    }
+    if (url.pathname.match(/^\/api\/v1\/admin\/contact-methods\/\d+$/)) {
+      const id = Number(url.pathname.split('/').pop())
+      const index = contactMethods.findIndex(method => method.id === id)
+      if (index < 0) return json({ error: { code: 'CONTACT_METHOD_NOT_FOUND', message: 'El medio de contacto no existe.' } }, 404)
+      if (request.method === 'PUT') {
+        const body = await request.json() as Record<string, unknown>
+        contactMethods[index] = { ...contactMethods[index]!, ...body } as typeof contactMethods[number]
+      } else if (request.method === 'DELETE') contactMethods[index] = { ...contactMethods[index]!, active: false }
+      return json(contactMethods[index])
+    }
     if (url.pathname === '/api/v1/admin/institutional-content/featured') {
       if (request.method === 'GET') return json({ newsIds: [7], eventIds: [10] })
       if (request.method === 'PUT') {

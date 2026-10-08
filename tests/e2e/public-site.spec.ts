@@ -132,6 +132,61 @@ test('el formulario anuncia validaciones y exige consentimiento', async ({ page 
   await expect(page.getByRole('checkbox')).not.toBeChecked()
 })
 
+test('muestra redes con iconos, mapa y medios dinámicos en el footer', async ({ page }) => {
+  await page.goto('/contacto')
+  await expect(page.getByRole('heading', { name: 'Campus Central UVG', level: 2 })).toBeVisible()
+  await expect(page.getByTitle(/Mapa de Campus Central UVG/)).toBeVisible()
+  await expect(page.getByRole('link', { name: /Abrir dirección en Google Maps/ })).toHaveAttribute('target', '_blank')
+  await expect(page.getByRole('link', { name: /Visitar TikTok/ })).toBeVisible()
+  const footer = page.locator('footer')
+  await expect(footer.getByText('asoquimica@uvg.edu.gt')).toBeVisible()
+  await expect(footer.getByText('@aeq_uvg')).toBeVisible()
+})
+
+test('envía el formulario una vez y anuncia el éxito', async ({ page }) => {
+  let submissions = 0
+  await page.route('**/api/v1/contact-requests', async route => {
+    submissions += 1
+    await new Promise(resolve => setTimeout(resolve, 500))
+    await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ accepted: true }) })
+  })
+  await page.goto('/contacto')
+  await page.getByLabel('Nombre completo').fill('Persona de prueba')
+  await page.getByLabel('Correo electrónico').fill('persona@example.com')
+  await page.getByLabel('Teléfono').fill('+502 5555-5555')
+  await page.getByLabel('Asunto').fill('Información')
+  await page.getByRole('textbox', { name: 'Mensaje', exact: true }).fill('Quisiera conocer más sobre la carrera.')
+  await page.getByRole('checkbox').check()
+  const button = page.getByRole('button', { name: 'Enviar solicitud' })
+  await button.evaluate((element: HTMLButtonElement) => { element.click(); element.click() })
+  await expect(page.getByRole('status')).toContainText('Tu mensaje fue enviado al correo oficial')
+  expect(submissions).toBe(1)
+})
+
+test('administra medios oficiales con validación y confirmación', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/contacto')
+  await expect(page.getByRole('heading', { name: 'Medios de contacto', level: 1 })).toBeVisible()
+  await expect(page.getByText(/El formulario entrega los mensajes a/)).toContainText('asoquimica@uvg.edu.gt')
+
+  await page.getByRole('button', { name: 'Agregar medio' }).click()
+  await expect(page.getByText('Escribe una etiqueta de al menos 2 caracteres.')).toBeVisible()
+  await expect(page.getByLabel('Nombre público')).toBeFocused()
+
+  await page.getByLabel('Nombre público').fill('YouTube')
+  await page.getByLabel('Tipo de medio').selectOption('OTRO')
+  await page.getByLabel('Valor público').fill('@aeq_uvg')
+  await page.getByLabel(/Enlace/).fill('https://youtube.com/@aeq_uvg')
+  await page.getByRole('button', { name: 'Agregar medio' }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'Agregar medio' }).click()
+  await expect(page.getByText('El medio oficial se agregó correctamente.')).toBeVisible()
+  await expect(page.getByText('YouTube', { exact: true })).toBeVisible()
+})
+
 test('lista, busca, pagina y muestra estados de noticias', async ({ page }) => {
   await page.goto('/noticias')
   await expect(page.getByRole('heading', { name: 'Noticias', level: 1 })).toBeVisible()
