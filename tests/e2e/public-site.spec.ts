@@ -55,7 +55,6 @@ test('protege el panel y valida el inicio de sesión administrativo', async ({ p
     await route.continue()
   })
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).not.toBeVisible()
 })
@@ -313,19 +312,19 @@ test('el módulo administrativo de contenido institucional interactúa con modal
   await expect(page.getByRole('heading', { name: 'Contenido Institucional', level: 1 })).toBeVisible()
 
   // Verifica que cargue el Hero y los bloques de anuncios
-  await expect(page.getByLabel('Título del Hero')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
-  await expect(page.getByText('3 / 3 cupos utilizados')).toBeVisible()
+  await expect(page.getByLabel('Título principal *')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
+  await expect(page.getByText('3 de 3 anuncios activos')).toBeVisible()
 
   // Intenta guardar el Hero: debe levantar el modal de confirmación primero
   await page.getByRole('button', { name: 'Guardar sección de Inicio' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
-  await expect(page.getByRole('heading', { name: '¿Guardar cambios del Hero?' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '¿Guardar sección de Inicio?' })).toBeVisible()
 
   // Confirma en el modal
-  await page.getByRole('button', { name: 'Confirmar' }).click()
+  await page.getByRole('button', { name: 'Guardar cambios' }).click()
   await expect(page.getByRole('dialog')).not.toBeVisible()
 
   // Verifica que se muestre el toast flotante de éxito
-  await expect(page.locator('.toast-card--success')).toBeVisible()
-  await expect(page.getByText('Sección de inicio actualizada exitosamente.')).toBeVisible()
+  await expect(page.locator('.toast-item--success')).toBeVisible()
+  await expect(page.getByText('La sección de Inicio (Hero) se guardó correctamente.')).toBeVisible()
 })

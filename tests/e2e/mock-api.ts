@@ -81,7 +81,7 @@ const institutionalBlocks = [
     body: 'Formamos profesionales con capacidad analítica, ética y liderazgo para innovar en la ciencia.',
     imageUrl: null,
     actionLabel: 'Conocer la carrera',
-    actionUrl: '#conocer-carrera',
+    actionUrl: '/#conocer-carrera',
     displayOrder: 0,
     status: 'PUBLICADO',
     publishedAt: '2026-01-01T00:00:00.000Z'
@@ -234,6 +234,12 @@ Bun.serve({
         const body = await request.json()
         return json(body)
       }
+    }
+    if (url.pathname === '/api/v1/admin/events') {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) {
+        return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      }
+      return json({ items: [event], pagination: { page: 1, pageSize: 50, total: 1 } })
     }
     if (url.pathname === '/api/v1/admin/institutional-content') {
       if (request.method === 'GET') return json(institutionalBlocks)
