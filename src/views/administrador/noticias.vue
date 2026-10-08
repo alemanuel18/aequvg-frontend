@@ -33,6 +33,8 @@ const submitting = ref(false)
 const archivingId = ref<number | null>(null)
 const deletingId = ref<number | null>(null)
 const statusUpdatingId = ref<number | null>(null)
+const statusDrafts = reactive<Record<number, ContentStatus>>({})
+const pendingStatusChange = ref<{ id: number; status: ContentStatus } | null>(null)
 const previewOpen = ref(false)
 const titleInput = ref<HTMLInputElement | null>(null)
 const categorySelect = ref<HTMLSelectElement | null>(null)
@@ -75,6 +77,7 @@ const loadData = async (initial = false) => {
       ...categoryResult.map(category => service.list({ ...countQuery, categoryId: category.id }))
     ])
     items.value = result.items
+    for (const item of result.items) statusDrafts[item.id] = item.status
     total.value = result.pagination.total
     categories.value = categoryResult
     allTotal.value = allResult.pagination.total
@@ -132,6 +135,13 @@ const handleConfirmation = async () => {
   confirmModal.loading = true
   try { await confirmModal.action(); confirmModal.open = false } catch { /* La acción ya muestra el error. */ } finally { confirmModal.loading = false }
 }
+const cancelConfirmation = () => {
+  if (pendingStatusChange.value) {
+    statusDrafts[pendingStatusChange.value.id] = items.value.find(item => item.id === pendingStatusChange.value?.id)?.status ?? 'BORRADOR'
+    pendingStatusChange.value = null
+  }
+  confirmModal.open = false
+}
 const requestSave = () => {
   errors.value = validateNewsForm(form)
   if (Object.keys(errors.value).length) {
@@ -168,14 +178,18 @@ const executeDelete = async (news: AdminNews) => {
   catch (error) { toast.error(errorMessage(error, 'No se pudo eliminar la noticia.')); throw error } finally { deletingId.value = null }
 }
 watch([search, selectedCategory, selectedStatus], scheduleFilters)
-const requestStatusChange = (news: AdminNews, status: Extract<ContentStatus, 'BORRADOR' | 'PUBLICADO'>) => {
-  const label = status === 'PUBLICADO' ? 'Publicar noticia' : 'Pasar a borrador'
+const requestStatusChange = (news: AdminNews, status: ContentStatus) => {
+  if (status === news.status) return
+  pendingStatusChange.value = { id: news.id, status }
+  const label = status === 'PUBLICADO' ? 'Publicar noticia' : status === 'BORRADOR' ? 'Pasar a borrador' : 'Archivar noticia'
   const description = status === 'PUBLICADO'
     ? `“${news.title}” se mostrará en el contenido público.`
-    : `“${news.title}” dejará de mostrarse públicamente y conservará su contenido.`
+    : status === 'BORRADOR'
+      ? `“${news.title}” dejará de mostrarse públicamente y conservará su contenido.`
+      : `“${news.title}” dejará de mostrarse públicamente, pero se conservará en el panel.`
   openConfirmation(`¿${label}?`, description, () => executeStatusChange(news, status), status === 'PUBLICADO' ? 'primary' : 'warning', label)
 }
-const executeStatusChange = async (news: AdminNews, status: Extract<ContentStatus, 'BORRADOR' | 'PUBLICADO'>) => {
+const executeStatusChange = async (news: AdminNews, status: ContentStatus) => {
   if (statusUpdatingId.value || archivingId.value || deletingId.value) return
   statusUpdatingId.value = news.id
   try {
@@ -187,15 +201,17 @@ const executeStatusChange = async (news: AdminNews, status: Extract<ContentStatu
       content: news.content,
       status
     })
-    toast.success(status === 'PUBLICADO' ? 'La noticia se publicó correctamente.' : 'La noticia pasó a borrador.')
+    toast.success(status === 'PUBLICADO' ? 'La noticia se publicó correctamente.' : status === 'BORRADOR' ? 'La noticia pasó a borrador.' : 'La noticia se archivó correctamente.')
     await loadData()
   } catch (error) {
     toast.error(errorMessage(error, 'No se pudo cambiar el estado de la noticia.'))
     throw error
   } finally {
     statusUpdatingId.value = null
+    pendingStatusChange.value = null
   }
 }
+const handleStatusSelection = (news: AdminNews) => requestStatusChange(news, statusDrafts[news.id] ?? news.status)
 onMounted(async () => { await loadData(true); if (!form.categoryId && categories.value.length) form.categoryId = categories.value[0]!.id })
 </script>
 
@@ -218,7 +234,7 @@ onMounted(async () => { await loadData(true); if (!form.categoryId && categories
         <div v-else class="news-grid">
           <article v-for="news in sortedItems" :key="news.id" class="news-item">
             <div class="news-item__media"><span class="news-item__tag">{{ news.category.name }}</span><div class="news-item__image-placeholder"><span v-if="!news.image">Imagen pendiente</span><span v-else>Imagen asociada</span></div><span class="news-item__date">◷ {{ formatDate(news.publishedAt) }}</span></div>
-            <div class="news-item__body"><div class="news-item__meta"><span :class="['status', `status--${news.status.toLowerCase()}`]">{{ statusLabel(news.status) }}</span></div><h3>{{ news.title }}</h3><p>{{ news.summary }}</p><p v-if="news.image" class="image-meta">Archivo: {{ news.image.originalName }}</p><div class="news-item__author"><span class="author-avatar">{{ news.createdBy.name.slice(0, 2).toUpperCase() }}</span><span>{{ news.createdBy.name }}</span></div><div class="item-actions"><button class="secondary-button" type="button" @click="editNews(news)">Editar</button><button v-if="news.status !== 'PUBLICADO'" class="primary-button" type="button" :disabled="statusUpdatingId === news.id || archivingId === news.id || deletingId === news.id" @click="requestStatusChange(news, 'PUBLICADO')">{{ statusUpdatingId === news.id ? 'Actualizando…' : 'Publicar' }}</button><button v-if="news.status !== 'BORRADOR'" class="warning-button" type="button" :disabled="statusUpdatingId === news.id || archivingId === news.id || deletingId === news.id" @click="requestStatusChange(news, 'BORRADOR')">Pasar a borrador</button><button v-if="news.status !== 'ARCHIVADO'" class="warning-button" type="button" :disabled="archivingId === news.id || deletingId === news.id || statusUpdatingId === news.id" @click="requestArchive(news)">{{ archivingId === news.id ? 'Archivando…' : 'Archivar' }}</button><button class="danger-button" type="button" :disabled="deletingId === news.id || archivingId === news.id || statusUpdatingId === news.id" @click="requestDelete(news)">{{ deletingId === news.id ? 'Eliminando…' : 'Eliminar' }}</button></div></div>
+            <div class="news-item__body"><div class="news-item__meta"><span :class="['status', `status--${news.status.toLowerCase()}`]">{{ statusLabel(news.status) }}</span></div><h3>{{ news.title }}</h3><p>{{ news.summary }}</p><p v-if="news.image" class="image-meta">Archivo: {{ news.image.originalName }}</p><div class="news-item__author"><span class="author-avatar">{{ news.createdBy.name.slice(0, 2).toUpperCase() }}</span><span>{{ news.createdBy.name }}</span></div><div class="item-actions"><button class="secondary-button" type="button" @click="editNews(news)">Editar</button><label class="status-control"><span>Estado</span><select v-model="statusDrafts[news.id]" :aria-label="`Cambiar estado de ${news.title}`" :disabled="statusUpdatingId === news.id || archivingId === news.id || deletingId === news.id" @change="handleStatusSelection(news)"><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="ARCHIVADO">Archivado</option></select></label><button class="danger-button" type="button" :disabled="deletingId === news.id || archivingId === news.id || statusUpdatingId === news.id" @click="requestDelete(news)">{{ deletingId === news.id ? 'Eliminando…' : 'Eliminar' }}</button></div></div>
           </article>
         </div>
         <nav v-if="totalPages > 1" class="pagination" aria-label="Paginación de noticias"><button type="button" :disabled="page === 1" @click="goToPage(page - 1)">Anterior</button><span aria-live="polite">Página {{ page }} de {{ totalPages }}</span><button type="button" :disabled="page === totalPages" @click="goToPage(page + 1)">Siguiente</button></nav>
@@ -239,7 +255,7 @@ onMounted(async () => { await loadData(true); if (!form.categoryId && categories
         </form>
       </section>
     </template>
-    <AppConfirmModal :open="confirmModal.open" :title="confirmModal.title" :message="confirmModal.message" :confirm-label="confirmModal.confirmLabel" :variant="confirmModal.variant" :loading="confirmModal.loading" @cancel="confirmModal.open = false" @confirm="handleConfirmation" />
+    <AppConfirmModal :open="confirmModal.open" :title="confirmModal.title" :message="confirmModal.message" :confirm-label="confirmModal.confirmLabel" :variant="confirmModal.variant" :loading="confirmModal.loading" @cancel="cancelConfirmation" @confirm="handleConfirmation" />
   </div>
 </template>
 
@@ -260,6 +276,8 @@ onMounted(async () => { await loadData(true); if (!form.categoryId && categories
 .news-item__date { font-size: .76rem; font-weight: 700; }
 .news-item__author { display: flex; align-items: center; gap: .45rem; color: var(--color-muted); font-size: .76rem; }
 .author-avatar { display: grid; width: 1.45rem; height: 1.45rem; place-items: center; color: white; background: var(--admin-primary); border-radius: 50%; font-size: .58rem; font-weight: 900; }
+.status-control { display: inline-flex; align-items: center; gap: .35rem; color: var(--color-muted); font-size: .74rem; font-weight: 750; }
+.status-control select { min-height: 2.7rem; padding: .45rem .55rem; color: var(--admin-primary-dark); background: white; border: 1px solid var(--admin-border); border-radius: var(--radius-sm); font: inherit; font-weight: 800; }
 @media (max-width: 1000px) { .category-tabs { grid-column: 1 / -1; order: 3; } }
 @media (max-width: 620px) { .new-button { width: 100%; }.category-tabs { grid-column: auto; } }
 </style>
