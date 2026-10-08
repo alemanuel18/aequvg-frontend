@@ -21,6 +21,7 @@ const search = ref('')
 const appliedSearch = ref('')
 const selectedCategory = ref<number | undefined>()
 const selectedStatus = ref<ContentStatus | undefined>()
+const selectedSort = ref<'recent' | 'oldest' | 'title'>('recent')
 
 const form = reactive<NewsFormState>({ categoryId: null, imageId: '', title: '', summary: '', content: '', status: 'BORRADOR' })
 const errors = ref<NewsFormErrors>({})
@@ -35,10 +36,24 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
 const isEditing = computed(() => editingId.value !== null)
 const previewCategory = computed(() => categories.value.find(category => category.id === form.categoryId)?.name || 'Sin categoría')
 const previewImage = computed(() => form.imageId.trim() ? `Imagen asociada · ID ${form.imageId.trim()}` : 'Sin imagen asociada')
+const categoryCounts = computed(() => categories.value.map(category => ({
+  ...category,
+  count: items.value.filter(item => item.categoryId === category.id).length
+})))
+const sortedItems = computed(() => [...items.value].sort((left, right) => {
+  if (selectedSort.value === 'title') return left.title.localeCompare(right.title, 'es')
+  const leftDate = new Date(left.publishedAt || left.updatedAt || left.createdAt).getTime()
+  const rightDate = new Date(right.publishedAt || right.updatedAt || right.createdAt).getTime()
+  return selectedSort.value === 'recent' ? rightDate - leftDate : leftDate - rightDate
+}))
 
 const confirmModal = reactive({ open: false, title: '', message: '', confirmLabel: 'Confirmar', variant: 'primary' as 'primary' | 'danger' | 'warning', loading: false, action: (() => {}) as () => Promise<void> })
 const statusLabel = (status: ContentStatus) => ({ BORRADOR: 'Borrador', PUBLICADO: 'Publicado', ARCHIVADO: 'Archivado' }[status])
 const errorMessage = (error: unknown, fallback: string) => error instanceof PublicApiError ? error.message : fallback
+const formatDate = (date: string | null) => date
+  ? new Intl.DateTimeFormat('es-GT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(date))
+  : 'Sin fecha de publicación'
+const focusEditor = () => nextTick(() => titleInput.value?.focus())
 
 const loadData = async () => {
   loading.value = true
@@ -143,18 +158,19 @@ onMounted(async () => { await loadData(); if (!form.categoryId && categories.val
 
     <template v-else>
       <section class="manager-card" aria-labelledby="news-list-title">
-        <header class="section-heading"><div><span class="eyebrow">Contenido editorial</span><h2 id="news-list-title">Listado administrativo</h2></div><span class="count-badge">{{ total }} {{ total === 1 ? 'noticia' : 'noticias' }}</span></header>
+        <header class="section-heading"><div><span class="eyebrow">Portal informativo directivo</span><h2 id="news-list-title">Gestión de Noticias y Comunicados</h2><p class="section-description">Publicaciones académicas, convocatorias y boletines informativos de la AEQ para la comunidad de estudiantes y docentes de Química UVG.</p></div><button class="primary-button new-button" type="button" @click="focusEditor">＋ Nueva noticia</button></header>
         <form class="filters" role="search" @submit.prevent="applyFilters">
           <div class="field"><label for="news-search">Buscar</label><input id="news-search" v-model="search" type="search" placeholder="Título, resumen o contenido" /></div>
-          <div class="field"><label for="news-category-filter">Categoría</label><select id="news-category-filter" v-model="selectedCategory"><option :value="undefined">Todas</option><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></div>
+          <div class="category-tabs" aria-label="Filtrar por categoría"><button type="button" :class="{ 'category-tab--active': selectedCategory === undefined }" @click="selectedCategory = undefined; applyFilters()">Todas ({{ total }})</button><button v-for="category in categoryCounts" :key="category.id" type="button" :class="{ 'category-tab--active': selectedCategory === category.id }" @click="selectedCategory = category.id; applyFilters()">{{ category.name }} ({{ category.count }})</button></div>
           <div class="field"><label for="news-status-filter">Estado</label><select id="news-status-filter" v-model="selectedStatus"><option :value="undefined">Todos</option><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="ARCHIVADO">Archivado</option></select></div>
+          <div class="field"><label for="news-sort">Ordenar</label><select id="news-sort" v-model="selectedSort"><option value="recent">Más recientes</option><option value="oldest">Más antiguas</option><option value="title">Título A-Z</option></select></div>
           <button class="primary-button filters__submit" type="submit">Aplicar filtros</button>
         </form>
         <div v-if="!items.length" class="empty-state"><h3>No hay noticias para mostrar</h3><p>Prueba con otros filtros o crea la primera noticia desde el formulario.</p></div>
         <div v-else class="news-grid">
-          <article v-for="news in items" :key="news.id" class="news-item">
-            <div class="news-item__media"><span class="news-item__tag">{{ news.category.name }}</span><span class="news-item__image">{{ news.image ? 'Imagen asociada' : 'Sin imagen' }}</span></div>
-            <div class="news-item__body"><div class="news-item__meta"><span :class="['status', `status--${news.status.toLowerCase()}`]">{{ statusLabel(news.status) }}</span><span>{{ news.publishedAt ? new Date(news.publishedAt).toLocaleDateString('es-GT') : 'Sin fecha' }}</span></div><h3>{{ news.title }}</h3><p>{{ news.summary }}</p><p v-if="news.image" class="image-meta">Archivo: {{ news.image.originalName }}</p><div class="item-actions"><button class="secondary-button" type="button" @click="editNews(news)">Editar</button><button v-if="news.status !== 'ARCHIVADO'" class="warning-button" type="button" :disabled="archivingId === news.id || deletingId === news.id" @click="requestArchive(news)">{{ archivingId === news.id ? 'Archivando…' : 'Archivar' }}</button><button class="danger-button" type="button" :disabled="deletingId === news.id || archivingId === news.id" @click="requestDelete(news)">{{ deletingId === news.id ? 'Eliminando…' : 'Eliminar' }}</button></div></div>
+          <article v-for="news in sortedItems" :key="news.id" class="news-item">
+            <div class="news-item__media"><span class="news-item__tag">{{ news.category.name }}</span><div class="news-item__image-placeholder"><span v-if="!news.image">Imagen pendiente</span><span v-else>Imagen asociada</span></div><span class="news-item__date">◷ {{ formatDate(news.publishedAt) }}</span></div>
+            <div class="news-item__body"><div class="news-item__meta"><span :class="['status', `status--${news.status.toLowerCase()}`]">{{ statusLabel(news.status) }}</span></div><h3>{{ news.title }}</h3><p>{{ news.summary }}</p><p v-if="news.image" class="image-meta">Archivo: {{ news.image.originalName }}</p><div class="news-item__author"><span class="author-avatar">{{ news.createdBy.name.slice(0, 2).toUpperCase() }}</span><span>{{ news.createdBy.name }}</span></div><div class="item-actions"><button class="secondary-button" type="button" @click="editNews(news)">Editar</button><button v-if="news.status !== 'ARCHIVADO'" class="warning-button" type="button" :disabled="archivingId === news.id || deletingId === news.id" @click="requestArchive(news)">{{ archivingId === news.id ? 'Archivando…' : 'Archivar' }}</button><button class="danger-button" type="button" :disabled="deletingId === news.id || archivingId === news.id" @click="requestDelete(news)">{{ deletingId === news.id ? 'Eliminando…' : 'Eliminar' }}</button></div></div>
           </article>
         </div>
         <nav v-if="totalPages > 1" class="pagination" aria-label="Paginación de noticias"><button type="button" :disabled="page === 1" @click="goToPage(page - 1)">Anterior</button><span aria-live="polite">Página {{ page }} de {{ totalPages }}</span><button type="button" :disabled="page === totalPages" @click="goToPage(page + 1)">Siguiente</button></nav>
@@ -185,4 +201,16 @@ onMounted(async () => { await loadData(); if (!form.categoryId && categories.val
 .news-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }.news-item { display: grid; min-width: 0; overflow: hidden; border: 1px solid var(--admin-border); border-radius: var(--radius-md); background: #fbfdfc; }.news-item__media { display: flex; min-height: 8rem; flex-direction: column; justify-content: space-between; gap: .8rem; padding: 1rem; color: white; background: linear-gradient(135deg, var(--admin-primary-dark), #4f8f83); }.news-item__tag { width: fit-content; padding: .3rem .55rem; background: rgb(255 255 255 / 18%); border-radius: 999px; font-size: .75rem; font-weight: 800; }.news-item__image { font-size: .82rem; font-weight: 700; }.news-item__body { display: grid; gap: .75rem; padding: 1rem; }.news-item__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem; color: var(--color-muted); font-size: .76rem; }.news-item h3 { font-size: 1.05rem; line-height: 1.3; }.news-item p { color: var(--color-muted); font-size: .88rem; line-height: 1.45; }.image-meta { font-size: .76rem !important; }.status { display: inline-flex; width: fit-content; padding: .25rem .5rem; border-radius: 999px; font-size: .7rem; font-weight: 900; }.status--publicado { color: #146c3a; background: #e5f6eb; }.status--borrador { color: #7a5511; background: #fff3cf; }.status--archivado { color: #5d6570; background: #e9edf0; }.item-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .25rem; }.empty-state { padding: 2rem 1rem; text-align: center; border: 1px dashed var(--admin-border); border-radius: var(--radius-md); }.empty-state h3 { font-size: 1.15rem; }.empty-state p { margin-top: .35rem; color: var(--color-muted); }
 .pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; }.pagination button { color: var(--admin-primary-dark); background: white; border-color: var(--admin-border); }.editor-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(18rem, .65fr); gap: 1.5rem; }.editor-fields { display: grid; gap: 1rem; }.form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }.editor-actions { display: flex; flex-wrap: wrap; gap: .7rem; }.preview { align-self: start; overflow: hidden; border: 1px solid var(--admin-border); border-radius: var(--radius-md); background: #f5faf8; }.preview__header { padding: 1.1rem; background: white; }.preview__header h3 { margin-top: .4rem; font-size: 1.25rem; line-height: 1.25; }.preview__media { display: grid; min-height: 7rem; align-content: end; gap: .25rem; padding: 1rem; color: white; background: linear-gradient(135deg, #246d68, #7aa890); }.preview__media span { font-weight: 900; }.preview__media small { opacity: .86; }.preview__content { display: grid; gap: .8rem; padding: 1.1rem; }.preview__content p { color: var(--color-muted); line-height: 1.45; }.preview__copy { max-height: 12rem; overflow: auto; white-space: pre-wrap; color: var(--color-ink); font-size: .9rem; line-height: 1.5; }
 @media (max-width: 1000px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }.filters__submit { width: fit-content; }.news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.editor-layout { grid-template-columns: 1fr; }.preview { order: -1; } } @media (max-width: 620px) { .section-heading { align-items: start; flex-direction: column; }.filters, .form-row { grid-template-columns: 1fr; }.filters__submit { width: 100%; }.news-grid { grid-template-columns: 1fr; }.item-actions > button { flex: 1 1 8rem; }.editor-actions { display: grid; grid-template-columns: 1fr; }.editor-actions button { width: 100%; } }
+<style scoped>
+.section-description { max-width: 52rem; margin-top: .45rem; color: var(--color-muted); line-height: 1.45; }
+.new-button { white-space: nowrap; }
+.category-tabs { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem; padding: .3rem; background: #f5f8f7; border-radius: var(--radius-sm); }
+.category-tabs button { padding: .45rem .6rem; color: var(--color-muted); background: transparent; border: 0; border-radius: .35rem; font: inherit; font-size: .78rem; font-weight: 750; cursor: pointer; }
+.category-tabs button:hover, .category-tabs .category-tab--active { color: white; background: var(--admin-primary); }
+.news-item__image-placeholder { display: grid; min-height: 3rem; place-items: center; color: rgb(255 255 255 / 85%); font-size: .82rem; font-weight: 700; background: rgb(255 255 255 / 12%); border: 1px dashed rgb(255 255 255 / 35%); border-radius: .4rem; }
+.news-item__date { font-size: .76rem; font-weight: 700; }
+.news-item__author { display: flex; align-items: center; gap: .45rem; color: var(--color-muted); font-size: .76rem; }
+.author-avatar { display: grid; width: 1.45rem; height: 1.45rem; place-items: center; color: white; background: var(--admin-primary); border-radius: 50%; font-size: .58rem; font-weight: 900; }
+@media (max-width: 1000px) { .category-tabs { grid-column: 1 / -1; order: 3; } }
+@media (max-width: 620px) { .new-button { width: 100%; }.category-tabs { grid-column: auto; } }
 </style>
