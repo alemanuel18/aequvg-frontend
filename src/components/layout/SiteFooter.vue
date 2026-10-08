@@ -10,7 +10,7 @@ const orderedMethods = computed(() => sortContactMethods(methods.value))
   <footer class="site-footer">
     <div class="container footer-grid">
       <div><strong class="footer-title">AsoQuímica UVG</strong><p>Asociación de Estudiantes de Química de la Universidad del Valle de Guatemala.</p></div>
-      <nav aria-label="Enlaces del pie"><strong class="footer-title">Explora</strong><NuxtLink to="/junta-directiva">Junta directiva</NuxtLink><NuxtLink to="/contacto">Contacto</NuxtLink><NuxtLink to="/investigacion">Investigación</NuxtLink></nav>
+      <nav aria-label="Enlaces del pie"><strong class="footer-title">Explora</strong><NuxtLink to="/junta-directiva">Junta Directiva</NuxtLink><NuxtLink to="/contacto">Contacto</NuxtLink><NuxtLink to="/investigacion">Investigación</NuxtLink></nav>
       <div>
         <strong class="footer-title">Contacto</strong>
         <span v-if="status === 'pending'" class="footer-state" role="status">Cargando medios…</span>

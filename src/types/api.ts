@@ -29,9 +29,12 @@ export interface AdminFeaturedResponse {
 }
 
 export interface BoardMember {
-  id: number; name: string; position: string; description: string | null; institutionalEmail: string; term: string
+  id: number; photoId: number | null; name: string; position: string; description: string | null; institutionalEmail: string; term: string
   termStartsAt: string | null; termEndsAt: string | null; displayOrder: number; status: 'ACTIVO' | 'INACTIVO'
+  photo: { id: number; originalName: string; mimeType: string } | null
 }
+
+export type BoardMemberInput = Omit<BoardMember, 'id' | 'photo'>
 
 export type ContactMethodType = 'EMAIL' | 'TELEFONO' | 'UBICACION' | 'INSTAGRAM' | 'FACEBOOK' | 'OTRO'
 export interface ContactMethod { id: number; type: ContactMethodType; label: string; value: string; url: string | null; displayOrder: number; active: boolean }
