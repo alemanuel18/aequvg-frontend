@@ -56,6 +56,7 @@ const formatDate = (date: string | null) => date
   ? new Intl.DateTimeFormat('es-GT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(date))
   : 'Sin fecha de publicación'
 const focusEditor = () => nextTick(() => titleInput.value?.focus())
+let filterTimeout: ReturnType<typeof setTimeout> | undefined
 
 const loadData = async () => {
   loading.value = true
@@ -83,6 +84,10 @@ const loadData = async () => {
 }
 
 const applyFilters = async () => { appliedSearch.value = search.value.trim(); page.value = 1; await loadData() }
+const scheduleFilters = () => {
+  if (filterTimeout) clearTimeout(filterTimeout)
+  filterTimeout = setTimeout(() => { void applyFilters() }, 250)
+}
 const goToPage = async (target: number) => { page.value = target; await loadData() }
 const resetForm = () => {
   editingId.value = null
@@ -156,6 +161,7 @@ const executeDelete = async (news: AdminNews) => {
   try { await service.remove(news.id); toast.success('La noticia se eliminó correctamente.'); if (editingId.value === news.id) resetForm(); await loadData() }
   catch (error) { toast.error(errorMessage(error, 'No se pudo eliminar la noticia.')); throw error } finally { deletingId.value = null }
 }
+watch([search, selectedCategory, selectedStatus], scheduleFilters)
 onMounted(async () => { await loadData(); if (!form.categoryId && categories.value.length) form.categoryId = categories.value[0]!.id })
 </script>
 
@@ -168,13 +174,12 @@ onMounted(async () => { await loadData(); if (!form.categoryId && categories.val
     <template v-else>
       <section class="manager-card" aria-labelledby="news-list-title">
         <header class="section-heading"><div><span class="eyebrow">Portal informativo directivo</span><h2 id="news-list-title">Gestión de Noticias y Comunicados</h2><p class="section-description">Publicaciones académicas, convocatorias y boletines informativos de la AEQ para la comunidad de estudiantes y docentes de Química UVG.</p></div><button class="primary-button new-button" type="button" @click="focusEditor">＋ Nueva noticia</button></header>
-        <form class="filters" role="search" @submit.prevent="applyFilters">
+        <div class="filters" role="search">
           <div class="field"><label for="news-search">Buscar</label><input id="news-search" v-model="search" type="search" placeholder="Título, resumen o contenido" /></div>
-          <div class="category-tabs" aria-label="Filtrar por categoría"><button type="button" :class="{ 'category-tab--active': selectedCategory === undefined }" @click="selectedCategory = undefined; applyFilters()">Todas ({{ allTotal }})</button><button v-for="category in categoryCounts" :key="category.id" type="button" :class="{ 'category-tab--active': selectedCategory === category.id }" @click="selectedCategory = category.id; applyFilters()">{{ category.name }} ({{ category.count }})</button></div>
+          <div class="category-tabs" aria-label="Filtrar por categoría"><button type="button" :class="{ 'category-tab--active': selectedCategory === undefined }" @click="selectedCategory = undefined">Todas ({{ allTotal }})</button><button v-for="category in categoryCounts" :key="category.id" type="button" :class="{ 'category-tab--active': selectedCategory === category.id }" @click="selectedCategory = category.id">{{ category.name }} ({{ category.count }})</button></div>
           <div class="field"><label for="news-status-filter">Estado</label><select id="news-status-filter" v-model="selectedStatus"><option :value="undefined">Todos</option><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="ARCHIVADO">Archivado</option></select></div>
           <div class="field"><label for="news-sort">Ordenar</label><select id="news-sort" v-model="selectedSort"><option value="recent">Más recientes</option><option value="oldest">Más antiguas</option><option value="title">Título A-Z</option></select></div>
-          <button class="primary-button filters__submit" type="submit">Aplicar filtros</button>
-        </form>
+        </div>
         <div v-if="!items.length" class="empty-state"><h3>No hay noticias para mostrar</h3><p>Prueba con otros filtros o crea la primera noticia desde el formulario.</p></div>
         <div v-else class="news-grid">
           <article v-for="news in sortedItems" :key="news.id" class="news-item">
