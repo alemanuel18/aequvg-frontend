@@ -168,6 +168,7 @@ test('administra medios oficiales con validación y confirmación', async ({ pag
   await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
   await page.getByLabel('Contraseña').fill('Acceso123!')
   await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
   await page.goto('/administrador/contacto')
   await expect(page.getByRole('heading', { name: 'Medios de contacto', level: 1 })).toBeVisible()
   await expect(page.getByText(/El formulario entrega los mensajes a/)).toContainText('asoquimica@uvg.edu.gt')
@@ -185,6 +186,15 @@ test('administra medios oficiales con validación y confirmación', async ({ pag
   await page.getByRole('dialog').getByRole('button', { name: 'Agregar medio' }).click()
   await expect(page.getByText('El medio oficial se agregó correctamente.')).toBeVisible()
   await expect(page.getByText('YouTube', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Mover YouTube hacia arriba' }).click()
+  await expect(page.getByText('Hay cambios de orden sin guardar.')).toBeVisible()
+  await page.getByRole('button', { name: 'Guardar orden' }).click()
+  await expect(page.getByText('El orden de los medios se guardó correctamente.')).toBeVisible()
+  const labels = await page.locator('.method-item .method-copy strong').allTextContents()
+  expect(labels).toEqual(['Correo oficial', 'YouTube', 'TikTok', 'Campus Central UVG'])
+  await expect(page.getByText(/Orden \d/)).toHaveCount(0)
+  await expect(page.getByText('Ubicación fija al final')).toBeVisible()
 })
 
 test('lista, busca, pagina y muestra estados de noticias', async ({ page }) => {

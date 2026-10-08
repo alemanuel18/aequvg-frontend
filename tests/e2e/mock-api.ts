@@ -143,6 +143,11 @@ let contactMethods = [
   { id: 3, type: 'OTRO', label: 'TikTok', value: '@aeq_uvg', url: 'https://www.tiktok.com/@aeq_uvg', displayOrder: 3, active: true }
 ]
 let nextContactMethodId = 4
+const sortedContactMethods = () => [...contactMethods].sort((a, b) =>
+  Number(a.type === 'UBICACION') - Number(b.type === 'UBICACION')
+  || a.displayOrder - b.displayOrder
+  || a.id - b.id
+)
 
 const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => Response.json(body, {
   status,
@@ -234,16 +239,25 @@ Bun.serve({
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
     if (url.pathname === '/api/v1/institutional-content') return json(institutionalBlocks)
     if (url.pathname === '/api/v1/board-members') return json([])
-    if (request.method === 'GET' && url.pathname === '/api/v1/contact-methods') return json(contactMethods.filter(method => method.active))
+    if (request.method === 'GET' && url.pathname === '/api/v1/contact-methods') return json(sortedContactMethods().filter(method => method.active))
     if (request.method === 'POST' && url.pathname === '/api/v1/contact-requests') return json({ accepted: true }, 202)
     if (url.pathname === '/api/v1/admin/contact-methods') {
-      if (request.method === 'GET') return json(contactMethods)
+      if (request.method === 'GET') return json(sortedContactMethods())
       if (request.method === 'POST') {
         const body = await request.json() as Record<string, unknown>
-        const created = { id: nextContactMethodId++, ...body }
+        const nextOrder = Math.max(-1, ...contactMethods.filter(method => method.type !== 'UBICACION').map(method => method.displayOrder)) + 1
+        const created = { id: nextContactMethodId++, displayOrder: body.type === 'UBICACION' ? 0 : nextOrder, ...body }
         contactMethods.push(created as typeof contactMethods[number])
         return json(created, 201)
       }
+    }
+    if (request.method === 'PUT' && url.pathname === '/api/v1/admin/contact-methods/order') {
+      const body = await request.json() as { orderedIds: number[] }
+      body.orderedIds.forEach((id, displayOrder) => {
+        const index = contactMethods.findIndex(method => method.id === id)
+        if (index >= 0) contactMethods[index] = { ...contactMethods[index]!, displayOrder }
+      })
+      return json(sortedContactMethods())
     }
     if (url.pathname.match(/^\/api\/v1\/admin\/contact-methods\/\d+$/)) {
       const id = Number(url.pathname.split('/').pop())
