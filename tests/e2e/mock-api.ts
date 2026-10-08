@@ -165,7 +165,7 @@ const json = (body: unknown, status = 200, extraHeaders: Record<string, string> 
 })
 
 Bun.serve({
-  port: 3002,
+  port: Number(process.env.PLAYWRIGHT_API_PORT || 3002),
   async fetch(request) {
     const url = new URL(request.url)
     if (request.method === 'OPTIONS') {
@@ -245,19 +245,26 @@ Bun.serve({
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
     if (url.pathname === '/api/v1/institutional-content') return json(institutionalBlocks)
     if (url.pathname === '/api/v1/board-members') return json(boardMembers.filter(member => member.status === 'ACTIVO'))
-    if (url.pathname === '/api/v1/admin/board-members' || url.pathname.match(/^\/api\/v1\/admin\/board-members\/\d+$/)) {
+    if (url.pathname === '/api/v1/admin/board-members' || url.pathname === '/api/v1/admin/board-members/order' || url.pathname.match(/^\/api\/v1\/admin\/board-members\/\d+$/)) {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
       if (request.method === 'GET') return json(boardMembers)
+      if (request.method === 'PUT' && url.pathname === '/api/v1/admin/board-members/order') {
+        const body = await request.json() as { items: Array<{ id: number; displayOrder: number }> }
+        body.items.forEach(item => { const index = boardMembers.findIndex(member => member.id === item.id); if (index >= 0) boardMembers[index] = { ...boardMembers[index]!, displayOrder: item.displayOrder } })
+        return json(body.items.map(item => boardMembers.find(member => member.id === item.id)))
+      }
       if (request.method === 'POST') {
         const body = await request.json() as Record<string, unknown>
-        const created = { id: nextBoardMemberId++, photo: null, ...body }
+        const startYear = String(body.termStartsAt).slice(0, 4); const endYear = String(body.termEndsAt).slice(0, 4)
+        const created = { id: nextBoardMemberId++, photoId: null, photo: null, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, displayOrder: boardMembers.length, ...body }
         boardMembers.push(created as typeof boardMembers[number]); return json(created, 201)
       }
       const id = Number(url.pathname.split('/').at(-1)); const index = boardMembers.findIndex(member => member.id === id)
       if (request.method === 'PUT') {
         const body = await request.json() as Record<string, unknown>
-        boardMembers[index] = { ...boardMembers[index]!, ...body, photo: null }; return json(boardMembers[index])
+        const startYear = String(body.termStartsAt).slice(0, 4); const endYear = String(body.termEndsAt).slice(0, 4)
+        boardMembers[index] = { ...boardMembers[index]!, ...body, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, photo: null }; return json(boardMembers[index])
       }
       if (request.method === 'DELETE') {
         boardMembers[index] = { ...boardMembers[index]!, status: 'INACTIVO' }; return json(boardMembers[index])
