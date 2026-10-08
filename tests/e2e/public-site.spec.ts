@@ -102,6 +102,10 @@ test('administra noticias con filtros, previsualización y confirmación', async
   await page.getByRole('button', { name: 'Crear noticia' }).click()
   await expect(page.getByText('La noticia se creó correctamente.')).toBeVisible()
 
+  await page.goto('/noticias?q=Nueva%20noticia%20de%20prueba')
+  await expect(page.getByRole('link', { name: /Leer noticia: Nueva noticia de prueba/ })).toBeVisible()
+  await page.goto('/administrador/noticias')
+
   await page.getByRole('button', { name: 'Eliminar' }).first().click()
   await expect(page.getByRole('heading', { name: '¿Eliminar noticia permanentemente?' })).toBeVisible()
   await page.getByRole('button', { name: 'Eliminar permanentemente' }).click()
@@ -285,13 +289,13 @@ test('la página de inicio muestra el Hero dinámico, la sección Conocer la Lic
   await expect(page.getByRole('link', { name: 'Conocer la carrera' })).toBeVisible()
 
   // Valida la sección unificada de anuncios (máximo 3)
-  await expect(page.getByRole('heading', { name: 'Conocer la Licenciatura de Química', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Conoce la Licenciatura en Química', level: 2 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Laboratorios Especializados', level: 3 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Oportunidades Laborales', level: 3 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Experiencia de Estudiantes', level: 3 })).toBeVisible()
 
   // Valida que no se pierden las secciones de noticias y eventos destacados
-  await expect(page.getByRole('heading', { name: 'Próximos eventos destacados', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Eventos destacados', level: 2 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis' })).toBeVisible()
 
   await expect(page.getByRole('heading', { name: 'Noticias destacadas', level: 2 })).toBeVisible()
@@ -313,19 +317,19 @@ test('el módulo administrativo de contenido institucional interactúa con modal
   await expect(page.getByRole('heading', { name: 'Contenido Institucional', level: 1 })).toBeVisible()
 
   // Verifica que cargue el Hero y los bloques de anuncios
-  await expect(page.getByLabel('Título del Hero')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
-  await expect(page.getByText('3 / 3 cupos utilizados')).toBeVisible()
+  await expect(page.getByLabel('Título principal')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
+  await expect(page.getByText('3 de 3 anuncios activos')).toBeVisible()
 
   // Intenta guardar el Hero: debe levantar el modal de confirmación primero
   await page.getByRole('button', { name: 'Guardar sección de Inicio' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
-  await expect(page.getByRole('heading', { name: '¿Guardar cambios del Hero?' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '¿Guardar sección de Inicio?' })).toBeVisible()
 
   // Confirma en el modal
-  await page.getByRole('button', { name: 'Confirmar' }).click()
+  await page.getByRole('button', { name: 'Guardar cambios' }).click()
   await expect(page.getByRole('dialog')).not.toBeVisible()
 
   // Verifica que se muestre el toast flotante de éxito
-  await expect(page.locator('.toast-card--success')).toBeVisible()
-  await expect(page.getByText('Sección de inicio actualizada exitosamente.')).toBeVisible()
+  await expect(page.locator('.toast-item--success')).toBeVisible()
+  await expect(page.getByText('La sección de Inicio (Hero) se guardó correctamente.')).toBeVisible()
 })
