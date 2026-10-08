@@ -93,7 +93,7 @@ test('administra noticias con filtros, previsualización y confirmación', async
   await page.getByRole('button', { name: 'Previsualizar' }).click()
   await expect(page.getByRole('heading', { name: 'Título de la noticia', level: 3 })).toBeVisible()
 
-  await page.getByLabel('Título').fill('Nueva noticia de prueba')
+  await page.locator('#news-title').fill('Nueva noticia de prueba')
   await page.getByLabel('Resumen').fill('Resumen suficientemente descriptivo.')
   await page.getByLabel('Contenido').fill('Contenido suficientemente extenso para publicar una noticia.')
   await page.getByLabel('Categoría', { exact: true }).selectOption('2')

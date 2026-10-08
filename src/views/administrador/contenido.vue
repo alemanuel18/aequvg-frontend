@@ -48,6 +48,7 @@ const announcementForm = reactive<AnnouncementFormState>({
   type: 'LABORATORIO',
   title: '',
   body: '',
+  imageUrl: '',
   actionLabel: '',
   actionUrl: '',
   status: 'PUBLICADO'
@@ -221,6 +222,7 @@ const startEditingAnnouncement = (block: InstitutionalBlock) => {
   announcementForm.type = block.type
   announcementForm.title = block.title
   announcementForm.body = block.body
+  announcementForm.imageUrl = block.imageUrl || ''
   announcementForm.actionLabel = block.actionLabel || ''
   announcementForm.actionUrl = block.actionUrl || ''
   announcementForm.status = block.status
@@ -234,6 +236,7 @@ const cancelEditingAnnouncement = () => {
   announcementForm.type = 'LABORATORIO'
   announcementForm.title = ''
   announcementForm.body = ''
+  announcementForm.imageUrl = ''
   announcementForm.actionLabel = ''
   announcementForm.actionUrl = ''
   announcementForm.status = 'PUBLICADO'
@@ -281,6 +284,7 @@ const executeSaveAnnouncement = async () => {
       type: announcementForm.type,
       title: announcementForm.title,
       body: announcementForm.body,
+      imageUrl: announcementForm.imageUrl.trim() || null,
       actionLabel: announcementForm.actionLabel || null,
       actionUrl: announcementForm.actionUrl || null,
       status: announcementForm.status
@@ -661,6 +665,23 @@ const getTypeLabel = (type: BlockType) => {
                 </span>
               </div>
 
+              <div class="form-group">
+                <label for="announcement-image">Imagen del anuncio</label>
+                <input
+                  id="announcement-image"
+                  v-model="announcementForm.imageUrl"
+                  type="url"
+                  maxlength="2048"
+                  placeholder="https://... o /images/anuncio.webp"
+                  :aria-invalid="Boolean(announcementErrors.imageUrl)"
+                  aria-describedby="announcement-image-hint announcement-image-error"
+                />
+                <span id="announcement-image-hint" class="field-hint">Usa la URL de una imagen ya cargada en el sistema.</span>
+                <span v-if="announcementErrors.imageUrl" id="announcement-image-error" class="field-error" role="alert">
+                  {{ announcementErrors.imageUrl }}
+                </span>
+              </div>
+
               <div class="form-row">
                 <div class="form-group">
                   <label for="announcement-action-label">Texto del enlace opcional</label>
@@ -710,6 +731,34 @@ const getTypeLabel = (type: BlockType) => {
                 </button>
               </div>
             </form>
+
+            <aside class="announcement-preview" aria-labelledby="announcement-preview-title">
+              <div class="announcement-preview__header">
+                <div>
+                  <span class="admin-card__tag">Previsualización</span>
+                  <h3 id="announcement-preview-title">Vista previa del anuncio</h3>
+                </div>
+                <span class="type-pill">{{ getTypeLabel(announcementForm.type) }}</span>
+              </div>
+              <div class="announcement-preview__card">
+                <img
+                  v-if="announcementForm.imageUrl"
+                  class="announcement-preview__image"
+                  :src="announcementForm.imageUrl"
+                  alt=""
+                />
+                <div class="announcement-preview__content">
+                  <span class="status-pill" :class="`status-pill--${announcementForm.status.toLowerCase()}`">
+                    {{ announcementForm.status === 'PUBLICADO' ? 'Publicado' : 'Borrador' }}
+                  </span>
+                  <h4>{{ announcementForm.title || 'Título del anuncio' }}</h4>
+                  <p>{{ announcementForm.body || 'El contenido del anuncio aparecerá aquí.' }}</p>
+                  <span v-if="announcementForm.actionLabel || announcementForm.actionUrl" class="announcement-preview__link">
+                    {{ announcementForm.actionLabel || 'Más información' }}
+                  </span>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </section>
@@ -1182,6 +1231,70 @@ const getTypeLabel = (type: BlockType) => {
   border-radius: var(--radius-sm);
 }
 
+.announcement-preview {
+  display: grid;
+  gap: .85rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--admin-border);
+}
+
+.announcement-preview__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.announcement-preview__header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.announcement-preview__card {
+  display: grid;
+  grid-template-columns: minmax(0, 10rem) minmax(0, 1fr);
+  overflow: hidden;
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+}
+
+.announcement-preview__image {
+  width: 100%;
+  height: 100%;
+  min-height: 9rem;
+  object-fit: cover;
+  background: var(--admin-soft);
+}
+
+.announcement-preview__content {
+  display: grid;
+  align-content: start;
+  gap: .55rem;
+  padding: 1rem;
+}
+
+.announcement-preview__content h4,
+.announcement-preview__content p {
+  margin: 0;
+}
+
+.announcement-preview__content h4 {
+  font-size: 1.05rem;
+}
+
+.announcement-preview__content p {
+  color: var(--color-muted);
+  font-size: .9rem;
+}
+
+.announcement-preview__link {
+  color: var(--admin-primary-dark);
+  font-size: .85rem;
+  font-weight: 750;
+}
+
 .unified-form-heading {
   margin-bottom: 1rem;
 }
@@ -1297,6 +1410,14 @@ const getTypeLabel = (type: BlockType) => {
 
   .selection-grid {
     grid-template-columns: 1fr;
+  }
+
+  .announcement-preview__card {
+    grid-template-columns: 1fr;
+  }
+
+  .announcement-preview__image {
+    max-height: 12rem;
   }
 }
 </style>
