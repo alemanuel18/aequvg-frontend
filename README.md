@@ -185,9 +185,9 @@ La imagen utiliza un usuario sin privilegios, healthcheck y rotación local de l
 
 ## Flujo de contacto
 
-La página `/contacto` consulta los medios activos, muestra iconos según el canal y representa la ubicación con un mapa de Google Maps. El mismo catálogo alimenta el footer; no hay correos, teléfonos o direcciones fijos en componentes. Las redes nuevas se agregan como `OTRO`: TikTok, YouTube, LinkedIn y X reciben un icono reconocido por etiqueta/URL, y cualquier otra usa un icono de enlace seguro.
+La página `/contacto` consulta los medios activos, muestra iconos según el canal y representa la ubicación con un mapa de Google Maps al final de los demás medios. El mismo catálogo ordenado alimenta el footer; no hay correos, teléfonos o direcciones fijos en componentes. Las redes nuevas se agregan como `OTRO`: TikTok, YouTube, LinkedIn y X reciben un icono reconocido por etiqueta/URL, y cualquier otra usa un icono de enlace seguro.
 
-`/administrador/contacto` requiere sesión y permiso `CONTACT_MANAGE`. Ofrece estados de carga, vacío y error, formulario con validaciones visibles, confirmación antes de cada escritura, toasts de resultado y edición/reactivación de medios inactivos. El correo `EMAIL` activo con menor orden se identifica como destinatario del formulario. No existe pantalla ni bandeja de solicitudes.
+`/administrador/contacto` requiere sesión y permiso `CONTACT_MANAGE`. Ofrece estados de carga, vacío y error, formulario con validaciones visibles, confirmación antes de cada escritura, toasts de resultado y edición/reactivación de medios inactivos. El orden numérico no se expone: los medios se acomodan con flechas y un botón guarda la secuencia completa, mientras que las ubicaciones permanecen fijas al final. El primer correo `EMAIL` activo de la lista se identifica como destinatario del formulario. No existe pantalla ni bandeja de solicitudes.
 
 El formulario público conserva consentimiento, honeypot y validación local; bloquea envíos repetidos mientras la petición está en curso. El backend responde `202` después de que el proveedor acepta el correo. Una falla de entrega se anuncia sin limpiar el formulario.
 
