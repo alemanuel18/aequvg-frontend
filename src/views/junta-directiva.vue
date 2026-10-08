@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { usePublicContentService } from '~/services/public-content'
+import { boardYears, membersInBoardYear } from '~/utils/board-members'
 useSeoMeta({ title: 'Junta Directiva', description: 'Conoce la integración actual y el historial de la Junta Directiva de AsoQuímica UVG.' })
 const service = usePublicContentService()
 const { data: members, status, error, refresh } = await useAsyncData('board-members', () => service.boardMembers(), { default: () => [] })
-const terms = computed(() => [...new Set(members.value.map(member => member.term))])
-const selectedTerm = ref(terms.value[0] ?? '')
+const years = computed(() => boardYears(members.value))
+const selectedYear = ref(years.value[0] ?? new Date().getFullYear())
 const ready = ref(false)
 onMounted(() => { ready.value = true })
-watch(terms, value => {
-  if (!value.length) selectedTerm.value = ''
-  else if (!value.includes(selectedTerm.value)) selectedTerm.value = value[0]!
+watch(years, value => {
+  if (value.length && !value.includes(selectedYear.value)) selectedYear.value = value[0]!
 }, { immediate: true })
-const visibleMembers = computed(() => members.value.filter(member => member.term === selectedTerm.value))
+const visibleMembers = computed(() => membersInBoardYear(members.value, selectedYear.value))
 </script>
 <template>
   <div>
@@ -28,11 +28,11 @@ const visibleMembers = computed(() => members.value.filter(member => member.term
       <template v-else-if="members.length">
         <div class="term-selector">
           <label for="board-term">Periodo de la Junta Directiva</label>
-          <select id="board-term" v-model="selectedTerm" :disabled="!ready">
-            <option v-for="term in terms" :key="term" :value="term">{{ term }}</option>
+          <select id="board-term" v-model.number="selectedYear" :disabled="!ready">
+            <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
           </select>
         </div>
-        <p class="term-summary" role="status">Mostrando {{ visibleMembers.length }} {{ visibleMembers.length === 1 ? 'integrante' : 'integrantes' }} del periodo {{ selectedTerm }}.</p>
+        <p class="term-summary" role="status">Mostrando {{ visibleMembers.length }} {{ visibleMembers.length === 1 ? 'integrante' : 'integrantes' }} con periodo vigente durante {{ selectedYear }}.</p>
         <div class="member-grid">
           <BoardMemberCard v-for="member in visibleMembers" :key="member.id" :member="member" />
         </div>

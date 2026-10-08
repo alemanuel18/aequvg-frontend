@@ -14,6 +14,7 @@ export const useAdminBoardService = () => {
     list: () => api<BoardMember[]>('/admin/board-members', { credentials: 'include' }),
     create: (body: BoardMemberInput) => api<BoardMember>('/admin/board-members', mutationOptions('POST', body)),
     update: (id: number, body: BoardMemberInput) => api<BoardMember>(`/admin/board-members/${id}`, mutationOptions('PUT', body)),
+    reorder: (items: Array<{ id: number; displayOrder: number }>) => api<BoardMember[]>('/admin/board-members/order', mutationOptions('PUT', { items })),
     retire: (id: number) => api<BoardMember>(`/admin/board-members/${id}`, mutationOptions('DELETE'))
   }
 }
