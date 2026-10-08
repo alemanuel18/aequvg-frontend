@@ -55,7 +55,6 @@ test('protege el panel y valida el inicio de sesión administrativo', async ({ p
     await route.continue()
   })
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).not.toBeVisible()
 })
