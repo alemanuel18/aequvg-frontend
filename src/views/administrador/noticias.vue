@@ -22,6 +22,8 @@ const appliedSearch = ref('')
 const selectedCategory = ref<number | undefined>()
 const selectedStatus = ref<ContentStatus | undefined>()
 const selectedSort = ref<'recent' | 'oldest' | 'title'>('recent')
+const allTotal = ref(0)
+const categoryTotals = ref<Record<number, number>>({})
 
 const form = reactive<NewsFormState>({ categoryId: null, imageId: '', title: '', summary: '', content: '', status: 'BORRADOR' })
 const errors = ref<NewsFormErrors>({})
@@ -38,7 +40,7 @@ const previewCategory = computed(() => categories.value.find(category => categor
 const previewImage = computed(() => form.imageId.trim() ? `Imagen asociada · ID ${form.imageId.trim()}` : 'Sin imagen asociada')
 const categoryCounts = computed(() => categories.value.map(category => ({
   ...category,
-  count: items.value.filter(item => item.categoryId === category.id).length
+  count: categoryTotals.value[category.id] ?? 0
 })))
 const sortedItems = computed(() => [...items.value].sort((left, right) => {
   if (selectedSort.value === 'title') return left.title.localeCompare(right.title, 'es')
@@ -63,9 +65,16 @@ const loadData = async () => {
       service.list({ q: appliedSearch.value || undefined, categoryId: selectedCategory.value, status: selectedStatus.value, page: page.value, pageSize }),
       service.categories()
     ])
+    const countQuery = { q: appliedSearch.value || undefined, status: selectedStatus.value, page: 1, pageSize: 1 }
+    const [allResult, ...categoryResults] = await Promise.all([
+      service.list(countQuery),
+      ...categoryResult.map(category => service.list({ ...countQuery, categoryId: category.id }))
+    ])
     items.value = result.items
     total.value = result.pagination.total
     categories.value = categoryResult
+    allTotal.value = allResult.pagination.total
+    categoryTotals.value = Object.fromEntries(categoryResult.map((category, index) => [category.id, categoryResults[index]?.pagination.total ?? 0]))
   } catch (error) {
     loadError.value = errorMessage(error, 'No se pudo cargar la administración de noticias.')
   } finally {
@@ -161,7 +170,7 @@ onMounted(async () => { await loadData(); if (!form.categoryId && categories.val
         <header class="section-heading"><div><span class="eyebrow">Portal informativo directivo</span><h2 id="news-list-title">Gestión de Noticias y Comunicados</h2><p class="section-description">Publicaciones académicas, convocatorias y boletines informativos de la AEQ para la comunidad de estudiantes y docentes de Química UVG.</p></div><button class="primary-button new-button" type="button" @click="focusEditor">＋ Nueva noticia</button></header>
         <form class="filters" role="search" @submit.prevent="applyFilters">
           <div class="field"><label for="news-search">Buscar</label><input id="news-search" v-model="search" type="search" placeholder="Título, resumen o contenido" /></div>
-          <div class="category-tabs" aria-label="Filtrar por categoría"><button type="button" :class="{ 'category-tab--active': selectedCategory === undefined }" @click="selectedCategory = undefined; applyFilters()">Todas ({{ total }})</button><button v-for="category in categoryCounts" :key="category.id" type="button" :class="{ 'category-tab--active': selectedCategory === category.id }" @click="selectedCategory = category.id; applyFilters()">{{ category.name }} ({{ category.count }})</button></div>
+          <div class="category-tabs" aria-label="Filtrar por categoría"><button type="button" :class="{ 'category-tab--active': selectedCategory === undefined }" @click="selectedCategory = undefined; applyFilters()">Todas ({{ allTotal }})</button><button v-for="category in categoryCounts" :key="category.id" type="button" :class="{ 'category-tab--active': selectedCategory === category.id }" @click="selectedCategory = category.id; applyFilters()">{{ category.name }} ({{ category.count }})</button></div>
           <div class="field"><label for="news-status-filter">Estado</label><select id="news-status-filter" v-model="selectedStatus"><option :value="undefined">Todos</option><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="ARCHIVADO">Archivado</option></select></div>
           <div class="field"><label for="news-sort">Ordenar</label><select id="news-sort" v-model="selectedSort"><option value="recent">Más recientes</option><option value="oldest">Más antiguas</option><option value="title">Título A-Z</option></select></div>
           <button class="primary-button filters__submit" type="submit">Aplicar filtros</button>
