@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { usePublicContentService } from '~/services/public-content'
+import { sortContactMethods } from '~/utils/contact-methods'
 useSeoMeta({ title: 'Contacto', description: 'Consulta los medios oficiales o envía una consulta o solicitud de reunión a AsoQuímica UVG.' })
 const service = usePublicContentService()
 const { data: methods, status, error } = await useAsyncData('contact-methods', () => service.contactMethods(), { default: () => [] })
-const location = computed(() => methods.value.find(method => method.type === 'UBICACION'))
-const nonLocationMethods = computed(() => methods.value.filter(method => method.type !== 'UBICACION'))
+const orderedMethods = computed(() => sortContactMethods(methods.value))
+const location = computed(() => orderedMethods.value.find(method => method.type === 'UBICACION'))
+const nonLocationMethods = computed(() => orderedMethods.value.filter(method => method.type !== 'UBICACION'))
 </script>
 <template>
   <div>

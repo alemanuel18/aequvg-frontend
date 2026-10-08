@@ -28,6 +28,5 @@ export const validateContactMethod = (input: ContactMethodInput) => {
   } else if (url && !/^(https?:\/\/|mailto:|tel:)/i.test(url)) {
     errors.url = 'Escribe un enlace válido o deja el campo vacío.'
   }
-  if (!Number.isInteger(input.displayOrder) || Number(input.displayOrder) < 0) errors.displayOrder = 'El orden debe ser un entero igual o mayor que 0.'
   return errors
 }

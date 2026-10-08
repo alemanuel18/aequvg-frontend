@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { usePublicContentService } from '~/services/public-content'
-import { contactMethodIcon } from '~/utils/contact-methods'
+import { contactMethodIcon, sortContactMethods } from '~/utils/contact-methods'
 const service = usePublicContentService()
 const { data: methods, status } = await useAsyncData('contact-methods', () => service.contactMethods(), { default: () => [] })
+const orderedMethods = computed(() => sortContactMethods(methods.value))
 </script>
 
 <template>
@@ -13,9 +14,9 @@ const { data: methods, status } = await useAsyncData('contact-methods', () => se
       <div>
         <strong class="footer-title">Contacto</strong>
         <span v-if="status === 'pending'" class="footer-state" role="status">Cargando medios…</span>
-        <template v-else-if="methods.length">
+        <template v-else-if="orderedMethods.length">
           <a
-            v-for="method in methods"
+            v-for="method in orderedMethods"
             :key="method.id"
             class="footer-contact"
             :href="method.url || undefined"

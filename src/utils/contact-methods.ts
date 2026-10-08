@@ -2,6 +2,13 @@ import type { ContactMethod } from '~/types/api'
 
 export type ContactIconName = 'facebook' | 'instagram' | 'link' | 'linkedin' | 'mail' | 'map-pin' | 'phone' | 'tiktok' | 'x' | 'youtube'
 
+export const sortContactMethods = <T extends Pick<ContactMethod, 'id' | 'type' | 'displayOrder'>>(methods: T[]) =>
+  [...methods].sort((a, b) =>
+    Number(a.type === 'UBICACION') - Number(b.type === 'UBICACION')
+    || a.displayOrder - b.displayOrder
+    || a.id - b.id
+  )
+
 export const contactMethodIcon = (method: Pick<ContactMethod, 'type' | 'label' | 'url'>): ContactIconName => {
   if (method.type === 'EMAIL') return 'mail'
   if (method.type === 'TELEFONO') return 'phone'

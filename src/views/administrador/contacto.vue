@@ -4,7 +4,7 @@ import { useToast } from '~/composables/use-toast'
 import { useAdminContactService } from '~/services/admin-contact'
 import { PublicApiError } from '~/services/api'
 import type { ContactMethod, ContactMethodInput } from '~/types/api'
-import { contactMethodIcon } from '~/utils/contact-methods'
+import { contactMethodIcon, sortContactMethods } from '~/utils/contact-methods'
 
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 useSeoMeta({ title: 'Contacto · Administración', robots: 'noindex, nofollow' })
@@ -15,16 +15,18 @@ const methods = ref<ContactMethod[]>([])
 const loading = ref(true)
 const loadError = ref('')
 const saving = ref(false)
+const orderSaving = ref(false)
+const orderDirty = ref(false)
 const editingId = ref<number | null>(null)
 const errors = ref<Record<string, string>>({})
 const firstInput = ref<HTMLInputElement | null>(null)
 
-const blankForm = (): ContactMethodInput => ({ type: 'EMAIL', label: '', value: '', url: '', displayOrder: 0, active: true })
+const blankForm = (): ContactMethodInput => ({ type: 'EMAIL', label: '', value: '', url: '', active: true })
 const form = reactive<ContactMethodInput>(blankForm())
 const selectedType = computed(() => CONTACT_METHOD_TYPES.find(option => option.value === form.type)!)
-const activeRecipient = computed(() => methods.value
-  .filter(method => method.active && method.type === 'EMAIL')
-  .sort((a, b) => a.displayOrder - b.displayOrder || a.id - b.id)[0])
+const orderedMethods = computed(() => sortContactMethods(methods.value))
+const reorderableMethods = computed(() => orderedMethods.value.filter(method => method.type !== 'UBICACION'))
+const activeRecipient = computed(() => reorderableMethods.value.find(method => method.active && method.type === 'EMAIL'))
 
 const confirm = reactive({
   open: false, title: '', message: '', label: 'Confirmar', variant: 'primary' as 'primary' | 'danger' | 'warning', loading: false,
@@ -34,7 +36,7 @@ const confirm = reactive({
 const loadMethods = async () => {
   loading.value = true
   loadError.value = ''
-  try { methods.value = await service.list() }
+  try { methods.value = sortContactMethods(await service.list()); orderDirty.value = false }
   catch (error) { loadError.value = error instanceof PublicApiError ? error.message : 'No se pudieron cargar los medios oficiales.' }
   finally { loading.value = false }
 }
@@ -49,7 +51,7 @@ const resetForm = () => {
 
 const edit = async (method: ContactMethod) => {
   editingId.value = method.id
-  Object.assign(form, { type: method.type, label: method.label, value: method.value, url: method.url ?? '', displayOrder: method.displayOrder, active: method.active })
+  Object.assign(form, { type: method.type, label: method.label, value: method.value, url: method.url ?? '', active: method.active })
   errors.value = {}
   await nextTick()
   firstInput.value?.focus()
@@ -57,7 +59,7 @@ const edit = async (method: ContactMethod) => {
 
 const payload = (): ContactMethodInput => ({
   type: form.type, label: form.label.trim(), value: form.value.trim(), url: form.url?.trim() || null,
-  displayOrder: Number(form.displayOrder), active: Boolean(form.active)
+  active: Boolean(form.active)
 })
 
 const openConfirmation = (options: { title: string; message: string; label: string; variant?: 'primary' | 'danger' | 'warning'; action: () => Promise<void> }) => {
@@ -65,6 +67,10 @@ const openConfirmation = (options: { title: string; message: string; label: stri
 }
 
 const requestSave = () => {
+  if (orderDirty.value) {
+    toast.error('Guarda el nuevo orden antes de editar los medios.')
+    return
+  }
   errors.value = validateContactMethod(payload())
   if (Object.keys(errors.value).length) {
     firstInput.value?.focus()
@@ -85,7 +91,7 @@ const save = async () => {
     const index = methods.value.findIndex(method => method.id === saved.id)
     if (index >= 0) methods.value[index] = saved
     else methods.value.push(saved)
-    methods.value.sort((a, b) => a.displayOrder - b.displayOrder || a.id - b.id)
+    methods.value = sortContactMethods(methods.value)
     toast.success(editingId.value ? 'El medio oficial se actualizó correctamente.' : 'El medio oficial se agregó correctamente.')
     resetForm()
   } catch (error) {
@@ -100,6 +106,29 @@ const requestDeactivate = (method: ContactMethod) => openConfirmation({
   message: `${method.label} dejará de aparecer en Contacto y en el pie de página. Puedes reactivarlo al editarlo.`,
   label: 'Desactivar medio', variant: 'danger', action: () => deactivate(method)
 })
+
+const moveMethod = (method: ContactMethod, direction: -1 | 1) => {
+  const reorderable = [...reorderableMethods.value]
+  const currentIndex = reorderable.findIndex(item => item.id === method.id)
+  const targetIndex = currentIndex + direction
+  if (currentIndex < 0 || targetIndex < 0 || targetIndex >= reorderable.length) return
+  ;[reorderable[currentIndex], reorderable[targetIndex]] = [reorderable[targetIndex]!, reorderable[currentIndex]!]
+  const locations = orderedMethods.value.filter(item => item.type === 'UBICACION')
+  methods.value = [...reorderable.map((item, displayOrder) => ({ ...item, displayOrder })), ...locations]
+  orderDirty.value = true
+}
+
+const saveOrder = async () => {
+  if (!orderDirty.value || orderSaving.value) return
+  orderSaving.value = true
+  try {
+    methods.value = sortContactMethods(await service.reorder(reorderableMethods.value.map(method => method.id)))
+    orderDirty.value = false
+    toast.success('El orden de los medios se guardó correctamente.')
+  } catch (error) {
+    toast.error(error instanceof PublicApiError ? error.message : 'No se pudo guardar el orden de los medios.')
+  } finally { orderSaving.value = false }
+}
 
 const deactivate = async (method: ContactMethod) => {
   try {
@@ -126,7 +155,7 @@ const executeConfirmation = async () => {
   <div class="contact-admin">
     <AdminPageHeader
       eyebrow="Panel administrativo" title="Medios de contacto"
-      description="Actualiza los canales oficiales que aparecen en Contacto y en el pie de todas las páginas. No existe una bandeja: el formulario entrega cada mensaje al correo activo con menor orden."
+      description="Actualiza los canales oficiales que aparecen en Contacto y en el pie de todas las páginas. El formulario entrega cada mensaje al primer correo de la lista."
     />
 
     <StatePanel v-if="loading" title="Cargando medios oficiales" message="Consultando la configuración pública de contacto." />
@@ -168,11 +197,6 @@ const executeConfirmation = async () => {
             <input id="method-url" v-model="form.url" type="url" placeholder="https://" :aria-invalid="!!errors.url" :aria-describedby="errors.url ? 'method-url-error' : undefined">
             <span v-if="errors.url" id="method-url-error" class="field-error">{{ errors.url }}</span>
           </div>
-          <div class="field field--order">
-            <label for="method-order">Orden</label>
-            <input id="method-order" v-model.number="form.displayOrder" type="number" min="0" step="1" :aria-invalid="!!errors.displayOrder" :aria-describedby="errors.displayOrder ? 'method-order-error' : undefined">
-            <span v-if="errors.displayOrder" id="method-order-error" class="field-error">{{ errors.displayOrder }}</span>
-          </div>
           <label class="active-check"><input v-model="form.active" type="checkbox"> Mostrar en el sitio público</label>
           <div class="form-actions"><AppButton type="submit" :disabled="saving">{{ saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Agregar medio' }}</AppButton></div>
         </form>
@@ -180,16 +204,24 @@ const executeConfirmation = async () => {
 
       <section class="admin-card" aria-labelledby="contact-list-heading">
         <div class="section-heading"><div><p class="eyebrow">Vista pública</p><h2 id="contact-list-heading">Medios configurados</h2></div><span class="count">{{ methods.length }} {{ methods.length === 1 ? 'medio' : 'medios' }}</span></div>
+        <div v-if="methods.length" class="order-toolbar" :class="{ 'order-toolbar--dirty': orderDirty }" role="status">
+          <span>{{ orderDirty ? 'Hay cambios de orden sin guardar.' : 'Usa las flechas para cambiar el orden público. La ubicación siempre permanece al final.' }}</span>
+          <AppButton type="button" :disabled="!orderDirty || orderSaving" @click="saveOrder">{{ orderSaving ? 'Guardando…' : 'Guardar orden' }}</AppButton>
+        </div>
         <StatePanel v-if="!methods.length" title="Sin medios configurados" message="Agrega el correo o la red social oficial para comenzar." />
         <ul v-else class="method-list">
-          <li v-for="method in methods" :key="method.id" class="method-item">
+          <li v-for="(method, index) in orderedMethods" :key="method.id" class="method-item">
             <span class="method-icon" aria-hidden="true"><AppIcon :name="contactMethodIcon(method)" :size="21" /></span>
             <div class="method-copy">
               <div><strong>{{ method.label }}</strong><span :class="['status', method.active ? 'status--active' : 'status--inactive']">{{ method.active ? 'Activo' : 'Inactivo' }}</span></div>
               <span>{{ method.value }}</span>
-              <small>Orden {{ method.displayOrder }} · {{ CONTACT_METHOD_TYPES.find(option => option.value === method.type)?.label }}</small>
+              <small>{{ method.type === 'UBICACION' ? 'Ubicación fija al final' : CONTACT_METHOD_TYPES.find(option => option.value === method.type)?.label }}</small>
             </div>
             <div class="item-actions">
+              <div v-if="method.type !== 'UBICACION'" class="order-actions" aria-label="Cambiar orden">
+                <button type="button" class="action-button action-button--arrow" :aria-label="`Mover ${method.label} hacia arriba`" :disabled="index === 0 || orderSaving" @click="moveMethod(method, -1)">↑</button>
+                <button type="button" class="action-button action-button--arrow" :aria-label="`Mover ${method.label} hacia abajo`" :disabled="index === reorderableMethods.length - 1 || orderSaving" @click="moveMethod(method, 1)">↓</button>
+              </div>
               <button type="button" class="action-button" @click="edit(method)">Editar</button>
               <button v-if="method.active" type="button" class="action-button action-button--danger" @click="requestDeactivate(method)">Desactivar</button>
             </div>
@@ -214,18 +246,20 @@ const executeConfirmation = async () => {
 .field label, .active-check { font-weight: 800; }
 .field input, .field select { width: 100%; min-height: 2.8rem; padding: .65rem .75rem; color: var(--color-ink); background: white; border: 1px solid #87948a; border-radius: .55rem; }
 .field small, .method-copy small { color: var(--color-muted); }
-.field--order { max-width: 10rem; }
 .field-error { color: var(--color-danger); font-size: .84rem; font-weight: 750; }
 .active-check { display: flex; align-items: center; gap: .55rem; align-self: center; }.active-check input { width: 1.15rem; height: 1.15rem; }
 .form-actions { grid-column: 1 / -1; }
 .text-button, .action-button { padding: .5rem .75rem; color: var(--admin-primary); background: white; border: 1px solid var(--admin-border, var(--color-border)); border-radius: .5rem; cursor: pointer; font-weight: 800; }
 .method-list { display: grid; gap: .75rem; padding: 0; list-style: none; }
+.order-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding: .8rem; color: var(--color-muted); background: var(--admin-soft, var(--color-soft)); border: 1px solid transparent; border-radius: var(--radius-sm); }
+.order-toolbar--dirty { color: var(--color-ink); border-color: #f59e0b; background: #fffbeb; }
 .method-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .85rem; padding: 1rem; border: 1px solid var(--admin-border, var(--color-border)); border-radius: var(--radius-sm); }
 .method-icon { display: grid; width: 2.7rem; height: 2.7rem; place-items: center; color: white; background: var(--admin-primary); border-radius: .75rem; }
 .method-copy { display: grid; min-width: 0; gap: .2rem; overflow-wrap: anywhere; }.method-copy > div { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .status { padding: .14rem .45rem; border-radius: 999px; font-size: .7rem; font-weight: 900; text-transform: uppercase; }.status--active { color: #14532d; background: #dcfce7; }.status--inactive { color: #713f12; background: #fef3c7; }
 .item-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .45rem; }.action-button--danger { color: #991b1b; border-color: #fecaca; }
+.order-actions { display: flex; gap: .3rem; }.action-button--arrow { min-width: 2.35rem; padding-inline: .6rem; font-size: 1.05rem; }.action-button:disabled { opacity: .45; cursor: not-allowed; }
 .count { flex: 0 0 auto; color: var(--color-muted); font-weight: 750; }
-@media (max-width: 720px) { .method-form { grid-template-columns: 1fr; } .form-actions { grid-column: auto; } .method-item { grid-template-columns: auto minmax(0, 1fr); } .item-actions { grid-column: 1 / -1; justify-content: stretch; } .item-actions button { flex: 1; } }
+@media (max-width: 720px) { .method-form { grid-template-columns: 1fr; } .form-actions { grid-column: auto; } .order-toolbar { align-items: stretch; flex-direction: column; } .method-item { grid-template-columns: auto minmax(0, 1fr); } .item-actions { grid-column: 1 / -1; justify-content: stretch; } .item-actions > button { flex: 1; } .order-actions { flex: 1; }.order-actions button { flex: 1; } }
 @media (max-width: 390px) { .section-heading { align-items: stretch; flex-direction: column; } .method-item { grid-template-columns: 1fr; } .method-icon { width: 2.5rem; height: 2.5rem; } }
 </style>
