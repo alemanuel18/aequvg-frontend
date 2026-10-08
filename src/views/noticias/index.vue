@@ -2,7 +2,7 @@
 import { usePublicContentService } from '~/services/public-content'
 import type { PublicNewsList } from '~/types/api'
 
-useSeoMeta({ title: 'Noticias y anuncios', description: 'Noticias y anuncios publicados por AsoQuímica UVG.' })
+useSeoMeta({ title: 'Noticias', description: 'Noticias y anuncios publicados por AsoQuímica UVG.' })
 const service = usePublicContentService()
 const route = useRoute()
 const queryNumber = (value: unknown) => {
@@ -30,7 +30,7 @@ const goToPage = async (page: number) => { currentPage.value = page; await updat
 
 <template>
   <div>
-    <PageHero eyebrow="▣ Mantente al día" title="Noticias y Eventos" description="Anuncios, eventos, actividades, charlas, conferencias, viajes académicos y convivencias de AsoQuímica UVG." />
+    <PageHero eyebrow="▣ Mantente al día" title="Noticias" description="Anuncios y publicaciones de AsoQuímica UVG." />
     <AppSection title="Explora nuestras publicaciones" lead="">
       <form class="news-filters" role="search" @submit.prevent="submitSearch">
         <strong>▼ Filtrar por categoría:</strong>
