@@ -236,12 +236,14 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/` | Inicio y contenido institucional conectado a la API. |
 | `/junta-directiva` | Integrantes activos conectados a la API. |
 | `/contacto` | Medios y formulario conectados a la API. |
-| `/noticias` | Navegación lista; contenido en desarrollo. |
+| `/noticias` | Listado y detalle público de noticias publicadas. |
 | `/eventos` | Conectado a la API: listado, detalle, disponibilidad e inscripción pública. |
 | `/recursos` | Catálogo público de recursos con categorías, búsqueda, paginación, enlaces y materiales disponibles. |
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
 | `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
 | `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
+| `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
+| `/administrador/contenido` | Gestión del Hero, anuncios institucionales y destacados. Requiere `INSTITUTIONAL_MANAGE`. |
 
 ### Acceso al panel administrativo
 
@@ -254,6 +256,14 @@ http://localhost:3001/administrador
 Inicia sesión con una cuenta institucional activa creada en el backend. Después de validar la sesión, el frontend redirige a `/administrador/panel`; si se intenta abrir directamente una ruta protegida sin sesión, se vuelve a `/administrador` y se conserva el destino solicitado.
 
 Los módulos visibles dependen de los permisos devueltos por el backend. Las credenciales, sesiones y permisos no se configuran ni se almacenan en el frontend.
+
+### Flujo de anuncios y noticias
+
+En `/administrador/noticias`, una persona autorizada puede buscar por texto, categoría y estado; crear o editar una noticia con resumen, contenido e imagen asociada por `imageId`; previsualizarla; cambiar su estado y confirmar su eliminación. El frontend muestra validaciones visibles, estados de carga/vacío/error/éxito y evita envíos duplicados, pero el backend sigue siendo la autoridad para permisos, categorías, imágenes y publicación.
+
+En `/administrador/contenido`, el permiso `INSTITUTIONAL_MANAGE` habilita la edición del Hero, anuncios de cuatro categorías y destacados de inicio. El límite de anuncios es global: máximo tres activos publicados, sin importar la categoría. Las imágenes de anuncios usan `imageUrl` HTTP/HTTPS; un borrador no ocupa el cupo público.
+
+Para el contrato HTTP, ejemplos, matriz de permisos, casos de prueba y resultados reproducibles consulta [`aequvg-backend/docs/admin-news-institutional-flow.md`](../aequvg-backend/docs/admin-news-institutional-flow.md). Las credenciales, cookies y tokens nunca deben incluirse en la evidencia.
 
 ## Solución de problemas
 
