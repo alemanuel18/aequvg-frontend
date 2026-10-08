@@ -23,6 +23,7 @@ const resource = {
   file: { id: 4, originalName: 'guia-seguridad.pdf', mimeType: 'application/pdf', downloadUrl: 'http://localhost:3002/materials/guia-seguridad.pdf' },
   links: [{ id: 1, label: 'Referencia UVG', url: 'https://www.uvg.edu.gt/', displayOrder: 1 }], createdBy: { id: 1, name: 'Contenido de desarrollo' }
 }
+let adminResource: typeof resource | null = { ...resource }
 const secondResource = { ...resource, id: 10, file: null, title: 'Manual de segunda página', description: 'Contenido para validar la paginación de recursos.' }
 
 const event = {
@@ -245,11 +246,11 @@ Bun.serve({
     if (url.pathname === '/api/v1/admin/resources' || url.pathname.match(/^\/api\/v1\/admin\/resources\/\d+$/)) {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
-      if (request.method === 'GET') return json({ items: [resource], pagination: { page: 1, pageSize: 9, total: 1 } })
+      if (request.method === 'GET') return json({ items: adminResource ? [adminResource] : [], pagination: { page: 1, pageSize: 9, total: adminResource ? 1 : 0 } })
       const id = Number(url.pathname.split('/').pop())
-      if (request.method === 'POST') return json({ ...resource, id: 30, ...(await request.json()) }, 201)
-      if (request.method === 'PUT') return json({ ...resource, id, ...(await request.json()) })
-      if (request.method === 'DELETE') return json({ ...resource, id, status: 'ARCHIVADO' })
+      if (request.method === 'POST') { adminResource = { ...resource, id: 30, ...(await request.json()) }; return json(adminResource, 201) }
+      if (request.method === 'PUT') { adminResource = { ...resource, id, ...(await request.json()) }; return json(adminResource) }
+      if (request.method === 'DELETE') { adminResource = null; return json({ ...resource, id, status: 'ARCHIVADO' }) }
     }
     if (url.pathname.match(/^\/api\/v1\/admin\/institutional-content\/\d+$/)) {
       const id = Number(url.pathname.split('/').pop())
