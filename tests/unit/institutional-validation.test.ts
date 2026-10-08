@@ -49,6 +49,7 @@ describe('validación de formulario unificado de anuncios', () => {
       type: 'LABORATORIO',
       title: 'Laboratorio de Química Analítica',
       body: 'Equipamiento de alta gama para análisis químicos.',
+      imageUrl: '',
       actionLabel: '',
       actionUrl: '',
       status: 'PUBLICADO'
@@ -62,6 +63,7 @@ describe('validación de formulario unificado de anuncios', () => {
       type: 'TESTIMONIO',
       title: 'Testimonio de egresado',
       body: 'Mi experiencia en la carrera fue muy enriquecedora.',
+      imageUrl: '',
       actionLabel: '',
       actionUrl: '',
       status: 'PUBLICADO'
@@ -76,6 +78,7 @@ describe('validación de formulario unificado de anuncios', () => {
       type: 'HERO',
       title: 'A',
       body: 'B',
+      imageUrl: 'javascript:alert(1)',
       actionLabel: '',
       actionUrl: 'ftp://invalido',
       status: 'PUBLICADO'
@@ -85,6 +88,20 @@ describe('validación de formulario unificado de anuncios', () => {
     expect(errors.title).toBeDefined()
     expect(errors.body).toBeDefined()
     expect(errors.actionUrl).toBeDefined()
+  })
+
+  it('valida la URL opcional de imagen', () => {
+    const errors = validateAnnouncementForm({
+      type: 'LABORATORIO',
+      title: 'Laboratorio de Química Analítica',
+      body: 'Equipamiento de alta gama para análisis químicos.',
+      imageUrl: 'javascript:alert(1)',
+      actionLabel: '',
+      actionUrl: '',
+      status: 'PUBLICADO'
+    }, 1, false)
+
+    expect(errors.imageUrl).toBeDefined()
   })
 })
 

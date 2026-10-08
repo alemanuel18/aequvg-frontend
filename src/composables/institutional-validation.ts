@@ -13,6 +13,7 @@ export interface AnnouncementFormState {
   type: BlockType
   title: string
   body: string
+  imageUrl: string
   actionLabel: string
   actionUrl: string
   status: ContentStatus
@@ -69,6 +70,7 @@ export const validateAnnouncementForm = (
   const errors: Record<string, string> = {}
   const title = form.title.trim()
   const body = form.body.trim()
+  const imageUrl = form.imageUrl?.trim() ?? ''
   const actionUrl = form.actionUrl.trim()
 
   const validTypes: BlockType[] = ['LABORATORIO', 'TESTIMONIO', 'CAMPO_LABORAL', 'PLAN_ESTUDIOS']
@@ -90,6 +92,10 @@ export const validateAnnouncementForm = (
     errors.body = 'El contenido del anuncio debe tener al menos 2 caracteres.'
   } else if (body.length > 8000) {
     errors.body = 'El contenido no puede superar los 8000 caracteres.'
+  }
+
+  if (imageUrl && !isValidUrl(imageUrl)) {
+    errors.imageUrl = 'La imagen debe iniciar con / o ser una URL válida (http/https).'
   }
 
   if (actionUrl && !isValidUrl(actionUrl)) {
