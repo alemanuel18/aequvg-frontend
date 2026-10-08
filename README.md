@@ -45,7 +45,7 @@ Las páginas consumen `src/services/api.ts`; no contienen URLs duplicadas. Ese s
 
 ## Junta Directiva
 
-La ruta pública `/junta-directiva` muestra las juntas publicadas agrupadas por periodo y permite consultar años anteriores. `/administrador/junta-directiva` requiere sesión y `BOARD_MANAGE`; permite agregar, editar y retirar integrantes con nombre, cargo, fotografía previamente cargada, correo institucional, periodo, orden y estado. Todas las mutaciones requieren confirmación, anuncian éxito o error mediante toast, bloquean envíos repetidos y conservan foco y diseño utilizable desde 320 px.
+La ruta pública `/junta-directiva` muestra por defecto el año más reciente y permite consultar años anteriores. Los integrantes aparecen en cada año comprendido entre el inicio y el fin de su periodo. `/administrador/junta-directiva` requiere sesión y `BOARD_MANAGE`; permite agregar, editar, ordenar con flechas y retirar integrantes con nombre, cargo seleccionado de un catálogo, correo institucional, fechas de periodo y estado. La fotografía queda fuera del formulario actual. Todas las mutaciones requieren confirmación, anuncian éxito o error mediante toast, bloquean envíos repetidos y conservan foco y diseño utilizable desde 320 px.
 
 ## Variables de entorno
 
