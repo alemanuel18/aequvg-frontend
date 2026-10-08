@@ -11,6 +11,7 @@ useSeoMeta({ title: 'Noticias · Administración', robots: 'noindex, nofollow' }
 const service = useAdminNewsService()
 const toast = useToast()
 const loading = ref(true)
+const refreshing = ref(false)
 const loadError = ref('')
 const items = ref<AdminNews[]>([])
 const categories = ref<NewsCategory[]>([])
@@ -31,6 +32,7 @@ const editingId = ref<number | null>(null)
 const submitting = ref(false)
 const archivingId = ref<number | null>(null)
 const deletingId = ref<number | null>(null)
+const statusUpdatingId = ref<number | null>(null)
 const previewOpen = ref(false)
 const titleInput = ref<HTMLInputElement | null>(null)
 const categorySelect = ref<HTMLSelectElement | null>(null)
@@ -58,8 +60,9 @@ const formatDate = (date: string | null) => date
 const focusEditor = () => nextTick(() => titleInput.value?.focus())
 let filterTimeout: ReturnType<typeof setTimeout> | undefined
 
-const loadData = async () => {
-  loading.value = true
+const loadData = async (initial = false) => {
+  if (initial) loading.value = true
+  else refreshing.value = true
   loadError.value = ''
   try {
     const [result, categoryResult] = await Promise.all([
@@ -77,9 +80,12 @@ const loadData = async () => {
     allTotal.value = allResult.pagination.total
     categoryTotals.value = Object.fromEntries(categoryResult.map((category, index) => [category.id, categoryResults[index]?.pagination.total ?? 0]))
   } catch (error) {
-    loadError.value = errorMessage(error, 'No se pudo cargar la administración de noticias.')
+    const message = errorMessage(error, 'No se pudo cargar la administración de noticias.')
+    if (initial) loadError.value = message
+    else toast.error(message)
   } finally {
-    loading.value = false
+    if (initial) loading.value = false
+    else refreshing.value = false
   }
 }
 
@@ -149,30 +155,58 @@ const executeSave = async () => {
 }
 const requestArchive = (news: AdminNews) => openConfirmation('¿Archivar noticia?', `“${news.title}” dejará de aparecer en el contenido público, pero se conservará en el panel.`, () => executeArchive(news), 'warning', 'Archivar noticia')
 const executeArchive = async (news: AdminNews) => {
-  if (archivingId.value || deletingId.value) return
+  if (archivingId.value || deletingId.value || statusUpdatingId.value) return
   archivingId.value = news.id
   try { await service.archive(news.id); toast.success('La noticia se archivó correctamente.'); if (editingId.value === news.id) resetForm(); await loadData() }
   catch (error) { toast.error(errorMessage(error, 'No se pudo archivar la noticia.')); throw error } finally { archivingId.value = null }
 }
 const requestDelete = (news: AdminNews) => openConfirmation('¿Eliminar noticia permanentemente?', `Esta acción eliminará “${news.title}” y no se puede deshacer.`, () => executeDelete(news), 'danger', 'Eliminar permanentemente')
 const executeDelete = async (news: AdminNews) => {
-  if (deletingId.value || archivingId.value) return
+  if (deletingId.value || archivingId.value || statusUpdatingId.value) return
   deletingId.value = news.id
   try { await service.remove(news.id); toast.success('La noticia se eliminó correctamente.'); if (editingId.value === news.id) resetForm(); await loadData() }
   catch (error) { toast.error(errorMessage(error, 'No se pudo eliminar la noticia.')); throw error } finally { deletingId.value = null }
 }
 watch([search, selectedCategory, selectedStatus], scheduleFilters)
-onMounted(async () => { await loadData(); if (!form.categoryId && categories.value.length) form.categoryId = categories.value[0]!.id })
+const requestStatusChange = (news: AdminNews, status: Extract<ContentStatus, 'BORRADOR' | 'PUBLICADO'>) => {
+  const label = status === 'PUBLICADO' ? 'Publicar noticia' : 'Pasar a borrador'
+  const description = status === 'PUBLICADO'
+    ? `“${news.title}” se mostrará en el contenido público.`
+    : `“${news.title}” dejará de mostrarse públicamente y conservará su contenido.`
+  openConfirmation(`¿${label}?`, description, () => executeStatusChange(news, status), status === 'PUBLICADO' ? 'primary' : 'warning', label)
+}
+const executeStatusChange = async (news: AdminNews, status: Extract<ContentStatus, 'BORRADOR' | 'PUBLICADO'>) => {
+  if (statusUpdatingId.value || archivingId.value || deletingId.value) return
+  statusUpdatingId.value = news.id
+  try {
+    await service.update(news.id, {
+      categoryId: news.categoryId,
+      imageId: news.imageId,
+      title: news.title,
+      summary: news.summary,
+      content: news.content,
+      status
+    })
+    toast.success(status === 'PUBLICADO' ? 'La noticia se publicó correctamente.' : 'La noticia pasó a borrador.')
+    await loadData()
+  } catch (error) {
+    toast.error(errorMessage(error, 'No se pudo cambiar el estado de la noticia.'))
+    throw error
+  } finally {
+    statusUpdatingId.value = null
+  }
+}
+onMounted(async () => { await loadData(true); if (!form.categoryId && categories.value.length) form.categoryId = categories.value[0]!.id })
 </script>
 
 <template>
   <div class="news-admin">
     <AdminPageHeader eyebrow="Panel administrativo" title="Noticias y anuncios" description="Crea, revisa, publica y retira las noticias que verá la comunidad." />
     <StatePanel v-if="loading" title="Cargando noticias" message="Estamos consultando publicaciones, categorías y estados administrativos." />
-    <StatePanel v-else-if="loadError" role="alert" title="No se pudo cargar el módulo" :message="loadError"><button class="secondary-button" type="button" @click="loadData">Reintentar consulta</button></StatePanel>
+    <StatePanel v-else-if="loadError" role="alert" title="No se pudo cargar el módulo" :message="loadError"><button class="secondary-button" type="button" @click="loadData(true)">Reintentar consulta</button></StatePanel>
 
     <template v-else>
-      <section class="manager-card" aria-labelledby="news-list-title">
+      <section class="manager-card" :class="{ 'manager-card--refreshing': refreshing }" aria-labelledby="news-list-title" :aria-busy="refreshing">
         <header class="section-heading"><div><span class="eyebrow">Portal informativo directivo</span><h2 id="news-list-title">Gestión de Noticias y Comunicados</h2><p class="section-description">Publicaciones académicas, convocatorias y boletines informativos de la AEQ para la comunidad de estudiantes y docentes de Química UVG.</p></div><button class="primary-button new-button" type="button" @click="focusEditor">＋ Nueva noticia</button></header>
         <div class="filters" role="search">
           <div class="field"><label for="news-search">Buscar</label><input id="news-search" v-model="search" type="search" placeholder="Título, resumen o contenido" /></div>
@@ -184,7 +218,7 @@ onMounted(async () => { await loadData(); if (!form.categoryId && categories.val
         <div v-else class="news-grid">
           <article v-for="news in sortedItems" :key="news.id" class="news-item">
             <div class="news-item__media"><span class="news-item__tag">{{ news.category.name }}</span><div class="news-item__image-placeholder"><span v-if="!news.image">Imagen pendiente</span><span v-else>Imagen asociada</span></div><span class="news-item__date">◷ {{ formatDate(news.publishedAt) }}</span></div>
-            <div class="news-item__body"><div class="news-item__meta"><span :class="['status', `status--${news.status.toLowerCase()}`]">{{ statusLabel(news.status) }}</span></div><h3>{{ news.title }}</h3><p>{{ news.summary }}</p><p v-if="news.image" class="image-meta">Archivo: {{ news.image.originalName }}</p><div class="news-item__author"><span class="author-avatar">{{ news.createdBy.name.slice(0, 2).toUpperCase() }}</span><span>{{ news.createdBy.name }}</span></div><div class="item-actions"><button class="secondary-button" type="button" @click="editNews(news)">Editar</button><button v-if="news.status !== 'ARCHIVADO'" class="warning-button" type="button" :disabled="archivingId === news.id || deletingId === news.id" @click="requestArchive(news)">{{ archivingId === news.id ? 'Archivando…' : 'Archivar' }}</button><button class="danger-button" type="button" :disabled="deletingId === news.id || archivingId === news.id" @click="requestDelete(news)">{{ deletingId === news.id ? 'Eliminando…' : 'Eliminar' }}</button></div></div>
+            <div class="news-item__body"><div class="news-item__meta"><span :class="['status', `status--${news.status.toLowerCase()}`]">{{ statusLabel(news.status) }}</span></div><h3>{{ news.title }}</h3><p>{{ news.summary }}</p><p v-if="news.image" class="image-meta">Archivo: {{ news.image.originalName }}</p><div class="news-item__author"><span class="author-avatar">{{ news.createdBy.name.slice(0, 2).toUpperCase() }}</span><span>{{ news.createdBy.name }}</span></div><div class="item-actions"><button class="secondary-button" type="button" @click="editNews(news)">Editar</button><button v-if="news.status !== 'PUBLICADO'" class="primary-button" type="button" :disabled="statusUpdatingId === news.id || archivingId === news.id || deletingId === news.id" @click="requestStatusChange(news, 'PUBLICADO')">{{ statusUpdatingId === news.id ? 'Actualizando…' : 'Publicar' }}</button><button v-if="news.status !== 'BORRADOR'" class="warning-button" type="button" :disabled="statusUpdatingId === news.id || archivingId === news.id || deletingId === news.id" @click="requestStatusChange(news, 'BORRADOR')">Pasar a borrador</button><button v-if="news.status !== 'ARCHIVADO'" class="warning-button" type="button" :disabled="archivingId === news.id || deletingId === news.id || statusUpdatingId === news.id" @click="requestArchive(news)">{{ archivingId === news.id ? 'Archivando…' : 'Archivar' }}</button><button class="danger-button" type="button" :disabled="deletingId === news.id || archivingId === news.id || statusUpdatingId === news.id" @click="requestDelete(news)">{{ deletingId === news.id ? 'Eliminando…' : 'Eliminar' }}</button></div></div>
           </article>
         </div>
         <nav v-if="totalPages > 1" class="pagination" aria-label="Paginación de noticias"><button type="button" :disabled="page === 1" @click="goToPage(page - 1)">Anterior</button><span aria-live="polite">Página {{ page }} de {{ totalPages }}</span><button type="button" :disabled="page === totalPages" @click="goToPage(page + 1)">Siguiente</button></nav>
@@ -217,6 +251,7 @@ onMounted(async () => { await loadData(); if (!form.categoryId && categories.val
 @media (max-width: 1000px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }.filters__submit { width: fit-content; }.news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.editor-layout { grid-template-columns: 1fr; }.preview { order: -1; } } @media (max-width: 620px) { .section-heading { align-items: start; flex-direction: column; }.filters, .form-row { grid-template-columns: 1fr; }.filters__submit { width: 100%; }.news-grid { grid-template-columns: 1fr; }.item-actions > button { flex: 1 1 8rem; }.editor-actions { display: grid; grid-template-columns: 1fr; }.editor-actions button { width: 100%; } }
 <style scoped>
 .section-description { max-width: 52rem; margin-top: .45rem; color: var(--color-muted); line-height: 1.45; }
+.manager-card--refreshing { opacity: .72; transition: opacity .15s ease; }
 .new-button { white-space: nowrap; }
 .category-tabs { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem; padding: .3rem; background: #f5f8f7; border-radius: var(--radius-sm); }
 .category-tabs button { padding: .45rem .6rem; color: var(--color-muted); background: transparent; border: 0; border-radius: .35rem; font: inherit; font-size: .78rem; font-weight: 750; cursor: pointer; }
