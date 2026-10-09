@@ -93,6 +93,7 @@ export interface PublicNewsQuery { q?: string; categoryId?: number; page?: numbe
 
 export interface ResourceCategory { id: number; name: string; active?: boolean }
 export interface ResourceFile { id: number; originalName: string; mimeType: string; downloadUrl?: string | null }
+export interface AdminFile { id: number; uploadedById: number; originalName: string; mimeType: string; sizeBytes: number; sha256: string; createdAt: string }
 export interface ResourceLink { id: number; label: string; url: string; displayOrder: number }
 export interface PublicResource {
   id: number; categoryId: number; fileId: number | null; title: string; description: string; status: 'PUBLICADO'
