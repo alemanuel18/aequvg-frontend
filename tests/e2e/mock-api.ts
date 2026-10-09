@@ -15,7 +15,7 @@ const news = {
 }
 
 const secondNews = { ...news, id: 8, title: 'Anuncio de segunda página', summary: 'Contenido para validar la paginación.' }
-const adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
+let adminNews: typeof news | null = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
 
 const resource = {
   id: 9, categoryId: 3, fileId: 4, title: 'Guía de seguridad de laboratorio', description: 'Material para preparar prácticas de laboratorio de forma segura.', status: 'PUBLICADO',
@@ -170,6 +170,7 @@ Bun.serve({
         return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
       }
       adminSessionActive = true
+      adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
       const response = json({ user: adminUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
       response.headers.append('set-cookie', 'aequvg_device=device-e2e; Path=/; HttpOnly; SameSite=Lax')
@@ -216,18 +217,23 @@ Bun.serve({
     if (url.pathname === '/api/v1/admin/news' || url.pathname.match(/^\/api\/v1\/admin\/news\/\d+(\/archive)?$/)) {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
-      if (request.method === 'GET' && url.pathname === '/api/v1/admin/news') return json({ items: [adminNews, secondNews], pagination: { page: 1, pageSize: 9, total: 2 } })
+      if (request.method === 'GET' && url.pathname === '/api/v1/admin/news') {
+        const items = [adminNews, secondNews].filter(Boolean)
+        return json({ items, pagination: { page: 1, pageSize: 9, total: items.length } })
+      }
       if (request.method === 'POST') {
         const body = await request.json() as Record<string, unknown>
-        return json({ ...adminNews, id: 30, ...body, category: { id: body.categoryId, name: 'Convocatorias', active: true }, createdBy: adminUser }, 201)
+        adminNews = { ...news, id: 30, ...body, category: { id: body.categoryId, name: 'Convocatorias', active: true }, createdBy: adminUser }
+        return json(adminNews, 201)
       }
       const id = Number(url.pathname.split('/')[5])
       if (request.method === 'PUT') {
         const body = await request.json() as Record<string, unknown>
-        return json({ ...adminNews, id, ...body, category: { id: body.categoryId || 2, name: 'Convocatorias', active: true }, createdBy: adminUser })
+        adminNews = { ...news, id, ...body, category: { id: body.categoryId || 2, name: 'Convocatorias', active: true }, createdBy: adminUser }
+        return json(adminNews)
       }
-      if (request.method === 'PATCH') return json({ ...adminNews, id, status: 'ARCHIVADO', publishedAt: null })
-      if (request.method === 'DELETE') return json({ ...adminNews, id, status: 'ARCHIVADO', publishedAt: null })
+      if (request.method === 'PATCH') { adminNews = adminNews ? { ...adminNews, id, status: 'ARCHIVADO', publishedAt: null } : null; return json(adminNews) }
+      if (request.method === 'DELETE') { const removed = adminNews ? { ...adminNews, id, status: 'ARCHIVADO', publishedAt: null } : { ...news, id, status: 'ARCHIVADO', publishedAt: null }; adminNews = null; return json(removed) }
     }
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
     if (url.pathname === '/api/v1/institutional-content') return json(institutionalBlocks)
