@@ -170,6 +170,8 @@ Bun.serve({
         return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
       }
       adminSessionActive = true
+      adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
+      adminResource = { ...resource }
       const response = json({ user: adminUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
       response.headers.append('set-cookie', 'aequvg_device=device-e2e; Path=/; HttpOnly; SameSite=Lax')
@@ -259,8 +261,16 @@ Bun.serve({
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
       if (request.method === 'GET') return json({ items: adminResource ? [adminResource] : [], pagination: { page: 1, pageSize: 9, total: adminResource ? 1 : 0 } })
       const id = Number(url.pathname.split('/').pop())
-      if (request.method === 'POST') { adminResource = { ...resource, id: 30, ...(await request.json()) }; return json(adminResource, 201) }
-      if (request.method === 'PUT') { adminResource = { ...resource, id, ...(await request.json()) }; return json(adminResource) }
+      if (request.method === 'POST') {
+        const body = await request.json() as Record<string, any>
+        adminResource = { ...resource, id: 30, ...body, file: body.fileId ? resource.file : null, links: body.links ?? [], category: { id: body.categoryId, name: 'Laboratorio', active: true }, createdBy: adminUser }
+        return json(adminResource, 201)
+      }
+      if (request.method === 'PUT') {
+        const body = await request.json() as Record<string, any>
+        adminResource = { ...resource, id, ...body, file: body.fileId ? { ...resource.file, id: body.fileId } : null, links: body.links ?? [], category: { id: body.categoryId || 3, name: 'Laboratorio', active: true }, createdBy: adminUser }
+        return json(adminResource)
+      }
       if (request.method === 'DELETE') { adminResource = null; return json({ ...resource, id, status: 'ARCHIVADO' }) }
     }
     if (url.pathname.match(/^\/api\/v1\/admin\/institutional-content\/\d+$/)) {
