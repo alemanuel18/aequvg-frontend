@@ -209,7 +209,7 @@ test('administra recursos con validación, edición y confirmación', async ({ p
   await page.getByRole('button', { name: 'Iniciar sesión' }).click()
   await expect(page).toHaveURL(/\/administrador\/panel$/)
   await page.goto('/administrador/recursos')
-  await expect(page.getByRole('heading', { name: 'Recursos académicos', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Material de estudiantes', level: 1 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Guía de seguridad de laboratorio', level: 3 })).toBeVisible()
   await page.getByRole('button', { name: 'Editar' }).click()
   const title = page.getByLabel('Título *')
