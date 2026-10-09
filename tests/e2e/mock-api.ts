@@ -161,6 +161,9 @@ Bun.serve({
       } })
     }
     if (url.pathname === '/health') return json({ status: 'ok' })
+    if (request.method === 'GET' && url.pathname === '/materials/guia-seguridad.pdf') {
+      return new Response('contenido PDF e2e', { status: 200, headers: { 'content-type': 'application/pdf', 'content-disposition': 'attachment; filename="guia-seguridad.pdf"' } })
+    }
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') {
       const body = await request.json() as { email?: string; password?: string }
       if (body.email !== 'admin@uvg.edu.gt' || body.password !== 'Acceso123!') {
