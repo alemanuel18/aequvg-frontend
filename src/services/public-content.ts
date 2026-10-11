@@ -19,6 +19,6 @@ export const usePublicContentService = () => {
     projectById: (id: number) => api<PublicProject>(`/projects/${id}`),
     resources: (query: PublicResourceQuery = {}) => api<PublicResourceList>('/resources', { query }),
     resourceCategories: () => api<ResourceCategory[]>('/resources/categories'),
-    sendContactRequest: (body: ContactRequestInput) => api<{ id: number; status: string; sentAt: string }>('/contact-requests', { method: 'POST', body })
+    sendContactRequest: (body: ContactRequestInput) => api<{ accepted: true }>('/contact-requests', { method: 'POST', body })
   }
 }
