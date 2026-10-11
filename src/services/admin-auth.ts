@@ -5,6 +5,7 @@ export const useAdminAuthApi = () => {
   const api = useApi()
 
   return {
+    requestRegistration: (input: AdminLoginInput & { name: string }) => api<{ message: string }>('/auth/registration-requests', { method: 'POST', body: input }),
     login: (input: AdminLoginInput) => api<AdminSessionResponse>('/auth/login', {
       method: 'POST',
       body: input,
