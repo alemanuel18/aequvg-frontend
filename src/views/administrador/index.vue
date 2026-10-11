@@ -19,6 +19,17 @@ const submitting = ref(false);
 const checkingSession = ref(true);
 const emailInput = ref<HTMLInputElement | null>(null);
 const passwordInput = ref<HTMLInputElement | null>(null);
+const route = useRoute()
+const sessionExpired = computed(() => route.query.reason === 'expired')
+const session = useAdminSession()
+const fields = reactive({ email: '', password: '' })
+const errors = ref<AdminLoginErrors>({})
+const requestError = ref('')
+const statusMessage = ref('')
+const submitting = ref(false)
+const checkingSession = ref(true)
+const emailInput = ref<HTMLInputElement | null>(null)
+const passwordInput = ref<HTMLInputElement | null>(null)
 
 const safeReturnTo = computed(() => {
   const value =
@@ -108,6 +119,7 @@ const submit = async () => {
             Usa tus credenciales institucionales de UVG.
           </p>
         </div>
+        <p v-if="sessionExpired" class="form-message" role="status">Tu sesión expiró. Inicia sesión nuevamente para continuar.</p>
 
         <div class="field">
           <label for="admin-email">Correo institucional</label>
@@ -178,6 +190,8 @@ const submit = async () => {
                 : "Iniciar sesión"
           }}
         </AppButton>
+        <NuxtLink class="recovery-link" to="/administrador/recover-access">¿Necesitas recuperar el acceso?</NuxtLink>
+        <NuxtLink class="recovery-link" to="/administrador/sign-up">Solicitar una cuenta administrativa</NuxtLink>
       </form>
     </main>
   </div>
@@ -334,6 +348,34 @@ const submit = async () => {
 .login-card :deep(.button:hover) {
   background: var(--admin-primary-dark);
 }
+  background: linear-gradient(145deg, var(--admin-primary-dark), var(--admin-primary) 50%, #3d7570);
+}
+.skip-link { position: fixed; top: .5rem; left: .5rem; z-index: 10; padding: .7rem 1rem; color: var(--color-ink); background: white; border-radius: .5rem; transform: translateY(-160%); }
+.skip-link:focus { transform: none; }
+.login-header { width: min(76rem, calc(100% - 2rem)); min-height: 5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-inline: auto; color: white; }
+.brand { display: inline-flex; align-items: center; gap: .75rem; text-decoration: none; }
+.brand__mark { display: grid; width: 2.8rem; height: 2.8rem; place-items: center; border: 1px solid rgb(255 255 255 / 45%); border-radius: 50%; }
+.brand strong, .brand small { display: block; }
+.brand small { color: rgb(255 255 255 / 76%); font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; }
+.public-link { font-weight: 800; text-underline-offset: .25em; }
+.login-main { width: min(68rem, calc(100% - 2rem)); min-height: calc(100vh - 5rem); display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(18rem, .9fr); align-items: center; gap: clamp(2rem, 7vw, 6rem); padding-block: 3rem 6rem; margin-inline: auto; }
+.login-intro { color: white; }
+.eyebrow { display: inline-block; margin-bottom: 1rem; color: #dce6d4; font-size: .8rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+.login-intro h1 { max-width: 9ch; font-size: clamp(2.7rem, 7vw, 5.3rem); }
+.login-intro p { max-width: 35rem; margin-top: 1.25rem; color: rgb(255 255 255 / 82%); font-size: 1.08rem; }
+.login-card { display: grid; gap: 1.25rem; padding: clamp(1.35rem, 5vw, 2.25rem); background: white; border: 1px solid rgb(255 255 255 / 50%); border-radius: var(--radius-lg); box-shadow: 0 28px 65px rgb(0 0 0 / 25%); }
+.login-card h2 { font-size: 2rem; }
+.login-card__hint { margin-top: .35rem; color: var(--color-muted); }
+.field { display: grid; gap: .4rem; }
+.field label { font-weight: 850; }
+.field input { width: 100%; min-height: 3rem; padding: .7rem .8rem; color: var(--color-ink); background: white; border: 1px solid #9ca696; border-radius: .65rem; }
+.field input[aria-invalid="true"] { border-color: var(--color-danger); border-width: 2px; }
+.field__error, .form-message--error { color: var(--color-danger); font-weight: 750; }
+.form-message { padding: .75rem; background: #fff0f0; border: 1px solid #d99; border-radius: .55rem; }
+.login-card :deep(.button) { width: 100%; background: var(--admin-primary); border-color: var(--admin-primary); }
+.login-card :deep(.button:hover) { background: var(--admin-primary-dark); }
+.recovery-link { justify-self: center; color: var(--admin-primary-dark); font-weight: 800; text-underline-offset: .2em; }
+.login-card a:focus-visible { outline: 3px solid #e6aa32; outline-offset: 3px; }
 @media (max-width: 720px) {
   .login-header {
     min-height: 4.5rem;

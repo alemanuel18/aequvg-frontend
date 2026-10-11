@@ -5,11 +5,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const session = useAdminSession()
   const user = await session.load()
   if (!user) {
-    return navigateTo({ path: '/administrador', query: { returnTo: to.fullPath } }, { replace: true })
+    return navigateTo({ path: '/administrador', query: { returnTo: to.fullPath, reason: 'expired' } }, { replace: true })
   }
 
   const destination = adminNavigation.find(item => item.to === to.path)
   if (destination?.permission && !user.permissions.includes(destination.permission)) {
-    return navigateTo('/administrador/panel', { replace: true })
+    return navigateTo({ path: '/administrador/access-denied', query: { from: to.path } }, { replace: true })
   }
 })

@@ -73,6 +73,14 @@ export interface AdminLoginInput {
   password: string
 }
 
+export type AdminAccountStatus = 'ACTIVO' | 'INACTIVO' | 'BLOQUEADO'
+export interface AdminRole { id: number; name: string; description: string | null; permissions: string[] }
+export interface ManagedAdminUser {
+  id: number; name: string; email: string; status: AdminAccountStatus; role: { id: number; name: string }
+  authenticationProviders: Array<'PASSWORD' | 'MICROSOFT'>; createdAt: string; updatedAt: string
+}
+export interface AdminRegistrationRequest { id: number; name: string; email: string; status: 'PENDIENTE'; createdAt: string }
+
 export interface NewsCategory { id: number; name: string; active?: boolean }
 
 export interface PublicNews {
