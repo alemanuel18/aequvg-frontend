@@ -116,6 +116,25 @@ test('protege el panel y valida el inicio de sesión administrativo', async ({ p
   await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).not.toBeVisible()
 })
 
+test('protege el acceso directo al módulo de noticias', async ({ page }) => {
+  await page.goto('/administrador/noticias')
+  await expect(page).toHaveURL(/\/administrador\?returnTo=\/administrador\/noticias/)
+  await expect(page.getByRole('heading', { name: 'Panel administrativo', level: 1 })).toBeVisible()
+})
+
+test('redirecciona una cuenta autenticada sin NEWS_MANAGE al panel', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('editor@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  await page.goto('/administrador/noticias')
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+  await expect(page.getByRole('heading', { name: 'Módulos disponibles', level: 2 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toHaveCount(0)
+})
+
 test('el panel administrativo funciona con teclado y a 320 px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await page.goto('/administrador')

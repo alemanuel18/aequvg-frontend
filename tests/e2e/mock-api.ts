@@ -142,7 +142,14 @@ const adminUser = {
   role: 'Administrador',
   permissions: ['ADMIN_ACCESS', 'BOARD_MANAGE', 'CONTACT_MANAGE', 'EVENTS_MANAGE', 'INSTITUTIONAL_MANAGE', 'NEWS_MANAGE', 'PROJECTS_MANAGE', 'RESOURCES_MANAGE', 'USERS_MANAGE']
 }
+const limitedUser = {
+  ...adminUser,
+  name: 'Cuenta sin permiso de noticias',
+  email: 'editor@uvg.edu.gt',
+  permissions: ['ADMIN_ACCESS', 'CONTACT_MANAGE']
+}
 let adminSessionActive = false
+let activeUser = adminUser
 let contactMethods = [
   { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
   { id: 2, type: 'UBICACION', label: 'Campus Central UVG', value: 'Campus Central UVG, zona 15, Ciudad de Guatemala', url: 'https://www.google.com/maps/search/?api=1&query=Universidad+del+Valle+de+Guatemala', displayOrder: 2, active: true },
@@ -179,11 +186,13 @@ Bun.serve({
     if (url.pathname === '/health') return json({ status: 'ok' })
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') {
       const body = await request.json() as { email?: string; password?: string }
-      if (body.email !== 'admin@uvg.edu.gt' || body.password !== 'Acceso123!') {
+      const validEmail = body.email === 'admin@uvg.edu.gt' || body.email === 'editor@uvg.edu.gt'
+      if (!validEmail || body.password !== 'Acceso123!') {
         return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
       }
       adminSessionActive = true
-      const response = json({ user: adminUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
+      activeUser = body.email === 'editor@uvg.edu.gt' ? limitedUser : adminUser
+      const response = json({ user: activeUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
       response.headers.append('set-cookie', 'aequvg_device=device-e2e; Path=/; HttpOnly; SameSite=Lax')
       response.headers.append('set-cookie', 'aequvg_csrf=csrf-e2e; Path=/; SameSite=Lax')
@@ -191,7 +200,7 @@ Bun.serve({
     }
     if (request.method === 'GET' && url.pathname === '/api/v1/auth/me') {
       return adminSessionActive && request.headers.get('cookie')?.includes('aequvg_session=session-e2e')
-        ? json({ user: adminUser })
+        ? json({ user: activeUser })
         : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/logout') {
