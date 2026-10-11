@@ -59,6 +59,26 @@ const initialAdminEvents = () => [
 let adminEvents = initialAdminEvents()
 let nextAdminEventId = 14
 
+type AdminRegistration = { id: number; eventId: number; fullName: string; email: string; phone: string; status: 'CONFIRMADA' | 'CANCELADA'; registeredAt: string }
+const initialAdminRegistrations = (): AdminRegistration[] => [
+  ...Array.from({ length: 21 }, (_, index) => ({
+    id: 100 + index,
+    eventId: 10,
+    fullName: index === 0 ? 'Ana Evento A' : `Participante Evento A ${index + 1}`,
+    email: index === 0 ? 'ana.evento.a@uvg.edu.gt' : `participante.a${index + 1}@uvg.edu.gt`,
+    phone: `5555-${String(1000 + index).slice(-4)}`,
+    status: index % 3 === 1 ? 'CANCELADA' as const : 'CONFIRMADA' as const,
+    registeredAt: `2030-04-${String(20 - Math.floor(index / 5)).padStart(2, '0')}T${String(16 - (index % 5)).padStart(2, '0')}:00:00.000Z`
+  })),
+  { id: 200, eventId: 11, fullName: 'Bruno Evento B', email: 'bruno.evento.b@uvg.edu.gt', phone: '5555-2200', status: 'CONFIRMADA', registeredAt: '2030-04-19T12:00:00.000Z' },
+  { id: 201, eventId: 13, fullName: 'Carla Evento C', email: 'carla.evento.c@uvg.edu.gt', phone: '5555-2300', status: 'CONFIRMADA', registeredAt: '2030-04-18T12:00:00.000Z' },
+  { id: 202, eventId: 13, fullName: 'Diego Evento C', email: 'diego.evento.c@uvg.edu.gt', phone: '5555-2301', status: 'CONFIRMADA', registeredAt: '2030-04-17T12:00:00.000Z' },
+  { id: 203, eventId: 13, fullName: 'Elena Evento C', email: 'elena.evento.c@uvg.edu.gt', phone: '5555-2302', status: 'CONFIRMADA', registeredAt: '2030-04-16T12:00:00.000Z' },
+  { id: 204, eventId: 13, fullName: 'Fabián Evento C', email: 'fabian.evento.c@uvg.edu.gt', phone: '5555-2303', status: 'CANCELADA', registeredAt: '2030-04-15T12:00:00.000Z' },
+  { id: 205, eventId: 13, fullName: 'Gabriela Evento C', email: 'gabriela.evento.c@uvg.edu.gt', phone: '5555-2304', status: 'CANCELADA', registeredAt: '2030-04-14T12:00:00.000Z' }
+]
+let adminRegistrations = initialAdminRegistrations()
+
 const fullEvent = {
   ...event,
   id: 12,
@@ -209,6 +229,7 @@ Bun.serve({
       adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
       adminResource = { ...resource }
       adminEvents = initialAdminEvents()
+      adminRegistrations = initialAdminRegistrations()
       nextAdminEventId = 14
       activeUser = body.email === 'editor@uvg.edu.gt' ? limitedUser : adminUser
       const response = json({ user: activeUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
@@ -346,6 +367,24 @@ Bun.serve({
         return json(body)
       }
     }
+    if (url.pathname.match(/^\/api\/v1\/admin\/events\/\d+\/registrations$/)) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (!activeUser.permissions.includes('EVENTS_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para administrar eventos.' } }, 403)
+      const eventId = Number(url.pathname.match(/\/events\/(\d+)\/registrations$/)?.[1])
+      if (!adminEvents.some(item => item.id === eventId)) return json({ error: { code: 'EVENT_NOT_FOUND', message: 'El evento no existe.' } }, 404)
+      const page = Number(url.searchParams.get('page') || 1)
+      const pageSize = Number(url.searchParams.get('pageSize') || 20)
+      const status = url.searchParams.get('status')
+      const q = url.searchParams.get('q') || ''
+      if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100 || (status && !['CONFIRMADA', 'CANCELADA'].includes(status)) || q.length > 120) return json({ error: { code: 'VALIDATION_ERROR', message: 'Los filtros de participantes no son válidos.' } }, 422)
+      const normalizedQuery = q.toLowerCase()
+      const filtered = adminRegistrations
+        .filter(item => item.eventId === eventId)
+        .filter(item => !status || item.status === status)
+        .filter(item => !normalizedQuery || `${item.fullName} ${item.email} ${item.phone}`.toLowerCase().includes(normalizedQuery))
+        .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt) || b.id - a.id)
+      return json({ items: filtered.slice((page - 1) * pageSize, page * pageSize).map(({ eventId: _eventId, ...item }) => item), pagination: { page, pageSize, total: filtered.length } })
+    }
     if (url.pathname === '/api/v1/admin/events' || url.pathname.match(/^\/api\/v1\/admin\/events\/\d+(\/archive)?$/)) {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (!activeUser.permissions.includes('EVENTS_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para administrar eventos.' } }, 403)
@@ -372,6 +411,7 @@ Bun.serve({
       if (request.method === 'PUT') {
         const body = await request.json() as Record<string, unknown>
         if (typeof body.name !== 'string' || !body.name.trim() || typeof body.description !== 'string' || !body.description.trim() || typeof body.startsAt !== 'string' || typeof body.location !== 'string' || Number(body.maximumCapacity) < 1) return json({ error: { code: 'VALIDATION_ERROR', message: 'Los datos del evento no son válidos.' } }, 422)
+        if (Number(body.maximumCapacity) < adminRegistrations.filter(item => item.eventId === id && item.status === 'CONFIRMADA').length) return json({ error: { code: 'CAPACITY_BELOW_REGISTRATIONS', message: 'La capacidad no puede ser menor al número de inscripciones confirmadas.' } }, 422)
         const updated = { ...current, ...body, imageId: body.imageId ?? current.imageId }
         adminEvents = adminEvents.map(item => item.id === id ? updated : item)
         return json(updated)
