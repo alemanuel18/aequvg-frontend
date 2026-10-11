@@ -338,6 +338,14 @@ Bun.serve({
         return json({ id: 99, ...body, status: body.status || 'PUBLICADO', publishedAt: new Date().toISOString() }, 201)
       }
     }
+    if (url.pathname === '/api/v1/admin/files') {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      const form = await request.formData()
+      const file = form.get('file')
+      if (!(file instanceof File)) return json({ error: { code: 'FILE_REQUIRED', message: 'Debes enviar un archivo.' } }, 422)
+      return json({ id: 21, uploadedById: 1, originalName: file.name, mimeType: file.type, sizeBytes: file.size, sha256: 'a'.repeat(64), createdAt: new Date().toISOString() }, 201)
+    }
     if (url.pathname === '/api/v1/admin/resources' || url.pathname.match(/^\/api\/v1\/admin\/resources\/\d+$/)) {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)

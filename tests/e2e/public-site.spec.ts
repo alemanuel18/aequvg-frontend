@@ -154,6 +154,20 @@ test('el panel administrativo funciona con teclado y a 320 px', async ({ page })
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
 })
 
+test('rechaza acceso directo al panel de recursos sin RESOURCES_MANAGE', async ({ page }) => {
+  await page.context().addCookies([
+    { name: 'aequvg_session', value: 'session-limited', domain: '127.0.0.1', path: '/' },
+    { name: 'aequvg_device', value: 'device-limited', domain: '127.0.0.1', path: '/' }
+  ])
+  await page.route('**/api/v1/auth/me', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id: 2, name: 'Cuenta limitada', email: 'editor@uvg.edu.gt', status: 'ACTIVO', role: 'Editor', permissions: ['NEWS_MANAGE'] } }) })
+  })
+
+  await page.goto('/administrador/recursos')
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+  await expect(page.getByRole('link', { name: 'Abrir módulo: Recursos' })).toHaveCount(0)
+})
+
 test('administra noticias con filtros, previsualización y confirmación', async ({ page }) => {
   await page.goto('/administrador')
   await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
@@ -348,8 +362,11 @@ test('administra recursos con validación, edición y confirmación', async ({ p
   await page.keyboard.press('Tab')
   await expect(page.getByLabel('Descripción *')).toBeFocused()
   await page.keyboard.press('Tab')
+  await expect(page.getByLabel('Archivo académico')).toBeFocused()
+  await page.keyboard.press('Tab')
   await expect(page.getByLabel('ID del archivo')).toBeFocused()
-  await page.getByLabel('ID del archivo').fill('4')
+  await page.getByLabel('Archivo académico').setInputFiles({ name: 'guia-reemplazo.pdf', mimeType: 'application/pdf', buffer: Buffer.from('contenido PDF') })
+  await expect(page.getByText('El archivo se cargó correctamente.')).toBeVisible()
   await page.getByRole('button', { name: 'Actualizar recurso' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.getByRole('dialog').getByRole('button', { name: 'Actualizar recurso' }).click()
