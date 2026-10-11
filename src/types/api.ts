@@ -155,6 +155,16 @@ export interface AdminEvent extends Omit<PublicEvent, 'status' | 'availableCapac
   createdBy: { id: number; name: string }
 }
 export interface AdminEventList { items: AdminEvent[]; pagination: Pagination }
+export type EventRegistrationStatus = 'CONFIRMADA' | 'CANCELADA'
+export interface AdminEventRegistration {
+  id: number
+  fullName: string
+  email: string
+  phone: string
+  status: EventRegistrationStatus
+  registeredAt: string
+}
+export interface AdminEventRegistrationList { items: AdminEventRegistration[]; pagination: Pagination }
 export interface EventInput {
   imageId?: number | null
   name: string
