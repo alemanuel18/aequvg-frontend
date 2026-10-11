@@ -47,6 +47,12 @@ Las páginas consumen `src/services/api.ts`; no contienen URLs duplicadas. Ese s
 
 La ruta pública `/junta-directiva` muestra por defecto el año más reciente y permite consultar años anteriores. Los integrantes aparecen en cada año comprendido entre el inicio y el fin de su periodo. `/administrador/junta-directiva` requiere sesión y `BOARD_MANAGE`; permite agregar, editar, ordenar con flechas y retirar integrantes con nombre, cargo seleccionado de un catálogo, correo institucional, fechas de periodo y estado. La fotografía queda fuera del formulario actual. Todas las mutaciones requieren confirmación, anuncian éxito o error mediante toast, bloquean envíos repetidos y conservan foco y diseño utilizable desde 320 px.
 
+## Acceso administrativo y proyectos
+
+El inicio de sesión está en `/administrador`; el panel muestra los módulos habilitados por los permisos de la sesión. La gestión de proyectos está en `/administrador/proyectos` y requiere `PROJECTS_MANAGE`. La guía API del backend describe permisos, contratos y casos: [`admin-access-flow.md`](../aequvg-backend/docs/admin-access-flow.md) y [`projects-admin-flow.md`](../aequvg-backend/docs/projects-admin-flow.md).
+
+Estado actual de interfaz: el login y cierre de sesión están disponibles. Las pantallas frontend de solicitud de alta, recuperación/restablecimiento de contraseña y acceso Microsoft no están implementadas; `/administrador/usuarios` sigue en construcción aunque el backend ofrece endpoints para gestión. Consultar la evidencia y defectos registrados en [`admin-flows-evidence.md`](../aequvg-backend/docs/admin-flows-evidence.md).
+
 ## Variables de entorno
 
 ```bash
@@ -257,6 +263,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
 | `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
 | `/administrador/eventos` | Gestión de eventos: listado, búsqueda, filtros, creación, edición, archivado y eliminación confirmada. Requiere `EVENTS_MANAGE`. |
+| `/administrador/investigacion` | Gestión de proyectos de investigación: búsqueda, filtros, paginación, formulario con PDF, detalle, edición, revisión y eliminación confirmada. Requiere `PROJECTS_MANAGE`. |
 | `/administrador/contenido` | Gestión del Hero, anuncios institucionales y destacados. Requiere `INSTITUTIONAL_MANAGE`. |
 
 ### Acceso al panel administrativo
@@ -286,6 +293,8 @@ En `/administrador/contenido`, el permiso `INSTITUTIONAL_MANAGE` habilita la edi
 ### Uso administrativo de eventos
 
 En `/administrador/eventos`, una cuenta con `EVENTS_MANAGE` puede consultar el listado, buscar por texto, filtrar por estado y administrar la paginación. El formulario permite crear y editar eventos con confirmación, mientras que archivar realiza un retiro lógico y eliminar realiza un borrado físico. La eliminación es rechazada con `EVENT_HAS_REGISTRATIONS` cuando el evento tiene participantes; en ese caso debe archivarse.
+
+En `/administrador/investigacion`, una cuenta con `PROJECTS_MANAGE` puede buscar por título, descripción o autoría, filtrar por estado/tipo y paginar. La junta directiva registra título, slug, descripción, tipo, enlaces y PDF (hasta 25 MB); el backend atribuye el proyecto a la cuenta administrativa y lo crea en `EN_REVISION`. No hay envío por estudiantes. Los estados disponibles son `EN_REVISION`, `APROBADO` y `NO_APROBADO`; el detalle refleja revisor y motivo de rechazo. La carga y consulta del PDF requieren `PROJECTS_MANAGE`. Crear, editar y eliminar piden confirmación y anuncian el resultado con toast.
 
 La acción `Participantes` abre la consulta administrativa del evento seleccionado. Permite buscar por nombre, correo o teléfono, filtrar por estado (`CONFIRMADA` o `CANCELADA`) y recorrer los resultados mediante paginación. Una cuenta autorizada puede ver nombre, correo, teléfono, estado y fecha de inscripción; estos datos se consultan bajo demanda, permanecen solo en memoria mientras el panel está abierto y se limpian al cerrar o cambiar de evento.
 

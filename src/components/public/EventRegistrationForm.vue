@@ -1,88 +1,90 @@
 <script setup lang="ts">
-import { PublicApiError } from '~/services/api'
-import { usePublicContentService } from '~/services/public-content'
-import type { EventRegistrationInput } from '~/types/api'
-import { validateEventRegistrationForm } from '~/composables/event-registration-validation'
+import { PublicApiError } from "~/services/api";
+import { usePublicContentService } from "~/services/public-content";
+import type { EventRegistrationInput } from "~/types/api";
+import { validateEventRegistrationForm } from "~/composables/event-registration-validation";
 
 const props = defineProps<{
-  eventId: number
-  eventName: string
-  startsAt: string
-  availableCapacity?: number
-}>()
+  eventId: number;
+  eventName: string;
+  startsAt: string;
+  availableCapacity?: number;
+}>();
 
 const emit = defineEmits<{
-  (e: 'full'): void
-}>()
+  (e: "full"): void;
+}>();
 
-const service = usePublicContentService()
-const privacyVersion = useRuntimeConfig().public.privacyVersion
+const service = usePublicContentService();
+const privacyVersion = useRuntimeConfig().public.privacyVersion;
 
-const submitting = ref(false)
-const success = ref(false)
-const errorMessage = ref('')
-const fieldErrors = ref<Record<string, string>>({})
-const eventClosed = ref(false)
-const closedMessage = ref('')
-const mounted = ref(false)
+const submitting = ref(false);
+const success = ref(false);
+const errorMessage = ref("");
+const fieldErrors = ref<Record<string, string>>({});
+const eventClosed = ref(false);
+const closedMessage = ref("");
+const mounted = ref(false);
 
 onMounted(() => {
-  mounted.value = true
-})
+  mounted.value = true;
+});
 
 const form = reactive({
-  fullName: '',
-  email: '',
-  phone: '',
+  fullName: "",
+  email: "",
+  phone: "",
   consent: false,
-  website: ''
-})
+  website: "",
+});
 
 const clearForm = () => {
-  form.fullName = ''
-  form.email = ''
-  form.phone = ''
-  form.consent = false
-  form.website = ''
-  fieldErrors.value = {}
-}
+  form.fullName = "";
+  form.email = "";
+  form.phone = "";
+  form.consent = false;
+  form.website = "";
+  fieldErrors.value = {};
+};
 
 const isAlreadyStarted = computed(() => {
-  if (!mounted.value || !props.startsAt) return false
-  const time = new Date(props.startsAt).getTime()
-  return !Number.isNaN(time) && time <= Date.now()
-})
+  if (!mounted.value || !props.startsAt) return false;
+  const time = new Date(props.startsAt).getTime();
+  return !Number.isNaN(time) && time <= Date.now();
+});
 
 const isPreventivelyFull = computed(() => {
-  return typeof props.availableCapacity === 'number' && props.availableCapacity <= 0
-})
+  return (
+    typeof props.availableCapacity === "number" && props.availableCapacity <= 0
+  );
+});
 
 const validate = () => {
-  const errors = validateEventRegistrationForm(form)
-  fieldErrors.value = errors
+  const errors = validateEventRegistrationForm(form);
+  fieldErrors.value = errors;
   if (Object.keys(errors).length > 0) {
-    const firstKey = Object.keys(errors)[0]
+    const firstKey = Object.keys(errors)[0];
     if (firstKey) {
-      const fieldId = firstKey === 'fullName' ? 'reg-name' : `reg-${firstKey}`
+      const fieldId = firstKey === "fullName" ? "reg-name" : `reg-${firstKey}`;
       if (import.meta.client) {
         nextTick(() => {
-          document.getElementById(fieldId)?.focus()
-        })
+          document.getElementById(fieldId)?.focus();
+        });
       }
     }
-    return false
+    return false;
   }
-  return true
-}
+  return true;
+};
 
 const submit = async () => {
-  errorMessage.value = ''
-  fieldErrors.value = {}
+  errorMessage.value = "";
+  fieldErrors.value = {};
 
-  if (submitting.value) return
-  if (!validate()) return
+  if (submitting.value) return;
+  if (!validate()) return;
 
-  submitting.value = true
+  submitting.value = true;
   try {
     const body: EventRegistrationInput = {
       fullName: form.fullName,
@@ -90,102 +92,139 @@ const submit = async () => {
       phone: form.phone,
       consent: true,
       privacyVersion,
-      website: form.website || undefined
-    }
+      website: form.website || undefined,
+    };
 
-    await service.registerForEvent(props.eventId, body)
-    success.value = true
-    clearForm()
+    await service.registerForEvent(props.eventId, body);
+    success.value = true;
+    clearForm();
   } catch (error) {
     if (error instanceof PublicApiError) {
       switch (error.code) {
-        case 'ALREADY_REGISTERED':
-          errorMessage.value = 'Ya existe una inscripción registrada con este correo electrónico para este evento.'
-          fieldErrors.value.email = 'Este correo ya se encuentra registrado.'
-          break
-        case 'EVENT_FULL':
-          eventClosed.value = true
-          closedMessage.value = 'Este evento ha alcanzado su capacidad máxima.'
-          emit('full')
-          clearForm()
-          break
-        case 'EVENT_NOT_OPEN':
-          eventClosed.value = true
-          closedMessage.value = 'Este evento ya no acepta inscripciones.'
-          clearForm()
-          break
-        case 'EVENT_ALREADY_STARTED':
-          eventClosed.value = true
-          closedMessage.value = 'Este evento ya inició. Las inscripciones se encuentran cerradas.'
-          clearForm()
-          break
-        case 'EVENT_NOT_FOUND':
-          eventClosed.value = true
-          closedMessage.value = 'El evento solicitado ya no se encuentra disponible.'
-          clearForm()
-          break
-        case 'CONSENT_REQUIRED':
-          fieldErrors.value.consent = 'Debes aceptar la política de privacidad.'
-          break
-        case 'INVALID_PRIVACY_VERSION':
-          errorMessage.value = 'No pudimos validar el aviso de privacidad. Recarga la página e intenta de nuevo.'
-          break
-        case 'INVALID_REQUEST':
-          errorMessage.value = 'No pudimos procesar tu solicitud. Por favor intenta de nuevo.'
-          break
-        case 'RATE_LIMITED':
-          errorMessage.value = 'Has enviado varias solicitudes seguidas. Por favor espera un momento antes de intentar de nuevo.'
-          break
-        case 'VALIDATION_ERROR':
-          errorMessage.value = 'Por favor revisa los campos señalados antes de continuar.'
-          break
+        case "ALREADY_REGISTERED":
+          errorMessage.value =
+            "Ya existe una inscripción registrada con este correo electrónico para este evento.";
+          fieldErrors.value.email = "Este correo ya se encuentra registrado.";
+          break;
+        case "EVENT_FULL":
+          eventClosed.value = true;
+          closedMessage.value = "Este evento ha alcanzado su capacidad máxima.";
+          emit("full");
+          clearForm();
+          break;
+        case "EVENT_NOT_OPEN":
+          eventClosed.value = true;
+          closedMessage.value = "Este evento ya no acepta inscripciones.";
+          clearForm();
+          break;
+        case "EVENT_ALREADY_STARTED":
+          eventClosed.value = true;
+          closedMessage.value =
+            "Este evento ya inició. Las inscripciones se encuentran cerradas.";
+          clearForm();
+          break;
+        case "EVENT_NOT_FOUND":
+          eventClosed.value = true;
+          closedMessage.value =
+            "El evento solicitado ya no se encuentra disponible.";
+          clearForm();
+          break;
+        case "CONSENT_REQUIRED":
+          fieldErrors.value.consent =
+            "Debes aceptar la política de privacidad.";
+          break;
+        case "INVALID_PRIVACY_VERSION":
+          errorMessage.value =
+            "No pudimos validar el aviso de privacidad. Recarga la página e intenta de nuevo.";
+          break;
+        case "INVALID_REQUEST":
+          errorMessage.value =
+            "No pudimos procesar tu solicitud. Por favor intenta de nuevo.";
+          break;
+        case "RATE_LIMITED":
+          errorMessage.value =
+            "Has enviado varias solicitudes seguidas. Por favor espera un momento antes de intentar de nuevo.";
+          break;
+        case "VALIDATION_ERROR":
+          errorMessage.value =
+            "Por favor revisa los campos señalados antes de continuar.";
+          break;
         default:
-          errorMessage.value = error.message || 'No pudimos procesar tu inscripción. Por favor intenta de nuevo.'
+          errorMessage.value =
+            error.message ||
+            "No pudimos procesar tu inscripción. Por favor intenta de nuevo.";
       }
     } else {
-      errorMessage.value = 'No pudimos conectar con el servidor. Revisa tu conexión o intenta más tarde.'
+      errorMessage.value =
+        "No pudimos conectar con el servidor. Revisa tu conexión o intenta más tarde.";
     }
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
-}
+};
 </script>
 
 <template>
   <div class="registration-shell">
-    <div v-if="success" class="registration-status-card registration-status-card--success" role="status">
+    <div
+      v-if="success"
+      class="registration-status-card registration-status-card--success"
+      role="status"
+    >
       <div class="status-card__header">
-        <span class="status-icon status-icon--success" aria-hidden="true">✓</span>
+        <span class="status-icon status-icon--success" aria-hidden="true"
+          >✓</span
+        >
         <h3>¡Inscripción confirmada!</h3>
       </div>
       <p class="status-card__message">
-        Has quedado inscrito exitosamente en <strong>{{ eventName }}</strong>.
+        Has quedado inscrito exitosamente en <strong>{{ eventName }}</strong
+        >.
       </p>
       <p class="status-card__notice">
         No es necesario que vuelvas a enviar el formulario.
       </p>
       <div class="status-card__actions">
-        <AppButton to="/eventos" variant="secondary">← Ver todos los eventos</AppButton>
+        <AppButton to="/eventos" variant="secondary"
+          >← Ver todos los eventos</AppButton
+        >
       </div>
     </div>
 
-    <div v-else-if="isAlreadyStarted || isPreventivelyFull || eventClosed" class="registration-status-card registration-status-card--closed" role="status">
+    <div
+      v-else-if="isAlreadyStarted || isPreventivelyFull || eventClosed"
+      class="registration-status-card registration-status-card--closed"
+      role="status"
+    >
       <div class="status-card__header">
-        <span class="status-icon status-icon--neutral" aria-hidden="true">ℹ</span>
+        <span class="status-icon status-icon--neutral" aria-hidden="true"
+          >ℹ</span
+        >
         <h3>Inscripciones no disponibles</h3>
       </div>
       <p class="status-card__message">
-        {{ closedMessage || (isAlreadyStarted ? 'Este evento ya inició. Las inscripciones se encuentran cerradas.' : (isPreventivelyFull ? 'Este evento ha alcanzado su capacidad máxima.' : 'Este evento ya inició. Las inscripciones se encuentran cerradas.')) }}
+        {{
+          closedMessage ||
+          (isAlreadyStarted
+            ? "Este evento ya inició. Las inscripciones se encuentran cerradas."
+            : isPreventivelyFull
+              ? "Este evento ha alcanzado su capacidad máxima."
+              : "Este evento ya inició. Las inscripciones se encuentran cerradas.")
+        }}
       </p>
       <div class="status-card__actions">
-        <AppButton to="/eventos" variant="secondary">← Ver otros eventos</AppButton>
+        <AppButton to="/eventos" variant="secondary"
+          >← Ver otros eventos</AppButton
+        >
       </div>
     </div>
 
     <form v-else class="form-card" novalidate @submit.prevent="submit">
       <div class="form-header">
         <h3>Inscripción al evento</h3>
-        <p>Completa tus datos para confirmar tu participación en esta actividad.</p>
+        <p>
+          Completa tus datos para confirmar tu participación en esta actividad.
+        </p>
       </div>
 
       <div class="form-grid">
@@ -196,10 +235,17 @@ const submit = async () => {
             v-model="form.fullName"
             autocomplete="name"
             :aria-invalid="!!fieldErrors.fullName"
-            :aria-describedby="fieldErrors.fullName ? 'reg-name-error' : undefined"
+            :aria-describedby="
+              fieldErrors.fullName ? 'reg-name-error' : undefined
+            "
             required
+          />
+          <span
+            v-if="fieldErrors.fullName"
+            id="reg-name-error"
+            class="field-error"
+            >{{ fieldErrors.fullName }}</span
           >
-          <span v-if="fieldErrors.fullName" id="reg-name-error" class="field-error">{{ fieldErrors.fullName }}</span>
         </div>
 
         <div class="field">
@@ -210,10 +256,17 @@ const submit = async () => {
             type="email"
             autocomplete="email"
             :aria-invalid="!!fieldErrors.email"
-            :aria-describedby="fieldErrors.email ? 'reg-email-error' : undefined"
+            :aria-describedby="
+              fieldErrors.email ? 'reg-email-error' : undefined
+            "
             required
+          />
+          <span
+            v-if="fieldErrors.email"
+            id="reg-email-error"
+            class="field-error"
+            >{{ fieldErrors.email }}</span
           >
-          <span v-if="fieldErrors.email" id="reg-email-error" class="field-error">{{ fieldErrors.email }}</span>
         </div>
 
         <div class="field field--full">
@@ -224,10 +277,17 @@ const submit = async () => {
             type="tel"
             autocomplete="tel"
             :aria-invalid="!!fieldErrors.phone"
-            :aria-describedby="fieldErrors.phone ? 'reg-phone-error' : undefined"
+            :aria-describedby="
+              fieldErrors.phone ? 'reg-phone-error' : undefined
+            "
             required
+          />
+          <span
+            v-if="fieldErrors.phone"
+            id="reg-phone-error"
+            class="field-error"
+            >{{ fieldErrors.phone }}</span
           >
-          <span v-if="fieldErrors.phone" id="reg-phone-error" class="field-error">{{ fieldErrors.phone }}</span>
         </div>
 
         <div class="honeypot" aria-hidden="true">
@@ -237,7 +297,7 @@ const submit = async () => {
             v-model="form.website"
             tabindex="-1"
             autocomplete="off"
-          >
+          />
         </div>
 
         <div class="field field--full">
@@ -247,21 +307,35 @@ const submit = async () => {
               v-model="form.consent"
               type="checkbox"
               :aria-invalid="!!fieldErrors.consent"
-              :aria-describedby="fieldErrors.consent ? 'reg-consent-error' : undefined"
+              :aria-describedby="
+                fieldErrors.consent ? 'reg-consent-error' : undefined
+              "
               required
+            />
+            <span
+              >Autorizo el tratamiento de mis datos para la inscripción a este
+              evento, conforme al aviso de privacidad vigente.</span
             >
-            <span>Autorizo el tratamiento de mis datos para la inscripción a este evento, conforme al aviso de privacidad vigente.</span>
           </label>
-          <span v-if="fieldErrors.consent" id="reg-consent-error" class="field-error">{{ fieldErrors.consent }}</span>
+          <span
+            v-if="fieldErrors.consent"
+            id="reg-consent-error"
+            class="field-error"
+            >{{ fieldErrors.consent }}</span
+          >
         </div>
 
-        <p v-if="errorMessage" class="form-status form-status--error field--full" role="alert">
+        <p
+          v-if="errorMessage"
+          class="form-status form-status--error field--full"
+          role="alert"
+        >
           {{ errorMessage }}
         </p>
 
         <div class="field--full form-actions">
           <AppButton :disabled="submitting" type="submit">
-            {{ submitting ? 'Inscribiendo…' : 'Inscribirme al evento' }}
+            {{ submitting ? "Inscribiendo…" : "Inscribirme al evento" }}
           </AppButton>
         </div>
       </div>
@@ -288,7 +362,7 @@ const submit = async () => {
 }
 
 .form-header h3 {
-  margin: 0 0 .35rem;
+  margin: 0 0 0.35rem;
   font-size: clamp(1.25rem, 3vw, 1.5rem);
   color: var(--color-ink);
 }
@@ -296,7 +370,7 @@ const submit = async () => {
 .form-header p {
   margin: 0;
   color: var(--color-muted);
-  font-size: .95rem;
+  font-size: 0.95rem;
   line-height: 1.5;
 }
 
@@ -309,7 +383,7 @@ const submit = async () => {
 .field {
   display: grid;
   align-content: start;
-  gap: .35rem;
+  gap: 0.35rem;
 }
 
 .field--full {
@@ -319,19 +393,21 @@ const submit = async () => {
 .field label {
   font-weight: 800;
   color: var(--color-ink);
-  font-size: .92rem;
+  font-size: 0.92rem;
 }
 
 .field input {
   width: 100%;
   min-height: 2.8rem;
-  padding: .65rem .75rem;
+  padding: 0.65rem 0.75rem;
   color: var(--color-ink);
   background: white;
   border: 1px solid #9ca397;
-  border-radius: .55rem;
+  border-radius: 0.55rem;
   font-size: 1rem;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .field input:focus {
@@ -342,14 +418,14 @@ const submit = async () => {
 
 .field-error {
   color: var(--color-danger);
-  font-size: .85rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
 .checkbox {
   display: grid;
   grid-template-columns: 1.2rem 1fr;
-  gap: .65rem;
+  gap: 0.65rem;
   align-items: start;
   cursor: pointer;
 }
@@ -357,12 +433,12 @@ const submit = async () => {
 .checkbox input {
   width: 1.15rem;
   height: 1.15rem;
-  margin-top: .25rem;
+  margin-top: 0.25rem;
   cursor: pointer;
 }
 
 .checkbox span {
-  font-size: .92rem;
+  font-size: 0.92rem;
   color: var(--color-ink);
   line-height: 1.45;
 }
@@ -376,11 +452,11 @@ const submit = async () => {
 }
 
 .form-status {
-  padding: .9rem;
+  padding: 0.9rem;
   background: white;
   border: 1px solid var(--color-border);
-  border-radius: .6rem;
-  font-size: .95rem;
+  border-radius: 0.6rem;
+  font-size: 0.95rem;
   line-height: 1.5;
 }
 
@@ -392,7 +468,7 @@ const submit = async () => {
 }
 
 .form-actions {
-  margin-top: .5rem;
+  margin-top: 0.5rem;
 }
 
 .registration-status-card {
@@ -416,8 +492,8 @@ const submit = async () => {
 .status-card__header {
   display: flex;
   align-items: center;
-  gap: .75rem;
-  margin-bottom: .75rem;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .status-card__header h3 {
@@ -448,7 +524,7 @@ const submit = async () => {
 }
 
 .status-card__message {
-  margin: 0 0 .5rem;
+  margin: 0 0 0.5rem;
   font-size: 1.05rem;
   line-height: 1.6;
   color: var(--color-ink);
@@ -456,7 +532,7 @@ const submit = async () => {
 
 .status-card__notice {
   margin: 0 0 1.25rem;
-  font-size: .92rem;
+  font-size: 0.92rem;
   color: var(--color-muted);
 }
 

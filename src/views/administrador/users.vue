@@ -1,4 +1,17 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: "admin",
+  middleware: "admin-auth",
+  alias: ["/administrador/usuarios"],
+});
+useSeoMeta({ title: "Usuarios · Administración", robots: "noindex, nofollow" });
+</script>
+<template>
+  <AdminUnderConstruction
+    title="Usuarios"
+    description="Gestiona las cuentas autorizadas y sus permisos administrativos."
+  />
+</template>
 import type { AdminRegistrationRequest, AdminRole, ManagedAdminUser } from '~/types/api'
 import { PublicApiError } from '~/services/api'
 import { useAdminUsersApi } from '~/services/admin-users'

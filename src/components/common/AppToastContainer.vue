@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { useToast, type ToastType } from '~/composables/use-toast'
+import { useToast, type ToastType } from "~/composables/use-toast";
 
-const { toasts, dismiss } = useToast()
+const { toasts, dismiss } = useToast();
 
 const getIconName = (type: ToastType) => {
   switch (type) {
-    case 'success':
-      return 'check'
-    case 'error':
-      return 'alert-circle'
-    case 'warning':
-      return 'alert-triangle'
-    case 'info':
+    case "success":
+      return "check";
+    case "error":
+      return "alert-circle";
+    case "warning":
+      return "alert-triangle";
+    case "info":
     default:
-      return 'info'
+      return "info";
   }
-}
+};
 </script>
 
 <template>
@@ -30,23 +30,65 @@ const getIconName = (type: ToastType) => {
       >
         <div class="toast-item__icon" aria-hidden="true">
           <!-- Check icon -->
-          <svg v-if="getIconName(item.type) === 'check'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            v-if="getIconName(item.type) === 'check'"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
           <!-- Alert circle icon -->
-          <svg v-else-if="getIconName(item.type) === 'alert-circle'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            v-else-if="getIconName(item.type) === 'alert-circle'"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
           <!-- Alert triangle icon -->
-          <svg v-else-if="getIconName(item.type) === 'alert-triangle'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+          <svg
+            v-else-if="getIconName(item.type) === 'alert-triangle'"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+            ></path>
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
           <!-- Info icon -->
-          <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            v-else
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -61,7 +103,17 @@ const getIconName = (type: ToastType) => {
           aria-label="Cerrar notificación"
           @click="dismiss(item.id)"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -85,21 +137,23 @@ const getIconName = (type: ToastType) => {
 .toast-list {
   display: flex;
   flex-direction: column;
-  gap: .65rem;
+  gap: 0.65rem;
 }
 
 .toast-item {
   pointer-events: auto;
   display: flex;
   align-items: flex-start;
-  gap: .75rem;
-  padding: .9rem 1.1rem;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
   background: white;
   border-radius: var(--radius-sm);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 12%), 0 2px 6px rgb(0 0 0 / 6%);
-  font-size: .92rem;
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 12%),
+    0 2px 6px rgb(0 0 0 / 6%);
+  font-size: 0.92rem;
   line-height: 1.45;
-  transition: all .25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toast-item--success {
@@ -128,7 +182,7 @@ const getIconName = (type: ToastType) => {
 
 .toast-item__icon {
   flex: 0 0 auto;
-  margin-top: .15rem;
+  margin-top: 0.15rem;
 }
 
 .toast-item__message {
@@ -144,15 +198,17 @@ const getIconName = (type: ToastType) => {
   width: 1.6rem;
   height: 1.6rem;
   padding: 0;
-  margin-left: .25rem;
-  margin-top: -.1rem;
+  margin-left: 0.25rem;
+  margin-top: -0.1rem;
   background: transparent;
   color: currentColor;
-  opacity: .6;
+  opacity: 0.6;
   border: 0;
-  border-radius: .3rem;
+  border-radius: 0.3rem;
   cursor: pointer;
-  transition: opacity .15s ease, background .15s ease;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
 }
 
 .toast-item__close:hover,
