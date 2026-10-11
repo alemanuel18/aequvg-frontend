@@ -146,6 +146,26 @@ export interface PublicEventList {
   pagination: Pagination
 }
 
+export type EventStatus = 'BORRADOR' | 'PUBLICADO' | 'FINALIZADO' | 'CANCELADO' | 'ARCHIVADO'
+export interface AdminEvent extends Omit<PublicEvent, 'status' | 'availableCapacity'> {
+  createdById: number
+  imageId: number | null
+  status: EventStatus
+  createdAt: string
+  createdBy: { id: number; name: string }
+}
+export interface AdminEventList { items: AdminEvent[]; pagination: Pagination }
+export interface EventInput {
+  imageId?: number | null
+  name: string
+  description: string
+  startsAt: string
+  location: string
+  maximumCapacity: number
+  additionalInformation?: string | null
+  status?: EventStatus
+}
+
 export interface PublicEventQuery {
   q?: string
   page?: number
