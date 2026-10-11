@@ -16,6 +16,7 @@ const news = {
 
 const secondNews = { ...news, id: 8, title: 'Anuncio de segunda página', summary: 'Contenido para validar la paginación.' }
 let adminNews: typeof news | null = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
+let reflectedNews: typeof news | null = null
 
 const resource = {
   id: 9, categoryId: 3, fileId: 4, title: 'Guía de seguridad de laboratorio', description: 'Material para preparar prácticas de laboratorio de forma segura.', status: 'PUBLICADO',
@@ -73,6 +74,12 @@ const project = {
 
 const secondProject = { ...project, id: 21, title: 'Tesis de segunda página', slug: 'tesis-segunda-pagina', type: 'TESIS' }
 
+let nextBoardMemberId = 103
+let boardMembers = [
+  { id: 101, photoId: null, name: 'Ana Pérez', position: 'Presidenta', description: null, institutionalEmail: 'ana@uvg.edu.gt', term: '2026', termStartsAt: '2026-01-01T00:00:00.000Z', termEndsAt: '2026-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null },
+  { id: 102, photoId: null, name: 'Luis Morales', position: 'Presidente', description: null, institutionalEmail: 'luis@uvg.edu.gt', term: '2025', termStartsAt: '2025-01-01T00:00:00.000Z', termEndsAt: '2025-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null }
+]
+
 const institutionalBlocks = [
   {
     id: 1,
@@ -82,7 +89,7 @@ const institutionalBlocks = [
     body: 'Formamos profesionales con capacidad analítica, ética y liderazgo para innovar en la ciencia.',
     imageUrl: null,
     actionLabel: 'Conocer la carrera',
-    actionUrl: '#conocer-carrera',
+    actionUrl: '/contacto',
     displayOrder: 0,
     status: 'PUBLICADO',
     publishedAt: '2026-01-01T00:00:00.000Z'
@@ -137,7 +144,25 @@ const adminUser = {
   role: 'Administrador',
   permissions: ['ADMIN_ACCESS', 'BOARD_MANAGE', 'CONTACT_MANAGE', 'EVENTS_MANAGE', 'INSTITUTIONAL_MANAGE', 'NEWS_MANAGE', 'PROJECTS_MANAGE', 'RESOURCES_MANAGE', 'USERS_MANAGE']
 }
+const limitedUser = {
+  ...adminUser,
+  name: 'Cuenta sin permiso de noticias',
+  email: 'editor@uvg.edu.gt',
+  permissions: ['ADMIN_ACCESS', 'CONTACT_MANAGE']
+}
 let adminSessionActive = false
+let activeUser = adminUser
+let contactMethods = [
+  { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
+  { id: 2, type: 'UBICACION', label: 'Campus Central UVG', value: 'Campus Central UVG, zona 15, Ciudad de Guatemala', url: 'https://www.google.com/maps/search/?api=1&query=Universidad+del+Valle+de+Guatemala', displayOrder: 2, active: true },
+  { id: 3, type: 'OTRO', label: 'TikTok', value: '@aeq_uvg', url: 'https://www.tiktok.com/@aeq_uvg', displayOrder: 3, active: true }
+]
+let nextContactMethodId = 4
+const sortedContactMethods = () => [...contactMethods].sort((a, b) =>
+  Number(a.type === 'UBICACION') - Number(b.type === 'UBICACION')
+  || a.displayOrder - b.displayOrder
+  || a.id - b.id
+)
 
 const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => Response.json(body, {
   status,
@@ -149,7 +174,7 @@ const json = (body: unknown, status = 200, extraHeaders: Record<string, string> 
 })
 
 Bun.serve({
-  port: 3002,
+  port: Number(process.env.PLAYWRIGHT_API_PORT || 3002),
   async fetch(request) {
     const url = new URL(request.url)
     if (request.method === 'OPTIONS') {
@@ -166,12 +191,15 @@ Bun.serve({
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') {
       const body = await request.json() as { email?: string; password?: string }
-      if (body.email !== 'admin@uvg.edu.gt' || body.password !== 'Acceso123!') {
+      const validEmail = body.email === 'admin@uvg.edu.gt' || body.email === 'editor@uvg.edu.gt'
+      if (!validEmail || body.password !== 'Acceso123!') {
         return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
       }
       adminSessionActive = true
       adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
       const response = json({ user: adminUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
+      activeUser = body.email === 'editor@uvg.edu.gt' ? limitedUser : adminUser
+      const response = json({ user: activeUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
       response.headers.append('set-cookie', 'aequvg_device=device-e2e; Path=/; HttpOnly; SameSite=Lax')
       response.headers.append('set-cookie', 'aequvg_csrf=csrf-e2e; Path=/; SameSite=Lax')
@@ -179,7 +207,7 @@ Bun.serve({
     }
     if (request.method === 'GET' && url.pathname === '/api/v1/auth/me') {
       return adminSessionActive && request.headers.get('cookie')?.includes('aequvg_session=session-e2e')
-        ? json({ user: adminUser })
+        ? json({ user: activeUser })
         : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/logout') {
@@ -218,12 +246,13 @@ Bun.serve({
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
       if (request.method === 'GET' && url.pathname === '/api/v1/admin/news') {
-        const items = [adminNews, secondNews].filter(Boolean)
+        const items = [reflectedNews ?? adminNews, secondNews]
         return json({ items, pagination: { page: 1, pageSize: 9, total: items.length } })
       }
       if (request.method === 'POST') {
         const body = await request.json() as Record<string, unknown>
         adminNews = { ...news, id: 30, ...body, category: { id: body.categoryId, name: 'Convocatorias', active: true }, createdBy: adminUser }
+        reflectedNews = { ...news, id: 30, ...body, category: { id: body.categoryId, name: 'Convocatorias', active: true }, createdBy: adminUser } as typeof news
         return json(adminNews, 201)
       }
       const id = Number(url.pathname.split('/')[5])
@@ -233,17 +262,83 @@ Bun.serve({
         return json(adminNews)
       }
       if (request.method === 'PATCH') { adminNews = adminNews ? { ...adminNews, id, status: 'ARCHIVADO', publishedAt: null } : null; return json(adminNews) }
-      if (request.method === 'DELETE') { const removed = adminNews ? { ...adminNews, id, status: 'ARCHIVADO', publishedAt: null } : { ...news, id, status: 'ARCHIVADO', publishedAt: null }; adminNews = null; return json(removed) }
+      if (request.method === 'DELETE') {
+        const removed = adminNews ? { ...adminNews, id, status: 'ARCHIVADO', publishedAt: null } : { ...news, id, status: 'ARCHIVADO', publishedAt: null }
+        adminNews = null
+        if (id === 30) reflectedNews = null
+        return json(removed)
+      }
     }
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
     if (url.pathname === '/api/v1/institutional-content') return json(institutionalBlocks)
-    if (url.pathname === '/api/v1/board-members' || url.pathname === '/api/v1/contact-methods') return json([])
+    if (url.pathname === '/api/v1/board-members') return json(boardMembers.filter(member => member.status === 'ACTIVO'))
+    if (url.pathname === '/api/v1/admin/board-members' || url.pathname === '/api/v1/admin/board-members/order' || url.pathname.match(/^\/api\/v1\/admin\/board-members\/\d+$/)) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      if (request.method === 'GET') return json(boardMembers)
+      if (request.method === 'PUT' && url.pathname === '/api/v1/admin/board-members/order') {
+        const body = await request.json() as { items: Array<{ id: number; displayOrder: number }> }
+        body.items.forEach(item => { const index = boardMembers.findIndex(member => member.id === item.id); if (index >= 0) boardMembers[index] = { ...boardMembers[index]!, displayOrder: item.displayOrder } })
+        return json(body.items.map(item => boardMembers.find(member => member.id === item.id)))
+      }
+      if (request.method === 'POST') {
+        const body = await request.json() as Record<string, unknown>
+        const startYear = String(body.termStartsAt).slice(0, 4); const endYear = String(body.termEndsAt).slice(0, 4)
+        const created = { id: nextBoardMemberId++, photoId: null, photo: null, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, displayOrder: boardMembers.length, ...body }
+        boardMembers.push(created as typeof boardMembers[number]); return json(created, 201)
+      }
+      const id = Number(url.pathname.split('/').at(-1)); const index = boardMembers.findIndex(member => member.id === id)
+      if (request.method === 'PUT') {
+        const body = await request.json() as Record<string, unknown>
+        const startYear = String(body.termStartsAt).slice(0, 4); const endYear = String(body.termEndsAt).slice(0, 4)
+        boardMembers[index] = { ...boardMembers[index]!, ...body, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, photo: null }; return json(boardMembers[index])
+      }
+      if (request.method === 'DELETE') {
+        boardMembers[index] = { ...boardMembers[index]!, status: 'INACTIVO' }; return json(boardMembers[index])
+      }
+    }
+    if (request.method === 'GET' && url.pathname === '/api/v1/contact-methods') return json(sortedContactMethods().filter(method => method.active))
+    if (request.method === 'POST' && url.pathname === '/api/v1/contact-requests') return json({ accepted: true }, 202)
+    if (url.pathname === '/api/v1/admin/contact-methods') {
+      if (request.method === 'GET') return json(sortedContactMethods())
+      if (request.method === 'POST') {
+        const body = await request.json() as Record<string, unknown>
+        const nextOrder = Math.max(-1, ...contactMethods.filter(method => method.type !== 'UBICACION').map(method => method.displayOrder)) + 1
+        const created = { id: nextContactMethodId++, displayOrder: body.type === 'UBICACION' ? 0 : nextOrder, ...body }
+        contactMethods.push(created as typeof contactMethods[number])
+        return json(created, 201)
+      }
+    }
+    if (request.method === 'PUT' && url.pathname === '/api/v1/admin/contact-methods/order') {
+      const body = await request.json() as { orderedIds: number[] }
+      body.orderedIds.forEach((id, displayOrder) => {
+        const index = contactMethods.findIndex(method => method.id === id)
+        if (index >= 0) contactMethods[index] = { ...contactMethods[index]!, displayOrder }
+      })
+      return json(sortedContactMethods())
+    }
+    if (url.pathname.match(/^\/api\/v1\/admin\/contact-methods\/\d+$/)) {
+      const id = Number(url.pathname.split('/').pop())
+      const index = contactMethods.findIndex(method => method.id === id)
+      if (index < 0) return json({ error: { code: 'CONTACT_METHOD_NOT_FOUND', message: 'El medio de contacto no existe.' } }, 404)
+      if (request.method === 'PUT') {
+        const body = await request.json() as Record<string, unknown>
+        contactMethods[index] = { ...contactMethods[index]!, ...body } as typeof contactMethods[number]
+      } else if (request.method === 'DELETE') contactMethods[index] = { ...contactMethods[index]!, active: false }
+      return json(contactMethods[index])
+    }
     if (url.pathname === '/api/v1/admin/institutional-content/featured') {
       if (request.method === 'GET') return json({ newsIds: [7], eventIds: [10] })
       if (request.method === 'PUT') {
         const body = await request.json()
         return json(body)
       }
+    }
+    if (url.pathname === '/api/v1/admin/events') {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) {
+        return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      }
+      return json({ items: [event], pagination: { page: 1, pageSize: 50, total: 1 } })
     }
     if (url.pathname === '/api/v1/admin/institutional-content') {
       if (request.method === 'GET') return json(institutionalBlocks)
@@ -284,6 +379,7 @@ Bun.serve({
       const query = url.searchParams.get('q')?.toLowerCase() || ''
       if (query === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0 } })
       if (query === 'error-prueba') return json({ error: { code: 'REQUEST_FAILED', message: 'Error simulado.' } }, 503)
+      if (query === 'nueva noticia de prueba') return json({ items: reflectedNews ? [reflectedNews] : [], pagination: { page: 1, pageSize: 9, total: reflectedNews ? 1 : 0 } })
       const page = Number(url.searchParams.get('page') || 1)
       return json({ items: page === 2 ? [secondNews] : [news], pagination: { page, pageSize: Number(url.searchParams.get('pageSize') || 9), total: 10 } })
     }

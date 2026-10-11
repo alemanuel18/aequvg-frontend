@@ -43,6 +43,10 @@ tests/
 
 Las páginas consumen `src/services/api.ts`; no contienen URLs duplicadas. Ese servicio selecciona la URL correcta para navegador o SSR y normaliza errores. La identidad visual está centralizada en `src/assets/styles/main.css`.
 
+## Junta Directiva
+
+La ruta pública `/junta-directiva` muestra por defecto el año más reciente y permite consultar años anteriores. Los integrantes aparecen en cada año comprendido entre el inicio y el fin de su periodo. `/administrador/junta-directiva` requiere sesión y `BOARD_MANAGE`; permite agregar, editar, ordenar con flechas y retirar integrantes con nombre, cargo seleccionado de un catálogo, correo institucional, fechas de periodo y estado. La fotografía queda fuera del formulario actual. Todas las mutaciones requieren confirmación, anuncian éxito o error mediante toast, bloquean envíos repetidos y conservan foco y diseño utilizable desde 320 px.
+
 ## Variables de entorno
 
 ```bash
@@ -183,6 +187,14 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 
 La imagen utiliza un usuario sin privilegios, healthcheck y rotación local de logs. Antes de publicar todavía deben definirse dominio, TLS/proxy inverso, observabilidad centralizada y la infraestructura definitiva del backend.
 
+## Flujo de contacto
+
+La página `/contacto` consulta los medios activos, muestra iconos según el canal y representa la ubicación con un mapa de Google Maps al final de los demás medios. El mismo catálogo ordenado alimenta el footer; no hay correos, teléfonos o direcciones fijos en componentes. Las redes nuevas se agregan como `OTRO`: TikTok, YouTube, LinkedIn y X reciben un icono reconocido por etiqueta/URL, y cualquier otra usa un icono de enlace seguro.
+
+`/administrador/contacto` requiere sesión y permiso `CONTACT_MANAGE`. Ofrece estados de carga, vacío y error, formulario con validaciones visibles, confirmación antes de cada escritura, toasts de resultado y edición/reactivación de medios inactivos. El orden numérico no se expone: los medios se acomodan con flechas y un botón guarda la secuencia completa, mientras que las ubicaciones permanecen fijas al final. El primer correo `EMAIL` activo de la lista se identifica como destinatario del formulario. No existe pantalla ni bandeja de solicitudes.
+
+El formulario público conserva consentimiento, honeypot y validación local; bloquea envíos repetidos mientras la petición está en curso. El backend responde `202` después de que el proveedor acepta el correo. Una falla de entrega se anuncia sin limpiar el formulario.
+
 ## Seed y datos mostrados
 
 El frontend no guarda datos ni posee un seed independiente. Inicio, junta y contacto consultan la API. Los datos iniciales se administran en:
@@ -236,13 +248,15 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/` | Inicio y contenido institucional conectado a la API. |
 | `/junta-directiva` | Integrantes activos conectados a la API. |
 | `/contacto` | Medios y formulario conectados a la API. |
-| `/noticias` | Navegación lista; contenido en desarrollo. |
+| `/noticias` | Listado y detalle público de noticias publicadas. |
 | `/eventos` | Conectado a la API: listado, detalle, disponibilidad e inscripción pública. |
 | `/recursos` | Catálogo público de recursos con categorías, búsqueda, paginación, enlaces y materiales disponibles. |
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
 | `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
 | `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
 | `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
+| `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
+| `/administrador/contenido` | Gestión del Hero, anuncios institucionales y destacados. Requiere `INSTITUTIONAL_MANAGE`. |
 
 ### Acceso al panel administrativo
 
@@ -261,6 +275,14 @@ Los módulos visibles dependen de los permisos devueltos por el backend. Las cre
 En `/administrador/recursos`, el listado permite buscar, filtrar por categoría o estado y editar, archivar o eliminar recursos con confirmación. El formulario valida de forma visible título, descripción, categoría, destino y enlaces. La selección de un PDF, DOC, DOCX o ZIP inicia la carga multipart y completa el `fileId`; no se envían binarios dentro del JSON del recurso. La edición puede sustituir el archivo y reemplazar los enlaces. Durante carga y guardado se deshabilitan las acciones para evitar envíos duplicados.
 
 Los estados de carga, vacío, error y éxito se muestran en la misma vista. Los controles tienen etiquetas accesibles, foco visible y orden navegable por teclado; el diseño se adapta desde 320 px. La autorización definitiva permanece en el backend: el frontend oculta módulos sin permiso, pero una llamada directa no autorizada debe ser rechazada por la API.
+
+### Flujo de anuncios y noticias
+
+En `/administrador/noticias`, una persona autorizada puede buscar por texto, categoría y estado; crear o editar una noticia con resumen, contenido e imagen asociada por `imageId`; previsualizarla; cambiar su estado y confirmar su eliminación. El frontend muestra validaciones visibles, estados de carga/vacío/error/éxito y evita envíos duplicados, pero el backend sigue siendo la autoridad para permisos, categorías, imágenes y publicación.
+
+En `/administrador/contenido`, el permiso `INSTITUTIONAL_MANAGE` habilita la edición del Hero, anuncios de cuatro categorías y destacados de inicio. El límite de anuncios es global: máximo tres activos publicados, sin importar la categoría. Las imágenes de anuncios usan `imageUrl` HTTP/HTTPS; un borrador no ocupa el cupo público.
+
+Para el contrato HTTP, ejemplos, matriz de permisos, casos de prueba y resultados reproducibles consulta [`aequvg-backend/docs/admin-news-institutional-flow.md`](../aequvg-backend/docs/admin-news-institutional-flow.md). Las credenciales, cookies y tokens nunca deben incluirse en la evidencia.
 
 ## Solución de problemas
 

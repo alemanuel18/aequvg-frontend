@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  name: 'arrow-up-right' | 'atom' | 'calendar' | 'dashboard' | 'facebook' | 'file-text' | 'flask' | 'folder' | 'graduation-cap' | 'instagram' | 'link' | 'log-out' | 'mail' | 'map-pin' | 'menu' | 'messages' | 'newspaper' | 'phone' | 'send' | 'users'
+  name: 'arrow-up-right' | 'atom' | 'calendar' | 'dashboard' | 'facebook' | 'file-text' | 'flask' | 'folder' | 'graduation-cap' | 'instagram' | 'link' | 'linkedin' | 'log-out' | 'mail' | 'map-pin' | 'menu' | 'messages' | 'newspaper' | 'phone' | 'send' | 'tiktok' | 'users' | 'x' | 'youtube'
   size?: number
 }>()
 </script>
@@ -56,6 +56,19 @@ defineProps<{
     </template>
     <template v-else-if="name === 'facebook'">
       <path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2.2-2H18V1.5c-.8-.1-1.7-.2-2.5-.2-3.1 0-5.5 1.9-5.5 5.5V9H7v4h3v8" />
+    </template>
+    <template v-else-if="name === 'youtube'">
+      <path d="M22 12s0-4-1-6c-.6-1.1-1.5-1.4-2.6-1.5C16.6 4.2 12 4.2 12 4.2s-4.6 0-6.4.3C4.5 4.6 3.6 4.9 3 6c-1 2-1 6-1 6s0 4 1 6c.6 1.1 1.5 1.4 2.6 1.5 1.8.3 6.4.3 6.4.3s4.6 0 6.4-.3c1.1-.1 2-.4 2.6-1.5 1-2 1-6 1-6Z" />
+      <path d="m10 9 5 3-5 3Z" />
+    </template>
+    <template v-else-if="name === 'linkedin'">
+      <rect x="3" y="9" width="4" height="12" /><circle cx="5" cy="5" r="2" /><path d="M11 21V9h4v2c1-1.5 6-2.4 6 4v6h-4v-5c0-3-2-3-2 0v5Z" />
+    </template>
+    <template v-else-if="name === 'x'">
+      <path d="M4 4l16 16M20 4 4 20" />
+    </template>
+    <template v-else-if="name === 'tiktok'">
+      <path d="M14 3v11.5a4.5 4.5 0 1 1-4.5-4.5" /><path d="M14 3c.8 3.3 2.6 5 6 5" />
     </template>
     <template v-else-if="name === 'send'">
       <path d="m22 2-7 20-4-9-9-4Z" />
