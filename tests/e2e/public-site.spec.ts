@@ -24,6 +24,62 @@ test('no genera desplazamiento horizontal a 320 px', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Abrir menú de navegación' })).toBeVisible()
 })
 
+test('consulta el historial de la Junta Directiva por periodo a 320 px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await page.goto('/junta-directiva')
+  await expect(page.getByRole('heading', { name: 'Junta Directiva', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Ana Pérez', level: 2 })).toBeVisible()
+  const termSelector = page.getByLabel('Periodo de la Junta Directiva')
+  await expect(termSelector).toBeEnabled()
+  await termSelector.selectOption('2025')
+  await expect(page.getByRole('heading', { name: 'Luis Morales', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Ana Pérez', level: 2 })).not.toBeVisible()
+  const sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }))
+  expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
+})
+
+test('administra integrantes de la Junta Directiva con confirmación y persistencia pública', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/junta-directiva')
+  await expect(page.getByRole('heading', { name: 'Junta Directiva', level: 1 })).toBeVisible()
+  await page.getByRole('button', { name: 'Agregar integrante' }).click()
+  await expect(page.getByText('Ingresa un nombre de al menos 2 caracteres.')).toBeVisible()
+  await expect(page.getByLabel('Nombre completo')).toBeFocused()
+  await page.getByLabel('Nombre completo').fill('María López')
+  await page.getByLabel('Cargo').selectOption('Secretaria')
+  await page.getByLabel('Correo institucional').fill('maria@uvg.edu.gt')
+  await page.getByLabel('Inicio del periodo').fill('2026-01-01')
+  await page.getByLabel('Fin del periodo').fill('2027-06-30')
+  await page.getByRole('button', { name: 'Agregar integrante' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Agregar integrante' }).click()
+  await expect(page.getByText('El integrante se agregó correctamente.')).toBeVisible()
+  await page.goto('/junta-directiva')
+  await expect(page.getByRole('heading', { name: 'María López', level: 2 })).toBeVisible()
+  await page.getByLabel('Periodo de la Junta Directiva').selectOption('2026')
+  await expect(page.getByRole('heading', { name: 'María López', level: 2 })).toBeVisible()
+
+  await page.goto('/administrador/junta-directiva')
+  const createdRow = page.locator('.member-item').filter({ hasText: 'María López' })
+  await createdRow.getByRole('button', { name: 'Editar' }).click()
+  await page.getByLabel('Cargo').selectOption('Vicepresidenta')
+  await page.getByRole('button', { name: 'Guardar cambios' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Guardar cambios' }).click()
+  await expect(page.getByText('El integrante se actualizó correctamente.')).toBeVisible()
+  await page.getByLabel('Año de la junta').selectOption('2026')
+  await page.getByRole('button', { name: 'Mover María López hacia arriba' }).click()
+  await expect(page.getByText('Hay cambios de orden sin guardar.')).toBeVisible()
+  await page.getByRole('button', { name: 'Guardar orden' }).click()
+  await expect(page.getByText('El orden de la Junta Directiva se guardó correctamente.')).toBeVisible()
+  await createdRow.getByRole('button', { name: 'Retirar' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Retirar integrante' }).click()
+  await expect(page.getByText('El integrante se retiró del sitio público.')).toBeVisible()
+  await page.goto('/junta-directiva')
+  await expect(page.getByRole('heading', { name: 'María López', level: 2 })).not.toBeVisible()
+})
+
 test('protege el panel y valida el inicio de sesión administrativo', async ({ page }) => {
   await page.goto('/administrador/panel')
   await expect(page).toHaveURL(/\/administrador\?returnTo=/)
@@ -57,6 +113,25 @@ test('protege el panel y valida el inicio de sesión administrativo', async ({ p
   await page.reload()
   await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).not.toBeVisible()
+})
+
+test('protege el acceso directo al módulo de noticias', async ({ page }) => {
+  await page.goto('/administrador/noticias')
+  await expect(page).toHaveURL(/\/administrador\?returnTo=\/administrador\/noticias/)
+  await expect(page.getByRole('heading', { name: 'Panel administrativo', level: 1 })).toBeVisible()
+})
+
+test('redirecciona una cuenta autenticada sin NEWS_MANAGE al panel', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('editor@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  await page.goto('/administrador/noticias')
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+  await expect(page.getByRole('heading', { name: 'Módulos disponibles', level: 2 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toHaveCount(0)
 })
 
 test('el panel administrativo funciona con teclado y a 320 px', async ({ page }) => {
@@ -106,6 +181,7 @@ test('administra noticias con filtros, previsualización y confirmación', async
   await page.getByRole('button', { name: 'Previsualizar' }).click()
   await expect(page.getByRole('heading', { name: 'Título de la noticia', level: 3 })).toBeVisible()
 
+  await page.getByRole('button', { name: 'Nueva noticia' }).click()
   await page.locator('#news-title').fill('Nueva noticia de prueba')
   await page.getByLabel('Resumen').fill('Resumen suficientemente descriptivo.')
   await page.getByLabel('Contenido').fill('Contenido suficientemente extenso para publicar una noticia.')
@@ -115,9 +191,24 @@ test('administra noticias con filtros, previsualización y confirmación', async
   await page.getByRole('button', { name: 'Crear noticia' }).click()
   await expect(page.getByText('La noticia se creó correctamente.')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Eliminar' }).first().click()
+  const createdCard = page.locator('.news-item').filter({ hasText: 'Nueva noticia de prueba' })
+  await expect(createdCard).toBeVisible()
+  await createdCard.getByRole('button', { name: 'Editar' }).click()
+  await page.locator('#news-title').fill('Noticia actualizada de prueba')
+  await page.getByRole('button', { name: 'Actualizar noticia' }).click()
+  await expect(page.getByRole('heading', { name: '¿Actualizar noticia?' })).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'Actualizar noticia' }).click()
+  await expect(page.getByText('La noticia se actualizó correctamente.')).toBeVisible()
+  const updatedCard = page.locator('.news-item').filter({ hasText: 'Noticia actualizada de prueba' })
+  await expect(updatedCard).toBeVisible()
+  await page.goto('/noticias?q=Nueva%20noticia%20de%20prueba')
+  await expect(page.getByRole('link', { name: /Leer noticia: Nueva noticia de prueba/ })).toBeVisible()
+  await page.goto('/administrador/noticias')
+  await updatedCard.getByRole('button', { name: 'Eliminar' }).click()
   await expect(page.getByRole('heading', { name: '¿Eliminar noticia permanentemente?' })).toBeVisible()
   await page.getByRole('button', { name: 'Eliminar permanentemente' }).click()
+  await expect(page.getByText('La noticia se eliminó correctamente.')).toBeVisible()
+  await expect(page.locator('.news-item').filter({ hasText: 'Noticia actualizada de prueba' })).toHaveCount(0)
 })
 
 test('cerrar sesión invalida acciones posteriores y protege el acceso directo', async ({ page }) => {
@@ -143,6 +234,71 @@ test('el formulario anuncia validaciones y exige consentimiento', async ({ page 
   await page.getByRole('button', { name: 'Enviar solicitud' }).click()
   await expect(page.getByText('El consentimiento es obligatorio.')).toBeVisible()
   await expect(page.getByRole('checkbox')).not.toBeChecked()
+})
+
+test('muestra redes con iconos, mapa y medios dinámicos en el footer', async ({ page }) => {
+  await page.goto('/contacto')
+  await expect(page.getByRole('heading', { name: 'Campus Central UVG', level: 2 })).toBeVisible()
+  await expect(page.getByTitle(/Mapa de Campus Central UVG/)).toBeVisible()
+  await expect(page.getByRole('link', { name: /Abrir dirección en Google Maps/ })).toHaveAttribute('target', '_blank')
+  await expect(page.getByRole('link', { name: /Visitar TikTok/ })).toBeVisible()
+  const footer = page.locator('footer')
+  await expect(footer.getByText('asoquimica@uvg.edu.gt')).toBeVisible()
+  await expect(footer.getByText('@aeq_uvg')).toBeVisible()
+})
+
+test('envía el formulario una vez y anuncia el éxito', async ({ page }) => {
+  let submissions = 0
+  await page.route('**/api/v1/contact-requests', async route => {
+    submissions += 1
+    await new Promise(resolve => setTimeout(resolve, 500))
+    await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ accepted: true }) })
+  })
+  await page.goto('/contacto')
+  await page.getByLabel('Nombre completo').fill('Persona de prueba')
+  await page.getByLabel('Correo electrónico').fill('persona@example.com')
+  await page.getByLabel('Teléfono').fill('+502 5555-5555')
+  await page.getByLabel('Asunto').fill('Información')
+  await page.getByRole('textbox', { name: 'Mensaje', exact: true }).fill('Quisiera conocer más sobre la carrera.')
+  await page.getByRole('checkbox').check()
+  const button = page.getByRole('button', { name: 'Enviar solicitud' })
+  await button.evaluate((element: HTMLButtonElement) => { element.click(); element.click() })
+  await expect(page.getByRole('status')).toContainText('Tu mensaje fue enviado al correo oficial')
+  expect(submissions).toBe(1)
+})
+
+test('administra medios oficiales con validación y confirmación', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+  await page.goto('/administrador/contacto')
+  await expect(page.getByRole('heading', { name: 'Medios de contacto', level: 1 })).toBeVisible()
+  await expect(page.getByText(/El formulario entrega los mensajes a/)).toContainText('asoquimica@uvg.edu.gt')
+
+  await page.getByRole('button', { name: 'Agregar medio' }).click()
+  await expect(page.getByText('Escribe una etiqueta de al menos 2 caracteres.')).toBeVisible()
+  await expect(page.getByLabel('Nombre público')).toBeFocused()
+
+  await page.getByLabel('Nombre público').fill('YouTube')
+  await page.getByLabel('Tipo de medio').selectOption('OTRO')
+  await page.getByLabel('Valor público').fill('@aeq_uvg')
+  await page.getByLabel(/Enlace/).fill('https://youtube.com/@aeq_uvg')
+  await page.getByRole('button', { name: 'Agregar medio' }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'Agregar medio' }).click()
+  await expect(page.getByText('El medio oficial se agregó correctamente.')).toBeVisible()
+  await expect(page.getByText('YouTube', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Mover YouTube hacia arriba' }).click()
+  await expect(page.getByText('Hay cambios de orden sin guardar.')).toBeVisible()
+  await page.getByRole('button', { name: 'Guardar orden' }).click()
+  await expect(page.getByText('El orden de los medios se guardó correctamente.')).toBeVisible()
+  const labels = await page.locator('.method-item .method-copy strong').allTextContents()
+  expect(labels).toEqual(['Correo oficial', 'YouTube', 'TikTok', 'Campus Central UVG'])
+  await expect(page.getByText(/Orden \d/)).toHaveCount(0)
+  await expect(page.getByText('Ubicación fija al final')).toBeVisible()
 })
 
 test('lista, busca, pagina y muestra estados de noticias', async ({ page }) => {
@@ -354,13 +510,13 @@ test('la página de inicio muestra el Hero dinámico, la sección Conocer la Lic
   await expect(page.getByRole('link', { name: 'Conocer la carrera' })).toBeVisible()
 
   // Valida la sección unificada de anuncios (máximo 3)
-  await expect(page.getByRole('heading', { name: 'Conocer la Licenciatura de Química', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Conoce la Licenciatura en Química', level: 2 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Laboratorios Especializados', level: 3 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Oportunidades Laborales', level: 3 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Experiencia de Estudiantes', level: 3 })).toBeVisible()
 
   // Valida que no se pierden las secciones de noticias y eventos destacados
-  await expect(page.getByRole('heading', { name: 'Próximos eventos destacados', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Eventos destacados', level: 2 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis' })).toBeVisible()
 
   await expect(page.getByRole('heading', { name: 'Noticias destacadas', level: 2 })).toBeVisible()
@@ -382,19 +538,19 @@ test('el módulo administrativo de contenido institucional interactúa con modal
   await expect(page.getByRole('heading', { name: 'Contenido Institucional', level: 1 })).toBeVisible()
 
   // Verifica que cargue el Hero y los bloques de anuncios
-  await expect(page.getByLabel('Título del Hero')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
-  await expect(page.getByText('3 / 3 cupos utilizados')).toBeVisible()
+  await expect(page.getByLabel('Título principal')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
+  await expect(page.getByText('3 de 3 anuncios activos')).toBeVisible()
 
   // Intenta guardar el Hero: debe levantar el modal de confirmación primero
   await page.getByRole('button', { name: 'Guardar sección de Inicio' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
-  await expect(page.getByRole('heading', { name: '¿Guardar cambios del Hero?' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '¿Guardar sección de Inicio?' })).toBeVisible()
 
   // Confirma en el modal
-  await page.getByRole('button', { name: 'Confirmar' }).click()
+  await page.getByRole('button', { name: 'Guardar cambios' }).click()
   await expect(page.getByRole('dialog')).not.toBeVisible()
 
   // Verifica que se muestre el toast flotante de éxito
-  await expect(page.locator('.toast-card--success')).toBeVisible()
-  await expect(page.getByText('Sección de inicio actualizada exitosamente.')).toBeVisible()
+  await expect(page.locator('.toast-item--success')).toBeVisible()
+  await expect(page.getByText('La sección de Inicio (Hero) se guardó correctamente.')).toBeVisible()
 })
