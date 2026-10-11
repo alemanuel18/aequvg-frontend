@@ -3,7 +3,7 @@ import type { AdminRegistrationRequest, AdminRole, ManagedAdminUser } from '~/ty
 import { PublicApiError } from '~/services/api'
 import { useAdminUsersApi } from '~/services/admin-users'
 
-definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
+definePageMeta({ layout: 'admin', middleware: 'admin-auth', alias: ['/administrador/usuarios'] })
 useSeoMeta({ title: 'Cuentas administrativas', robots: 'noindex, nofollow' })
 const session = useAdminSession()
 const api = useAdminUsersApi()

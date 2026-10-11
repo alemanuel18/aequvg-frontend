@@ -125,8 +125,8 @@ const submit = async () => {
         <AppButton type="submit" :disabled="submitting || checkingSession">
           {{ checkingSession ? 'Comprobando sesión…' : submitting ? 'Verificando acceso…' : 'Iniciar sesión' }}
         </AppButton>
-        <NuxtLink class="recovery-link" to="/administrador/recuperar-acceso">¿Necesitas recuperar el acceso?</NuxtLink>
-        <NuxtLink class="recovery-link" to="/administrador/crear-cuenta">Solicitar una cuenta administrativa</NuxtLink>
+        <NuxtLink class="recovery-link" to="/administrador/recover-access">¿Necesitas recuperar el acceso?</NuxtLink>
+        <NuxtLink class="recovery-link" to="/administrador/sign-up">Solicitar una cuenta administrativa</NuxtLink>
       </form>
     </main>
   </div>

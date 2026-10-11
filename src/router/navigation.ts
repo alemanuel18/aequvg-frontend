@@ -26,6 +26,6 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
   { label: 'Investigación', description: 'Proyectos estudiantiles.', to: '/administrador/investigacion', permission: 'PROJECTS_MANAGE', icon: 'file-text' },
   { label: 'Junta Directiva', description: 'Integrantes, periodos e historial público.', to: '/administrador/junta-directiva', permission: 'BOARD_MANAGE', icon: 'users' },
   { label: 'Contacto', description: 'Medios oficiales y correo receptor.', to: '/administrador/contacto', permission: 'CONTACT_MANAGE', icon: 'messages' },
-  { label: 'Usuarios', description: 'Cuentas y permisos del panel.', to: '/administrador/usuarios', permission: 'USERS_MANAGE', icon: 'users' },
+  { label: 'Usuarios', description: 'Cuentas y permisos del panel.', to: '/administrador/users', permission: 'USERS_MANAGE', icon: 'users' },
   { label: 'Tesis', description: 'Disponible en un próximo sprint.', permission: 'PAPERS_MANAGE', icon: 'file-text', disabled: true },
 ] as const

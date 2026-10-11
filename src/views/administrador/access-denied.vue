@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: false, alias: ['/administrador/acceso-denegado'] })
 useSeoMeta({ title: 'Acceso denegado', robots: 'noindex, nofollow' })
 const session = useAdminSession()
 </script>

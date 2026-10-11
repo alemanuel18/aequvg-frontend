@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PublicApiError } from '~/services/api'
 import { useAdminAuthApi } from '~/services/admin-auth'
-definePageMeta({ layout: false })
+definePageMeta({ layout: false, alias: ['/administrador/crear-cuenta'] })
 useSeoMeta({ title: 'Solicitar cuenta administrativa', robots: 'noindex, nofollow' })
 const auth = useAdminAuthApi()
 const fields = reactive({ name: '', email: '', password: '', confirmation: '' })

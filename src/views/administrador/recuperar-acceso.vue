@@ -1,8 +1,0 @@
-<script setup lang="ts">
-definePageMeta({ layout: false })
-useSeoMeta({ title: 'Recuperar acceso administrativo', robots: 'noindex, nofollow' })
-</script>
-<template>
-  <main class="recovery"><a class="skip" href="#recovery-content">Saltar al contenido</a><section id="recovery-content" class="card"><p class="eyebrow">Ayuda con tu cuenta</p><h1>Recuperar acceso</h1><p>El sistema no envía enlaces de recuperación por correo. Por seguridad, solicita a una persona administradora con permiso de gestión de usuarios que restablezca tu contraseña.</p><p>Si tu cuenta usa Microsoft, verifica que estés entrando con tu cuenta institucional <strong>@uvg.edu.gt</strong>.</p><div class="actions"><NuxtLink to="/administrador">Volver al inicio de sesión</NuxtLink><NuxtLink to="/contacto">Contactar a AsoQuímica</NuxtLink></div></section></main>
-</template>
-<style scoped>.recovery{min-height:100vh;display:grid;place-items:center;padding:1rem;background:linear-gradient(145deg,#0b3d3a,#17645f 55%,#3d7570)}.card{width:min(38rem,100%);padding:clamp(1.25rem,5vw,2.5rem);background:white;border-radius:1rem;box-shadow:0 24px 60px #0003}.eyebrow{color:#17645f;font-size:.8rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}h1{margin:.5rem 0 1rem;font-size:clamp(2rem,8vw,3.4rem)}.card p{line-height:1.65}.actions{display:flex;flex-wrap:wrap;gap:1rem;margin-top:1.5rem}.actions a{color:#0b514c;font-weight:800;text-underline-offset:.2em}.skip{position:fixed;top:.5rem;left:.5rem;padding:.7rem;background:white;border-radius:.5rem;transform:translateY(-180%)}.skip:focus{transform:none}a:focus-visible{outline:3px solid #e6aa32;outline-offset:3px}</style>

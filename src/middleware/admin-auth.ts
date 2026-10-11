@@ -10,6 +10,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const destination = adminNavigation.find(item => item.to === to.path)
   if (destination?.permission && !user.permissions.includes(destination.permission)) {
-    return navigateTo({ path: '/administrador/acceso-denegado', query: { from: to.path } }, { replace: true })
+    return navigateTo({ path: '/administrador/access-denied', query: { from: to.path } }, { replace: true })
   }
 })
