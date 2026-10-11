@@ -533,6 +533,12 @@ test('muestra redes con iconos, mapa y medios dinámicos en el footer', async ({
   const footer = page.locator('footer')
   await expect(footer.getByText('asoquimica@uvg.edu.gt')).toBeVisible()
   await expect(footer.getByText('@aeq_uvg')).toBeVisible()
+  const instagram = footer.getByRole('link', { name: '@aeq__uvg' })
+  await expect(instagram).toHaveAttribute('href', 'https://www.instagram.com/aeq__uvg/')
+  await expect(instagram).toHaveAttribute('target', '_blank')
+  await expect(instagram).toHaveAttribute('rel', /noopener/)
+  await expect(instagram).toHaveAttribute('rel', /noreferrer/)
+  await expect(instagram.locator('svg.app-icon')).toBeVisible()
 })
 
 test('envía el formulario una vez y anuncia el éxito', async ({ page }) => {
