@@ -199,6 +199,17 @@ export interface EventRegistrationResponse {
 }
 
 export type ProjectType = 'TESIS' | 'PROYECTO'
+export type ProjectStatus = 'EN_REVISION' | 'APROBADO' | 'NO_APROBADO'
+export interface AdminProject {
+  id: number; authorId: number; reviewerId: number | null; coverImageId: number | null; documentFileId: number | null
+  title: string; slug: string; description: string; repositoryUrl: string | null; liveUrl: string | null
+  type: ProjectType; status: ProjectStatus; rejectionReason: string | null; reviewedAt: string | null; createdAt: string; updatedAt: string
+  author: { id: number; name: string; email: string }; reviewer: { id: number; name: string } | null
+  documentFile: { id: number; originalName: string; mimeType: string; sizeBytes: number } | null
+}
+export interface AdminProjectList { items: AdminProject[]; pagination: Pagination }
+export interface ProjectInput { title: string; slug: string; description: string; type: ProjectType; repositoryUrl?: string; liveUrl?: string; documentFileId?: number | null }
+export interface ProjectAdminQuery { q?: string; status?: ProjectStatus; type?: ProjectType; page?: number; pageSize?: number }
 
 export interface PublicProject {
   id: number

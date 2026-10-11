@@ -1,100 +1,107 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    open: boolean
-    title: string
-    message: string
-    confirmLabel?: string
-    cancelLabel?: string
-    variant?: 'primary' | 'danger' | 'warning'
-    loading?: boolean
+    open: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    variant?: "primary" | "danger" | "warning";
+    loading?: boolean;
   }>(),
   {
-    confirmLabel: 'Confirmar',
-    cancelLabel: 'Cancelar',
-    variant: 'primary',
-    loading: false
-  }
-)
+    confirmLabel: "Confirmar",
+    cancelLabel: "Cancelar",
+    variant: "primary",
+    loading: false,
+  },
+);
 
 const emit = defineEmits<{
-  (e: 'confirm'): void
-  (e: 'cancel'): void
-}>()
+  (e: "confirm"): void;
+  (e: "cancel"): void;
+}>();
 
-const modalRef = ref<HTMLDivElement | null>(null)
-const confirmButtonRef = ref<HTMLButtonElement | null>(null)
-const cancelButtonRef = ref<HTMLButtonElement | null>(null)
-let previousActiveElement: HTMLElement | null = null
+const modalRef = ref<HTMLDivElement | null>(null);
+const confirmButtonRef = ref<HTMLButtonElement | null>(null);
+const cancelButtonRef = ref<HTMLButtonElement | null>(null);
+let previousActiveElement: HTMLElement | null = null;
 
 const onKeydown = (event: KeyboardEvent) => {
-  if (!props.open) return
+  if (!props.open) return;
 
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    if (!props.loading) emit('cancel')
-    return
+  if (event.key === "Escape") {
+    event.preventDefault();
+    if (!props.loading) emit("cancel");
+    return;
   }
 
-  if (event.key === 'Tab') {
+  if (event.key === "Tab") {
     const focusable = modalRef.value?.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )
-    if (!focusable || focusable.length === 0) return
+      'button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusable || focusable.length === 0) return;
 
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
 
-    if (!first || !last) return
+    if (!first || !last) return;
 
     if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault()
-      last.focus()
+      event.preventDefault();
+      last.focus();
     } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault()
-      first.focus()
+      event.preventDefault();
+      first.focus();
     }
   }
-}
+};
 
 watch(
   () => props.open,
   async (isOpen) => {
     if (import.meta.client) {
       if (isOpen) {
-        previousActiveElement = document.activeElement as HTMLElement | null
-        document.body.style.overflow = 'hidden'
-        window.addEventListener('keydown', onKeydown)
-        await nextTick()
+        previousActiveElement = document.activeElement as HTMLElement | null;
+        document.body.style.overflow = "hidden";
+        window.addEventListener("keydown", onKeydown);
+        await nextTick();
         // Focus the confirm or cancel button depending on variant
-        if (props.variant === 'danger') {
-          cancelButtonRef.value?.focus()
+        if (props.variant === "danger") {
+          cancelButtonRef.value?.focus();
         } else {
-          confirmButtonRef.value?.focus()
+          confirmButtonRef.value?.focus();
         }
       } else {
-        document.body.style.overflow = ''
-        window.removeEventListener('keydown', onKeydown)
-        if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
-          previousActiveElement.focus()
+        document.body.style.overflow = "";
+        window.removeEventListener("keydown", onKeydown);
+        if (
+          previousActiveElement &&
+          typeof previousActiveElement.focus === "function"
+        ) {
+          previousActiveElement.focus();
         }
       }
     }
-  }
-)
+  },
+);
 
 onBeforeUnmount(() => {
   if (import.meta.client) {
-    document.body.style.overflow = ''
-    window.removeEventListener('keydown', onKeydown)
+    document.body.style.overflow = "";
+    window.removeEventListener("keydown", onKeydown);
   }
-})
+});
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="open" class="modal-backdrop" @click.self="!loading && emit('cancel')">
+      <div
+        v-if="open"
+        class="modal-backdrop"
+        @click.self="!loading && emit('cancel')"
+      >
         <div
           ref="modalRef"
           class="modal-panel"
@@ -104,29 +111,72 @@ onBeforeUnmount(() => {
           aria-describedby="confirm-modal-desc"
         >
           <div class="modal-panel__header">
-            <div :class="['modal-icon', `modal-icon--${variant}`]" aria-hidden="true">
+            <div
+              :class="['modal-icon', `modal-icon--${variant}`]"
+              aria-hidden="true"
+            >
               <!-- Danger icon -->
-              <svg v-if="variant === 'danger'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              <svg
+                v-if="variant === 'danger'"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+                ></path>
                 <line x1="10" y1="11" x2="10" y2="17"></line>
                 <line x1="14" y1="11" x2="14" y2="17"></line>
               </svg>
               <!-- Warning icon -->
-              <svg v-else-if="variant === 'warning'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+              <svg
+                v-else-if="variant === 'warning'"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+                ></path>
                 <line x1="12" y1="9" x2="12" y2="13"></line>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
               </svg>
               <!-- Primary / Check icon -->
-              <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+              <svg
+                v-else
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
+                ></path>
                 <path d="m9 12 2 2 4-4"></path>
               </svg>
             </div>
 
             <div class="modal-panel__copy">
-              <h3 id="confirm-modal-title" class="modal-panel__title">{{ title }}</h3>
-              <p id="confirm-modal-desc" class="modal-panel__desc">{{ message }}</p>
+              <h3 id="confirm-modal-title" class="modal-panel__title">
+                {{ title }}
+              </h3>
+              <p id="confirm-modal-desc" class="modal-panel__desc">
+                {{ message }}
+              </p>
             </div>
           </div>
 
@@ -147,7 +197,7 @@ onBeforeUnmount(() => {
               :disabled="loading"
               @click="emit('confirm')"
             >
-              {{ loading ? 'Procesando...' : confirmLabel }}
+              {{ loading ? "Procesando..." : confirmLabel }}
             </button>
           </div>
         </div>
@@ -173,7 +223,9 @@ onBeforeUnmount(() => {
   background: white;
   border-radius: var(--radius-md);
   padding: clamp(1.25rem, 3.5vw, 1.75rem);
-  box-shadow: 0 20px 45px rgb(0 0 0 / 22%), 0 4px 12px rgb(0 0 0 / 8%);
+  box-shadow:
+    0 20px 45px rgb(0 0 0 / 22%),
+    0 4px 12px rgb(0 0 0 / 8%);
   border: 1px solid var(--admin-border, #bfd8d5);
   display: grid;
   gap: 1.5rem;
@@ -211,7 +263,7 @@ onBeforeUnmount(() => {
 
 .modal-panel__copy {
   display: grid;
-  gap: .4rem;
+  gap: 0.4rem;
   min-width: 0;
 }
 
@@ -226,14 +278,14 @@ onBeforeUnmount(() => {
 .modal-panel__desc {
   margin: 0;
   color: var(--color-muted, #4d5a49);
-  font-size: .95rem;
+  font-size: 0.95rem;
   line-height: 1.5;
 }
 
 .modal-panel__actions {
   display: flex;
   justify-content: flex-end;
-  gap: .75rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
   padding-top: 1rem;
   border-top: 1px solid var(--admin-border, #bfd8d5);
@@ -243,16 +295,16 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: .65rem 1.25rem;
-  font-size: .92rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.92rem;
   font-weight: 700;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all .15s ease;
+  transition: all 0.15s ease;
 }
 
 .modal-btn:disabled {
-  opacity: .55;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -327,12 +379,12 @@ onBeforeUnmount(() => {
 
 .modal-enter-active,
 .modal-leave-active {
-  transition: opacity .2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .modal-enter-active .modal-panel,
 .modal-leave-active .modal-panel {
-  transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (max-width: 480px) {

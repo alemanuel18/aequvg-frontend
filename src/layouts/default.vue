@@ -20,13 +20,13 @@ main {
 
 .skip-link {
   position: fixed;
-  top: .5rem;
-  left: .5rem;
+  top: 0.5rem;
+  left: 0.5rem;
   z-index: 100;
-  padding: .7rem 1rem;
+  padding: 0.7rem 1rem;
   color: var(--color-ink);
   background: white;
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   transform: translateY(-150%);
 }
 

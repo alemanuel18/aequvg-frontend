@@ -5,279 +5,307 @@ import {
   validateFeaturedSelection,
   validateHeroForm,
   type AnnouncementFormState,
-  type HeroFormState
-} from '~/composables/institutional-validation'
-import { useToast } from '~/composables/use-toast'
-import { useAdminContentService } from '~/services/admin-content'
-import { PublicApiError } from '~/services/api'
-import type { BlockType, InstitutionalBlock, PublicEvent, PublicNews } from '~/types/api'
+  type HeroFormState,
+} from "~/composables/institutional-validation";
+import { useToast } from "~/composables/use-toast";
+import { useAdminContentService } from "~/services/admin-content";
+import { PublicApiError } from "~/services/api";
+import type {
+  BlockType,
+  InstitutionalBlock,
+  PublicEvent,
+  PublicNews,
+} from "~/types/api";
 
-definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
-useSeoMeta({ title: 'Contenido institucional · Administración', robots: 'noindex, nofollow' })
+definePageMeta({
+  layout: "admin",
+  middleware: "admin-auth",
+  alias: ["/administrador/contenido"],
+});
+useSeoMeta({
+  title: "Contenido institucional · Administración",
+  robots: "noindex, nofollow",
+});
 
-const service = useAdminContentService()
-const toast = useToast()
+const service = useAdminContentService();
+const toast = useToast();
 
 // Lifecycle & data state
-const loading = ref(true)
-const loadError = ref('')
+const loading = ref(true);
+const loadError = ref("");
 
 // Raw data
-const blocks = ref<InstitutionalBlock[]>([])
-const availableNews = ref<PublicNews[]>([])
-const availableEvents = ref<PublicEvent[]>([])
-const selectedNewsIds = ref<number[]>([])
-const selectedEventIds = ref<number[]>([])
+const blocks = ref<InstitutionalBlock[]>([]);
+const availableNews = ref<PublicNews[]>([]);
+const availableEvents = ref<PublicEvent[]>([]);
+const selectedNewsIds = ref<number[]>([]);
+const selectedEventIds = ref<number[]>([]);
 
 // Section 1: Hero form state
-const heroId = ref<number | null>(null)
+const heroId = ref<number | null>(null);
 const heroForm = reactive<HeroFormState>({
-  title: '',
-  subtitle: '',
-  body: '',
-  actionLabel: '',
-  actionUrl: '',
-  status: 'PUBLICADO'
-})
-const heroErrors = ref<Record<string, string>>({})
-const submittingHero = ref(false)
+  title: "",
+  subtitle: "",
+  body: "",
+  actionLabel: "",
+  actionUrl: "",
+  status: "PUBLICADO",
+});
+const heroErrors = ref<Record<string, string>>({});
+const submittingHero = ref(false);
 
 // Section 2: Announcement single unified form state
-const editingAnnouncementId = ref<number | null>(null)
+const editingAnnouncementId = ref<number | null>(null);
 const announcementForm = reactive<AnnouncementFormState>({
-  type: 'LABORATORIO',
-  title: '',
-  body: '',
-  imageUrl: '',
-  actionLabel: '',
-  actionUrl: '',
-  status: 'PUBLICADO'
-})
-const announcementErrors = ref<Record<string, string>>({})
-const submittingAnnouncement = ref(false)
-const archivingAnnouncementId = ref<number | null>(null)
+  type: "LABORATORIO",
+  title: "",
+  body: "",
+  imageUrl: "",
+  actionLabel: "",
+  actionUrl: "",
+  status: "PUBLICADO",
+});
+const announcementErrors = ref<Record<string, string>>({});
+const submittingAnnouncement = ref(false);
+const archivingAnnouncementId = ref<number | null>(null);
 
 // Section 3: Featured items state
-const submittingFeatured = ref(false)
-const featuredErrors = ref<Record<string, string>>({})
+const submittingFeatured = ref(false);
+const featuredErrors = ref<Record<string, string>>({});
 
 // Active announcements list (non-HERO, non-ARCHIVADO)
 const activeAnnouncements = computed(() =>
-  blocks.value.filter(b => b.type !== 'HERO' && b.status !== 'ARCHIVADO')
-)
-const activeCount = computed(() => activeAnnouncements.value.length)
-const canCreateAnnouncement = computed(() => activeCount.value < 3 || editingAnnouncementId.value !== null)
+  blocks.value.filter((b) => b.type !== "HERO" && b.status !== "ARCHIVADO"),
+);
+const activeCount = computed(() => activeAnnouncements.value.length);
+const canCreateAnnouncement = computed(
+  () => activeCount.value < 3 || editingAnnouncementId.value !== null,
+);
 
 // Element refs for keyboard focus
-const heroTitleInput = ref<HTMLInputElement | null>(null)
-const announcementTypeSelect = ref<HTMLSelectElement | null>(null)
-const announcementTitleInput = ref<HTMLInputElement | null>(null)
+const heroTitleInput = ref<HTMLInputElement | null>(null);
+const announcementTypeSelect = ref<HTMLSelectElement | null>(null);
+const announcementTitleInput = ref<HTMLInputElement | null>(null);
 
 // Modular Confirmation Modal State
 const confirmModal = reactive({
   open: false,
-  title: '',
-  message: '',
-  confirmLabel: 'Confirmar',
-  cancelLabel: 'Cancelar',
-  variant: 'primary' as 'primary' | 'danger' | 'warning',
+  title: "",
+  message: "",
+  confirmLabel: "Confirmar",
+  cancelLabel: "Cancelar",
+  variant: "primary" as "primary" | "danger" | "warning",
   loading: false,
-  action: (() => {}) as () => Promise<void> | void
-})
+  action: (() => {}) as () => Promise<void> | void,
+});
 
 const openConfirmDialog = (options: {
-  title: string
-  message: string
-  confirmLabel?: string
-  cancelLabel?: string
-  variant?: 'primary' | 'danger' | 'warning'
-  action: () => Promise<void> | void
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "primary" | "danger" | "warning";
+  action: () => Promise<void> | void;
 }) => {
-  confirmModal.title = options.title
-  confirmModal.message = options.message
-  confirmModal.confirmLabel = options.confirmLabel ?? 'Confirmar'
-  confirmModal.cancelLabel = options.cancelLabel ?? 'Cancelar'
-  confirmModal.variant = options.variant ?? 'primary'
-  confirmModal.loading = false
-  confirmModal.action = options.action
-  confirmModal.open = true
-}
+  confirmModal.title = options.title;
+  confirmModal.message = options.message;
+  confirmModal.confirmLabel = options.confirmLabel ?? "Confirmar";
+  confirmModal.cancelLabel = options.cancelLabel ?? "Cancelar";
+  confirmModal.variant = options.variant ?? "primary";
+  confirmModal.loading = false;
+  confirmModal.action = options.action;
+  confirmModal.open = true;
+};
 
 const handleConfirmAction = async () => {
-  confirmModal.loading = true
+  confirmModal.loading = true;
   try {
-    await confirmModal.action()
-    confirmModal.open = false
+    await confirmModal.action();
+    confirmModal.open = false;
   } catch (err) {
     // If an error occurs, error toast will already have been fired by the action
   } finally {
-    confirmModal.loading = false
+    confirmModal.loading = false;
   }
-}
+};
 
 const loadData = async () => {
-  loading.value = true
-  loadError.value = ''
+  loading.value = true;
+  loadError.value = "";
 
   try {
     const [blocksData, featuredData, newsData, eventsData] = await Promise.all([
       service.listBlocks(),
       service.featured().catch(() => ({ newsIds: [], eventIds: [] })),
       service.listNews().catch(() => ({ items: [] })),
-      service.listEvents().catch(() => ({ items: [] }))
-    ])
+      service.listEvents().catch(() => ({ items: [] })),
+    ]);
 
-    blocks.value = blocksData
-    availableNews.value = newsData.items ?? []
-    availableEvents.value = eventsData.items ?? []
-    selectedNewsIds.value = featuredData.newsIds ?? []
-    selectedEventIds.value = featuredData.eventIds ?? []
+    blocks.value = blocksData;
+    availableNews.value = newsData.items ?? [];
+    availableEvents.value = eventsData.items ?? [];
+    selectedNewsIds.value = featuredData.newsIds ?? [];
+    selectedEventIds.value = featuredData.eventIds ?? [];
 
     // Populate Hero form
-    const existingHero = blocksData.find(b => b.type === 'HERO')
+    const existingHero = blocksData.find((b) => b.type === "HERO");
     if (existingHero) {
-      heroId.value = existingHero.id
-      heroForm.title = existingHero.title
-      heroForm.subtitle = existingHero.subtitle || ''
-      heroForm.body = existingHero.body
-      heroForm.actionLabel = existingHero.actionLabel || ''
-      heroForm.actionUrl = existingHero.actionUrl || ''
-      heroForm.status = existingHero.status
+      heroId.value = existingHero.id;
+      heroForm.title = existingHero.title;
+      heroForm.subtitle = existingHero.subtitle || "";
+      heroForm.body = existingHero.body;
+      heroForm.actionLabel = existingHero.actionLabel || "";
+      heroForm.actionUrl = existingHero.actionUrl || "";
+      heroForm.status = existingHero.status;
     } else {
-      heroId.value = null
-      heroForm.title = 'La química está en todo. Descúbrela con nosotros.'
-      heroForm.subtitle = '⚛ Asociación de Estudiantes · UVG'
-      heroForm.body = 'Conecta con una comunidad que fomenta el pensamiento crítico, la innovación y el interés por la química desde el laboratorio hasta su impacto en la vida cotidiana.'
-      heroForm.actionLabel = 'Conocer la carrera'
-      heroForm.actionUrl = '/contacto'
-      heroForm.status = 'PUBLICADO'
+      heroId.value = null;
+      heroForm.title = "La química está en todo. Descúbrela con nosotros.";
+      heroForm.subtitle = "⚛ Asociación de Estudiantes · UVG";
+      heroForm.body =
+        "Conecta con una comunidad que fomenta el pensamiento crítico, la innovación y el interés por la química desde el laboratorio hasta su impacto en la vida cotidiana.";
+      heroForm.actionLabel = "Conocer la carrera";
+      heroForm.actionUrl = "/contacto";
+      heroForm.status = "PUBLICADO";
     }
   } catch (error) {
-    loadError.value = error instanceof PublicApiError
-      ? error.message
-      : 'No se pudo cargar el contenido institucional. Revisa tu conexión.'
+    loadError.value =
+      error instanceof PublicApiError
+        ? error.message
+        : "No se pudo cargar el contenido institucional. Revisa tu conexión.";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  loadData()
-})
+  loadData();
+});
 
 // Section 1: Hero Save flow with modal confirmation
 const requestSaveHero = () => {
-  heroErrors.value = validateHeroForm(heroForm)
+  heroErrors.value = validateHeroForm(heroForm);
   if (Object.keys(heroErrors.value).length > 0) {
-    heroTitleInput.value?.focus()
-    toast.error('Revisa los campos del formulario de Inicio antes de continuar.')
-    return
+    heroTitleInput.value?.focus();
+    toast.error(
+      "Revisa los campos del formulario de Inicio antes de continuar.",
+    );
+    return;
   }
 
   openConfirmDialog({
-    title: '¿Guardar sección de Inicio?',
-    message: '¿Deseas actualizar el contenido principal de inicio (Hero)? Los cambios se aplicarán inmediatamente en el sitio público.',
-    confirmLabel: 'Guardar cambios',
-    variant: 'primary',
-    action: executeSaveHero
-  })
-}
+    title: "¿Guardar sección de Inicio?",
+    message:
+      "¿Deseas actualizar el contenido principal de inicio (Hero)? Los cambios se aplicarán inmediatamente en el sitio público.",
+    confirmLabel: "Guardar cambios",
+    variant: "primary",
+    action: executeSaveHero,
+  });
+};
 
 const executeSaveHero = async () => {
-  submittingHero.value = true
+  submittingHero.value = true;
   try {
     const payload = {
-      type: 'HERO' as BlockType,
+      type: "HERO" as BlockType,
       title: heroForm.title,
       subtitle: heroForm.subtitle || null,
       body: heroForm.body,
       actionLabel: heroForm.actionLabel || null,
       actionUrl: heroForm.actionUrl || null,
-      status: heroForm.status
-    }
+      status: heroForm.status,
+    };
 
     if (heroId.value) {
-      const updated = await service.updateBlock(heroId.value, payload)
-      const index = blocks.value.findIndex(b => b.id === heroId.value)
-      if (index !== -1) blocks.value[index] = updated
+      const updated = await service.updateBlock(heroId.value, payload);
+      const index = blocks.value.findIndex((b) => b.id === heroId.value);
+      if (index !== -1) blocks.value[index] = updated;
     } else {
-      const created = await service.createBlock(payload)
-      heroId.value = created.id
-      blocks.value.unshift(created)
+      const created = await service.createBlock(payload);
+      heroId.value = created.id;
+      blocks.value.unshift(created);
     }
 
-    toast.success('La sección de Inicio (Hero) se guardó correctamente.')
+    toast.success("La sección de Inicio (Hero) se guardó correctamente.");
   } catch (error) {
-    const message = error instanceof PublicApiError ? error.message : 'Error al guardar la sección de Inicio.'
-    toast.error(message)
-    throw error
+    const message =
+      error instanceof PublicApiError
+        ? error.message
+        : "Error al guardar la sección de Inicio.";
+    toast.error(message);
+    throw error;
   } finally {
-    submittingHero.value = false
+    submittingHero.value = false;
   }
-}
+};
 
 // Section 2: Announcement Edit & Save flow with modal confirmation
 const startEditingAnnouncement = (block: InstitutionalBlock) => {
-  editingAnnouncementId.value = block.id
-  announcementForm.type = block.type
-  announcementForm.title = block.title
-  announcementForm.body = block.body
-  announcementForm.imageUrl = block.imageUrl || ''
-  announcementForm.actionLabel = block.actionLabel || ''
-  announcementForm.actionUrl = block.actionUrl || ''
-  announcementForm.status = block.status
-  announcementErrors.value = {}
-  announcementTitleInput.value?.focus()
-  toast.info(`Editando anuncio: "${block.title}"`)
-}
+  editingAnnouncementId.value = block.id;
+  announcementForm.type = block.type;
+  announcementForm.title = block.title;
+  announcementForm.body = block.body;
+  announcementForm.imageUrl = block.imageUrl || "";
+  announcementForm.actionLabel = block.actionLabel || "";
+  announcementForm.actionUrl = block.actionUrl || "";
+  announcementForm.status = block.status;
+  announcementErrors.value = {};
+  announcementTitleInput.value?.focus();
+  toast.info(`Editando anuncio: "${block.title}"`);
+};
 
 const cancelEditingAnnouncement = () => {
-  editingAnnouncementId.value = null
-  announcementForm.type = 'LABORATORIO'
-  announcementForm.title = ''
-  announcementForm.body = ''
-  announcementForm.imageUrl = ''
-  announcementForm.actionLabel = ''
-  announcementForm.actionUrl = ''
-  announcementForm.status = 'PUBLICADO'
-  announcementErrors.value = {}
-}
+  editingAnnouncementId.value = null;
+  announcementForm.type = "LABORATORIO";
+  announcementForm.title = "";
+  announcementForm.body = "";
+  announcementForm.imageUrl = "";
+  announcementForm.actionLabel = "";
+  announcementForm.actionUrl = "";
+  announcementForm.status = "PUBLICADO";
+  announcementErrors.value = {};
+};
 
 const requestSaveAnnouncement = () => {
-  const isEditing = editingAnnouncementId.value !== null
-  announcementErrors.value = validateAnnouncementForm(announcementForm, activeCount.value, isEditing)
+  const isEditing = editingAnnouncementId.value !== null;
+  announcementErrors.value = validateAnnouncementForm(
+    announcementForm,
+    activeCount.value,
+    isEditing,
+  );
   if (Object.keys(announcementErrors.value).length > 0) {
     if (announcementErrors.value.type) {
-      announcementTypeSelect.value?.focus()
+      announcementTypeSelect.value?.focus();
     } else {
-      announcementTitleInput.value?.focus()
+      announcementTitleInput.value?.focus();
     }
-    toast.error('Corrige los errores del formulario de anuncio antes de guardar.')
-    return
+    toast.error(
+      "Corrige los errores del formulario de anuncio antes de guardar.",
+    );
+    return;
   }
 
   if (isEditing) {
     openConfirmDialog({
-      title: '¿Actualizar anuncio?',
+      title: "¿Actualizar anuncio?",
       message: `¿Deseas guardar los cambios del anuncio "${announcementForm.title}" en la categoría ${getTypeLabel(announcementForm.type)}?`,
-      confirmLabel: 'Actualizar anuncio',
-      variant: 'primary',
-      action: executeSaveAnnouncement
-    })
+      confirmLabel: "Actualizar anuncio",
+      variant: "primary",
+      action: executeSaveAnnouncement,
+    });
   } else {
     openConfirmDialog({
-      title: '¿Crear nuevo anuncio?',
+      title: "¿Crear nuevo anuncio?",
       message: `¿Deseas crear y publicar el anuncio "${announcementForm.title}" en la categoría ${getTypeLabel(announcementForm.type)}?`,
-      confirmLabel: 'Crear anuncio',
-      variant: 'primary',
-      action: executeSaveAnnouncement
-    })
+      confirmLabel: "Crear anuncio",
+      variant: "primary",
+      action: executeSaveAnnouncement,
+    });
   }
-}
+};
 
 const executeSaveAnnouncement = async () => {
-  const isEditing = editingAnnouncementId.value !== null
-  submittingAnnouncement.value = true
+  const isEditing = editingAnnouncementId.value !== null;
+  submittingAnnouncement.value = true;
 
   try {
     const payload = {
@@ -287,120 +315,141 @@ const executeSaveAnnouncement = async () => {
       imageUrl: announcementForm.imageUrl.trim() || null,
       actionLabel: announcementForm.actionLabel || null,
       actionUrl: announcementForm.actionUrl || null,
-      status: announcementForm.status
-    }
+      status: announcementForm.status,
+    };
 
     if (isEditing) {
-      const updated = await service.updateBlock(editingAnnouncementId.value!, payload)
-      const index = blocks.value.findIndex(b => b.id === editingAnnouncementId.value)
-      if (index !== -1) blocks.value[index] = updated
-      toast.success(`El anuncio "${updated.title}" se actualizó correctamente.`)
+      const updated = await service.updateBlock(
+        editingAnnouncementId.value!,
+        payload,
+      );
+      const index = blocks.value.findIndex(
+        (b) => b.id === editingAnnouncementId.value,
+      );
+      if (index !== -1) blocks.value[index] = updated;
+      toast.success(
+        `El anuncio "${updated.title}" se actualizó correctamente.`,
+      );
     } else {
-      const created = await service.createBlock(payload)
-      blocks.value.push(created)
-      toast.success(`El anuncio "${created.title}" se creó exitosamente.`)
+      const created = await service.createBlock(payload);
+      blocks.value.push(created);
+      toast.success(`El anuncio "${created.title}" se creó exitosamente.`);
     }
 
-    cancelEditingAnnouncement()
+    cancelEditingAnnouncement();
   } catch (error) {
-    const message = error instanceof PublicApiError ? error.message : 'Error al guardar el anuncio.'
-    toast.error(message)
-    throw error
+    const message =
+      error instanceof PublicApiError
+        ? error.message
+        : "Error al guardar el anuncio.";
+    toast.error(message);
+    throw error;
   } finally {
-    submittingAnnouncement.value = false
+    submittingAnnouncement.value = false;
   }
-}
+};
 
 const requestArchiveAnnouncement = (block: InstitutionalBlock) => {
   openConfirmDialog({
-    title: '¿Retirar anuncio de la carrera?',
+    title: "¿Retirar anuncio de la carrera?",
     message: `¿Confirmas que deseas retirar el anuncio "${block.title}"? Dejará de mostrarse en la sección pública y liberará un cupo de los 3 permitidos.`,
-    confirmLabel: 'Sí, retirar anuncio',
-    variant: 'danger',
-    action: () => executeArchiveAnnouncement(block)
-  })
-}
+    confirmLabel: "Sí, retirar anuncio",
+    variant: "danger",
+    action: () => executeArchiveAnnouncement(block),
+  });
+};
 
 const executeArchiveAnnouncement = async (block: InstitutionalBlock) => {
-  archivingAnnouncementId.value = block.id
+  archivingAnnouncementId.value = block.id;
   try {
-    await service.archiveBlock(block.id)
-    const index = blocks.value.findIndex(b => b.id === block.id)
+    await service.archiveBlock(block.id);
+    const index = blocks.value.findIndex((b) => b.id === block.id);
     if (index !== -1) {
-      blocks.value[index] = { ...block, status: 'ARCHIVADO' }
+      blocks.value[index] = { ...block, status: "ARCHIVADO" };
     }
     if (editingAnnouncementId.value === block.id) {
-      cancelEditingAnnouncement()
+      cancelEditingAnnouncement();
     }
-    toast.success(`El anuncio "${block.title}" fue retirado exitosamente.`)
+    toast.success(`El anuncio "${block.title}" fue retirado exitosamente.`);
   } catch (error) {
-    const message = error instanceof PublicApiError ? error.message : 'Error al retirar el anuncio.'
-    toast.error(message)
-    throw error
+    const message =
+      error instanceof PublicApiError
+        ? error.message
+        : "Error al retirar el anuncio.";
+    toast.error(message);
+    throw error;
   } finally {
-    archivingAnnouncementId.value = null
+    archivingAnnouncementId.value = null;
   }
-}
+};
 
 // Section 3: Featured selection flow with modal confirmation
 const toggleNewsSelection = (id: number) => {
-  const index = selectedNewsIds.value.indexOf(id)
+  const index = selectedNewsIds.value.indexOf(id);
   if (index !== -1) {
-    selectedNewsIds.value.splice(index, 1)
+    selectedNewsIds.value.splice(index, 1);
   } else if (selectedNewsIds.value.length < 3) {
-    selectedNewsIds.value.push(id)
+    selectedNewsIds.value.push(id);
   } else {
-    toast.warning('Solo puedes seleccionar hasta 3 noticias destacadas.')
+    toast.warning("Solo puedes seleccionar hasta 3 noticias destacadas.");
   }
-}
+};
 
 const toggleEventSelection = (id: number) => {
-  const index = selectedEventIds.value.indexOf(id)
+  const index = selectedEventIds.value.indexOf(id);
   if (index !== -1) {
-    selectedEventIds.value.splice(index, 1)
+    selectedEventIds.value.splice(index, 1);
   } else if (selectedEventIds.value.length < 3) {
-    selectedEventIds.value.push(id)
+    selectedEventIds.value.push(id);
   } else {
-    toast.warning('Solo puedes seleccionar hasta 3 eventos destacados.')
+    toast.warning("Solo puedes seleccionar hasta 3 eventos destacados.");
   }
-}
+};
 
 const requestSaveFeatured = () => {
-  featuredErrors.value = validateFeaturedSelection(selectedNewsIds.value, selectedEventIds.value)
+  featuredErrors.value = validateFeaturedSelection(
+    selectedNewsIds.value,
+    selectedEventIds.value,
+  );
   if (Object.keys(featuredErrors.value).length > 0) {
-    toast.error('Revisa la cantidad de noticias o eventos seleccionados.')
-    return
+    toast.error("Revisa la cantidad de noticias o eventos seleccionados.");
+    return;
   }
 
   openConfirmDialog({
-    title: '¿Guardar destacados de inicio?',
+    title: "¿Guardar destacados de inicio?",
     message: `Se configurarán ${selectedNewsIds.value.length} noticias y ${selectedEventIds.value.length} eventos como elementos destacados en la página principal.`,
-    confirmLabel: 'Guardar destacados',
-    variant: 'primary',
-    action: executeSaveFeatured
-  })
-}
+    confirmLabel: "Guardar destacados",
+    variant: "primary",
+    action: executeSaveFeatured,
+  });
+};
 
 const executeSaveFeatured = async () => {
-  submittingFeatured.value = true
+  submittingFeatured.value = true;
   try {
     await service.saveFeatured({
       newsIds: selectedNewsIds.value,
-      eventIds: selectedEventIds.value
-    })
-    toast.success('La selección de noticias y eventos destacados se guardó correctamente.')
+      eventIds: selectedEventIds.value,
+    });
+    toast.success(
+      "La selección de noticias y eventos destacados se guardó correctamente.",
+    );
   } catch (error) {
-    const message = error instanceof PublicApiError ? error.message : 'Error al guardar los destacados.'
-    toast.error(message)
-    throw error
+    const message =
+      error instanceof PublicApiError
+        ? error.message
+        : "Error al guardar los destacados.";
+    toast.error(message);
+    throw error;
   } finally {
-    submittingFeatured.value = false
+    submittingFeatured.value = false;
   }
-}
+};
 
 const getTypeLabel = (type: BlockType) => {
-  return ANNOUNCEMENT_TYPES.find(t => t.value === type)?.label || type
-}
+  return ANNOUNCEMENT_TYPES.find((t) => t.value === type)?.label || type;
+};
 </script>
 
 <template>
@@ -425,7 +474,9 @@ const getTypeLabel = (type: BlockType) => {
       title="No se pudo cargar el contenido"
       :message="loadError"
     >
-      <button class="retry-btn" type="button" @click="loadData">Reintentar consulta</button>
+      <button class="retry-btn" type="button" @click="loadData">
+        Reintentar consulta
+      </button>
     </StatePanel>
 
     <!-- Main administration workspace -->
@@ -439,12 +490,17 @@ const getTypeLabel = (type: BlockType) => {
             <span class="admin-card__tag">Sección principal</span>
             <h2 id="section-hero-title">Inicio (Hero)</h2>
           </div>
-          <p>Define el mensaje de bienvenida y el llamado a la acción que verán los visitantes al ingresar al sitio.</p>
+          <p>
+            Define el mensaje de bienvenida y el llamado a la acción que verán
+            los visitantes al ingresar al sitio.
+          </p>
         </header>
 
         <form class="admin-form" @submit.prevent="requestSaveHero">
           <div class="form-group">
-            <label for="hero-title">Título principal <span class="required">*</span></label>
+            <label for="hero-title"
+              >Título principal <span class="required">*</span></label
+            >
             <input
               id="hero-title"
               ref="heroTitleInput"
@@ -454,8 +510,16 @@ const getTypeLabel = (type: BlockType) => {
               :aria-invalid="Boolean(heroErrors.title)"
               aria-describedby="hero-title-hint hero-title-error"
             />
-            <span id="hero-title-hint" class="field-hint">Hasta 220 caracteres. Encabezado principal del sitio.</span>
-            <span v-if="heroErrors.title" id="hero-title-error" class="field-error" role="alert">{{ heroErrors.title }}</span>
+            <span id="hero-title-hint" class="field-hint"
+              >Hasta 220 caracteres. Encabezado principal del sitio.</span
+            >
+            <span
+              v-if="heroErrors.title"
+              id="hero-title-error"
+              class="field-error"
+              role="alert"
+              >{{ heroErrors.title }}</span
+            >
           </div>
 
           <div class="form-group">
@@ -467,11 +531,16 @@ const getTypeLabel = (type: BlockType) => {
               maxlength="320"
               aria-describedby="hero-subtitle-hint"
             />
-            <span id="hero-subtitle-hint" class="field-hint">Texto superior en la cápsula institucional (ej. ⚛ Asociación de Estudiantes · UVG).</span>
+            <span id="hero-subtitle-hint" class="field-hint"
+              >Texto superior en la cápsula institucional (ej. ⚛ Asociación de
+              Estudiantes · UVG).</span
+            >
           </div>
 
           <div class="form-group">
-            <label for="hero-body">Descripción institucional <span class="required">*</span></label>
+            <label for="hero-body"
+              >Descripción institucional <span class="required">*</span></label
+            >
             <textarea
               id="hero-body"
               v-model="heroForm.body"
@@ -480,8 +549,16 @@ const getTypeLabel = (type: BlockType) => {
               :aria-invalid="Boolean(heroErrors.body)"
               aria-describedby="hero-body-hint hero-body-error"
             ></textarea>
-            <span id="hero-body-hint" class="field-hint">Párrafo explicativo debajo del título principal.</span>
-            <span v-if="heroErrors.body" id="hero-body-error" class="field-error" role="alert">{{ heroErrors.body }}</span>
+            <span id="hero-body-hint" class="field-hint"
+              >Párrafo explicativo debajo del título principal.</span
+            >
+            <span
+              v-if="heroErrors.body"
+              id="hero-body-error"
+              class="field-error"
+              role="alert"
+              >{{ heroErrors.body }}</span
+            >
           </div>
 
           <div class="form-row">
@@ -506,7 +583,13 @@ const getTypeLabel = (type: BlockType) => {
                 :aria-invalid="Boolean(heroErrors.actionUrl)"
                 aria-describedby="hero-url-error"
               />
-              <span v-if="heroErrors.actionUrl" id="hero-url-error" class="field-error" role="alert">{{ heroErrors.actionUrl }}</span>
+              <span
+                v-if="heroErrors.actionUrl"
+                id="hero-url-error"
+                class="field-error"
+                role="alert"
+                >{{ heroErrors.actionUrl }}</span
+              >
             </div>
             <div class="form-group">
               <label for="hero-status">Estado de publicación</label>
@@ -523,7 +606,11 @@ const getTypeLabel = (type: BlockType) => {
               type="submit"
               :disabled="submittingHero"
             >
-              {{ submittingHero ? 'Guardando cambios...' : 'Guardar sección de Inicio' }}
+              {{
+                submittingHero
+                  ? "Guardando cambios..."
+                  : "Guardar sección de Inicio"
+              }}
             </button>
           </div>
         </form>
@@ -537,41 +624,74 @@ const getTypeLabel = (type: BlockType) => {
           <div class="header-with-badge">
             <div>
               <span class="admin-card__tag">Promoción de la carrera</span>
-              <h2 id="section-announcements-title">Conocer la Licenciatura de Química</h2>
+              <h2 id="section-announcements-title">
+                Conocer la Licenciatura de Química
+              </h2>
             </div>
-            <span class="counter-badge" :class="{ 'counter-badge--full': activeCount >= 3 }">
+            <span
+              class="counter-badge"
+              :class="{ 'counter-badge--full': activeCount >= 3 }"
+            >
               {{ activeCount }} de 3 anuncios activos
             </span>
           </div>
           <p>
-            Muestra hasta un <strong>máximo de 3 anuncios</strong> en total en la sección "Conoce la Licenciatura en Química", sin importar si son de Laboratorios, Testimonios, Campos Laborales o Plan de Estudios.
+            Muestra hasta un <strong>máximo de 3 anuncios</strong> en total en
+            la sección "Conoce la Licenciatura en Química", sin importar si son
+            de Laboratorios, Testimonios, Campos Laborales o Plan de Estudios.
           </p>
         </header>
 
         <!-- Current Announcements List -->
         <div class="announcements-manager">
-          <h3 class="subsection-title">Anuncios actuales ({{ activeCount }}/3)</h3>
+          <h3 class="subsection-title">
+            Anuncios actuales ({{ activeCount }}/3)
+          </h3>
 
           <div v-if="activeAnnouncements.length === 0" class="empty-notice">
-            <p>No hay anuncios activos actualmente. Utiliza el formulario a continuación para agregar hasta tres anuncios.</p>
+            <p>
+              No hay anuncios activos actualmente. Utiliza el formulario a
+              continuación para agregar hasta tres anuncios.
+            </p>
           </div>
 
           <div v-else class="announcements-grid">
             <article
               v-for="announcement in activeAnnouncements"
               :key="announcement.id"
-              :class="['announcement-item', { 'announcement-item--editing': editingAnnouncementId === announcement.id }]"
+              :class="[
+                'announcement-item',
+                {
+                  'announcement-item--editing':
+                    editingAnnouncementId === announcement.id,
+                },
+              ]"
             >
               <div class="announcement-item__header">
-                <span class="type-pill">{{ getTypeLabel(announcement.type) }}</span>
-                <span :class="['status-pill', `status-pill--${announcement.status.toLowerCase()}`]">
-                  {{ announcement.status === 'PUBLICADO' ? 'Publicado' : 'Borrador' }}
+                <span class="type-pill">{{
+                  getTypeLabel(announcement.type)
+                }}</span>
+                <span
+                  :class="[
+                    'status-pill',
+                    `status-pill--${announcement.status.toLowerCase()}`,
+                  ]"
+                >
+                  {{
+                    announcement.status === "PUBLICADO"
+                      ? "Publicado"
+                      : "Borrador"
+                  }}
                 </span>
               </div>
               <h4 class="announcement-item__title">{{ announcement.title }}</h4>
               <p class="announcement-item__body">{{ announcement.body }}</p>
-              <div v-if="announcement.actionUrl" class="announcement-item__link">
-                🔗 {{ announcement.actionLabel || 'Más información' }}: <code>{{ announcement.actionUrl }}</code>
+              <div
+                v-if="announcement.actionUrl"
+                class="announcement-item__link"
+              >
+                🔗 {{ announcement.actionLabel || "Más información" }}:
+                <code>{{ announcement.actionUrl }}</code>
               </div>
               <div class="announcement-item__actions">
                 <button
@@ -587,7 +707,11 @@ const getTypeLabel = (type: BlockType) => {
                   :disabled="archivingAnnouncementId === announcement.id"
                   @click="requestArchiveAnnouncement(announcement)"
                 >
-                  {{ archivingAnnouncementId === announcement.id ? 'Retirando...' : '🗑️ Retirar' }}
+                  {{
+                    archivingAnnouncementId === announcement.id
+                      ? "Retirando..."
+                      : "🗑️ Retirar"
+                  }}
                 </button>
               </div>
             </article>
@@ -596,36 +720,61 @@ const getTypeLabel = (type: BlockType) => {
           <!-- Single Unified Announcement Form -->
           <div class="unified-form-wrapper">
             <div class="unified-form-heading">
-              <h3>{{ editingAnnouncementId ? 'Editar anuncio' : 'Nuevo anuncio' }}</h3>
-              <p v-if="!canCreateAnnouncement && !editingAnnouncementId" class="limit-warning" role="alert">
-                ⚠️ Ya se alcanzó el límite de 3 anuncios activos. Edita o retira uno existente para poder registrar otro.
+              <h3>
+                {{ editingAnnouncementId ? "Editar anuncio" : "Nuevo anuncio" }}
+              </h3>
+              <p
+                v-if="!canCreateAnnouncement && !editingAnnouncementId"
+                class="limit-warning"
+                role="alert"
+              >
+                ⚠️ Ya se alcanzó el límite de 3 anuncios activos. Edita o retira
+                uno existente para poder registrar otro.
               </p>
             </div>
 
             <form class="admin-form" @submit.prevent="requestSaveAnnouncement">
-              <div v-if="announcementErrors.general" class="field-error field-error--banner" role="alert">
+              <div
+                v-if="announcementErrors.general"
+                class="field-error field-error--banner"
+                role="alert"
+              >
                 {{ announcementErrors.general }}
               </div>
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="announcement-type">Tipo de anuncio <span class="required">*</span></label>
+                  <label for="announcement-type"
+                    >Tipo de anuncio <span class="required">*</span></label
+                  >
                   <select
                     id="announcement-type"
                     ref="announcementTypeSelect"
                     v-model="announcementForm.type"
                     :aria-invalid="Boolean(announcementErrors.type)"
                   >
-                    <option v-for="t in ANNOUNCEMENT_TYPES" :key="t.value" :value="t.value">
+                    <option
+                      v-for="t in ANNOUNCEMENT_TYPES"
+                      :key="t.value"
+                      :value="t.value"
+                    >
                       {{ t.label }} — {{ t.description }}
                     </option>
                   </select>
-                  <span v-if="announcementErrors.type" class="field-error" role="alert">{{ announcementErrors.type }}</span>
+                  <span
+                    v-if="announcementErrors.type"
+                    class="field-error"
+                    role="alert"
+                    >{{ announcementErrors.type }}</span
+                  >
                 </div>
 
                 <div class="form-group">
                   <label for="announcement-status">Estado</label>
-                  <select id="announcement-status" v-model="announcementForm.status">
+                  <select
+                    id="announcement-status"
+                    v-model="announcementForm.status"
+                  >
                     <option value="PUBLICADO">Publicado</option>
                     <option value="BORRADOR">Borrador</option>
                   </select>
@@ -633,7 +782,9 @@ const getTypeLabel = (type: BlockType) => {
               </div>
 
               <div class="form-group">
-                <label for="announcement-title">Título del anuncio <span class="required">*</span></label>
+                <label for="announcement-title"
+                  >Título del anuncio <span class="required">*</span></label
+                >
                 <input
                   id="announcement-title"
                   ref="announcementTitleInput"
@@ -644,13 +795,21 @@ const getTypeLabel = (type: BlockType) => {
                   :aria-invalid="Boolean(announcementErrors.title)"
                   aria-describedby="announcement-title-error"
                 />
-                <span v-if="announcementErrors.title" id="announcement-title-error" class="field-error" role="alert">
+                <span
+                  v-if="announcementErrors.title"
+                  id="announcement-title-error"
+                  class="field-error"
+                  role="alert"
+                >
                   {{ announcementErrors.title }}
                 </span>
               </div>
 
               <div class="form-group">
-                <label for="announcement-body">Contenido / Descripción <span class="required">*</span></label>
+                <label for="announcement-body"
+                  >Contenido / Descripción
+                  <span class="required">*</span></label
+                >
                 <textarea
                   id="announcement-body"
                   v-model="announcementForm.body"
@@ -660,7 +819,12 @@ const getTypeLabel = (type: BlockType) => {
                   :aria-invalid="Boolean(announcementErrors.body)"
                   aria-describedby="announcement-body-error"
                 ></textarea>
-                <span v-if="announcementErrors.body" id="announcement-body-error" class="field-error" role="alert">
+                <span
+                  v-if="announcementErrors.body"
+                  id="announcement-body-error"
+                  class="field-error"
+                  role="alert"
+                >
                   {{ announcementErrors.body }}
                 </span>
               </div>
@@ -676,15 +840,24 @@ const getTypeLabel = (type: BlockType) => {
                   :aria-invalid="Boolean(announcementErrors.imageUrl)"
                   aria-describedby="announcement-image-hint announcement-image-error"
                 />
-                <span id="announcement-image-hint" class="field-hint">Usa la URL de una imagen ya cargada en el sistema.</span>
-                <span v-if="announcementErrors.imageUrl" id="announcement-image-error" class="field-error" role="alert">
+                <span id="announcement-image-hint" class="field-hint"
+                  >Usa la URL de una imagen ya cargada en el sistema.</span
+                >
+                <span
+                  v-if="announcementErrors.imageUrl"
+                  id="announcement-image-error"
+                  class="field-error"
+                  role="alert"
+                >
                   {{ announcementErrors.imageUrl }}
                 </span>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="announcement-action-label">Texto del enlace opcional</label>
+                  <label for="announcement-action-label"
+                    >Texto del enlace opcional</label
+                  >
                   <input
                     id="announcement-action-label"
                     v-model="announcementForm.actionLabel"
@@ -704,7 +877,12 @@ const getTypeLabel = (type: BlockType) => {
                     :aria-invalid="Boolean(announcementErrors.actionUrl)"
                     aria-describedby="announcement-url-error"
                   />
-                  <span v-if="announcementErrors.actionUrl" id="announcement-url-error" class="field-error" role="alert">
+                  <span
+                    v-if="announcementErrors.actionUrl"
+                    id="announcement-url-error"
+                    class="field-error"
+                    role="alert"
+                  >
                     {{ announcementErrors.actionUrl }}
                   </span>
                 </div>
@@ -714,11 +892,17 @@ const getTypeLabel = (type: BlockType) => {
                 <button
                   class="primary-btn"
                   type="submit"
-                  :disabled="submittingAnnouncement || (!canCreateAnnouncement && !editingAnnouncementId)"
+                  :disabled="
+                    submittingAnnouncement ||
+                    (!canCreateAnnouncement && !editingAnnouncementId)
+                  "
                 >
-                  {{ submittingAnnouncement
-                    ? 'Guardando...'
-                    : (editingAnnouncementId ? 'Actualizar anuncio' : 'Guardar anuncio')
+                  {{
+                    submittingAnnouncement
+                      ? "Guardando..."
+                      : editingAnnouncementId
+                        ? "Actualizar anuncio"
+                        : "Guardar anuncio"
                   }}
                 </button>
                 <button
@@ -732,13 +916,20 @@ const getTypeLabel = (type: BlockType) => {
               </div>
             </form>
 
-            <aside class="announcement-preview" aria-labelledby="announcement-preview-title">
+            <aside
+              class="announcement-preview"
+              aria-labelledby="announcement-preview-title"
+            >
               <div class="announcement-preview__header">
                 <div>
                   <span class="admin-card__tag">Previsualización</span>
-                  <h3 id="announcement-preview-title">Vista previa del anuncio</h3>
+                  <h3 id="announcement-preview-title">
+                    Vista previa del anuncio
+                  </h3>
                 </div>
-                <span class="type-pill">{{ getTypeLabel(announcementForm.type) }}</span>
+                <span class="type-pill">{{
+                  getTypeLabel(announcementForm.type)
+                }}</span>
               </div>
               <div class="announcement-preview__card">
                 <img
@@ -748,13 +939,30 @@ const getTypeLabel = (type: BlockType) => {
                   alt=""
                 />
                 <div class="announcement-preview__content">
-                  <span class="status-pill" :class="`status-pill--${announcementForm.status.toLowerCase()}`">
-                    {{ announcementForm.status === 'PUBLICADO' ? 'Publicado' : 'Borrador' }}
+                  <span
+                    class="status-pill"
+                    :class="`status-pill--${announcementForm.status.toLowerCase()}`"
+                  >
+                    {{
+                      announcementForm.status === "PUBLICADO"
+                        ? "Publicado"
+                        : "Borrador"
+                    }}
                   </span>
-                  <h4>{{ announcementForm.title || 'Título del anuncio' }}</h4>
-                  <p>{{ announcementForm.body || 'El contenido del anuncio aparecerá aquí.' }}</p>
-                  <span v-if="announcementForm.actionLabel || announcementForm.actionUrl" class="announcement-preview__link">
-                    {{ announcementForm.actionLabel || 'Más información' }}
+                  <h4>{{ announcementForm.title || "Título del anuncio" }}</h4>
+                  <p>
+                    {{
+                      announcementForm.body ||
+                      "El contenido del anuncio aparecerá aquí."
+                    }}
+                  </p>
+                  <span
+                    v-if="
+                      announcementForm.actionLabel || announcementForm.actionUrl
+                    "
+                    class="announcement-preview__link"
+                  >
+                    {{ announcementForm.actionLabel || "Más información" }}
                   </span>
                 </div>
               </div>
@@ -769,11 +977,15 @@ const getTypeLabel = (type: BlockType) => {
       <section class="admin-card" aria-labelledby="section-featured-title">
         <header class="admin-card__header">
           <div>
-            <span class="admin-card__tag">Destacados en pantalla de inicio</span>
+            <span class="admin-card__tag"
+              >Destacados en pantalla de inicio</span
+            >
             <h2 id="section-featured-title">Noticias y eventos destacados</h2>
           </div>
           <p>
-            Selecciona hasta <strong>tres eventos</strong> y hasta <strong>tres noticias</strong> que se presentarán de forma prioritaria en la página de inicio.
+            Selecciona hasta <strong>tres eventos</strong> y hasta
+            <strong>tres noticias</strong> que se presentarán de forma
+            prioritaria en la página de inicio.
           </p>
         </header>
 
@@ -783,15 +995,26 @@ const getTypeLabel = (type: BlockType) => {
             <div class="featured-block__header">
               <div class="title-with-pill">
                 <h3>Eventos destacados</h3>
-                <span class="counter-badge" :class="{ 'counter-badge--full': selectedEventIds.length >= 3 }">
+                <span
+                  class="counter-badge"
+                  :class="{
+                    'counter-badge--full': selectedEventIds.length >= 3,
+                  }"
+                >
                   {{ selectedEventIds.length }} / 3 seleccionados
                 </span>
               </div>
-              <p class="field-hint">Selecciona hasta 3 eventos que se destacarán en la página de inicio.</p>
+              <p class="field-hint">
+                Selecciona hasta 3 eventos que se destacarán en la página de
+                inicio.
+              </p>
             </div>
 
             <div v-if="availableEvents.length === 0" class="empty-notice">
-              <p>No hay eventos disponibles para destacar. Crea eventos en el módulo correspondiente.</p>
+              <p>
+                No hay eventos disponibles para destacar. Crea eventos en el
+                módulo correspondiente.
+              </p>
             </div>
 
             <div v-else class="selection-grid">
@@ -801,16 +1024,23 @@ const getTypeLabel = (type: BlockType) => {
                 :class="[
                   'selectable-card',
                   {
-                    'selectable-card--selected': selectedEventIds.includes(event.id),
-                    'selectable-card--disabled': !selectedEventIds.includes(event.id) && selectedEventIds.length >= 3
-                  }
+                    'selectable-card--selected': selectedEventIds.includes(
+                      event.id,
+                    ),
+                    'selectable-card--disabled':
+                      !selectedEventIds.includes(event.id) &&
+                      selectedEventIds.length >= 3,
+                  },
                 ]"
               >
                 <input
                   type="checkbox"
                   class="selectable-card__checkbox"
                   :checked="selectedEventIds.includes(event.id)"
-                  :disabled="!selectedEventIds.includes(event.id) && selectedEventIds.length >= 3"
+                  :disabled="
+                    !selectedEventIds.includes(event.id) &&
+                    selectedEventIds.length >= 3
+                  "
                   @change="toggleEventSelection(event.id)"
                 />
                 <div class="selectable-card__info">
@@ -819,7 +1049,12 @@ const getTypeLabel = (type: BlockType) => {
                 </div>
               </label>
             </div>
-            <span v-if="featuredErrors.events" class="field-error" role="alert">{{ featuredErrors.events }}</span>
+            <span
+              v-if="featuredErrors.events"
+              class="field-error"
+              role="alert"
+              >{{ featuredErrors.events }}</span
+            >
           </div>
 
           <!-- Featured News Selection -->
@@ -827,15 +1062,26 @@ const getTypeLabel = (type: BlockType) => {
             <div class="featured-block__header">
               <div class="title-with-pill">
                 <h3>Noticias destacadas</h3>
-                <span class="counter-badge" :class="{ 'counter-badge--full': selectedNewsIds.length >= 3 }">
+                <span
+                  class="counter-badge"
+                  :class="{
+                    'counter-badge--full': selectedNewsIds.length >= 3,
+                  }"
+                >
                   {{ selectedNewsIds.length }} / 3 seleccionadas
                 </span>
               </div>
-              <p class="field-hint">Selecciona hasta 3 noticias que se destacarán en la página de inicio.</p>
+              <p class="field-hint">
+                Selecciona hasta 3 noticias que se destacarán en la página de
+                inicio.
+              </p>
             </div>
 
             <div v-if="availableNews.length === 0" class="empty-notice">
-              <p>No hay noticias disponibles para destacar. Crea noticias en el módulo correspondiente.</p>
+              <p>
+                No hay noticias disponibles para destacar. Crea noticias en el
+                módulo correspondiente.
+              </p>
             </div>
 
             <div v-else class="selection-grid">
@@ -845,25 +1091,36 @@ const getTypeLabel = (type: BlockType) => {
                 :class="[
                   'selectable-card',
                   {
-                    'selectable-card--selected': selectedNewsIds.includes(item.id),
-                    'selectable-card--disabled': !selectedNewsIds.includes(item.id) && selectedNewsIds.length >= 3
-                  }
+                    'selectable-card--selected': selectedNewsIds.includes(
+                      item.id,
+                    ),
+                    'selectable-card--disabled':
+                      !selectedNewsIds.includes(item.id) &&
+                      selectedNewsIds.length >= 3,
+                  },
                 ]"
               >
                 <input
                   type="checkbox"
                   class="selectable-card__checkbox"
                   :checked="selectedNewsIds.includes(item.id)"
-                  :disabled="!selectedNewsIds.includes(item.id) && selectedNewsIds.length >= 3"
+                  :disabled="
+                    !selectedNewsIds.includes(item.id) &&
+                    selectedNewsIds.length >= 3
+                  "
                   @change="toggleNewsSelection(item.id)"
                 />
                 <div class="selectable-card__info">
-                  <span class="card-meta">📰 {{ item.category?.name || 'Noticia' }}</span>
+                  <span class="card-meta"
+                    >📰 {{ item.category?.name || "Noticia" }}</span
+                  >
                   <span class="card-title">{{ item.title }}</span>
                 </div>
               </label>
             </div>
-            <span v-if="featuredErrors.news" class="field-error" role="alert">{{ featuredErrors.news }}</span>
+            <span v-if="featuredErrors.news" class="field-error" role="alert">{{
+              featuredErrors.news
+            }}</span>
           </div>
 
           <div class="form-actions">
@@ -873,7 +1130,11 @@ const getTypeLabel = (type: BlockType) => {
               :disabled="submittingFeatured"
               @click="requestSaveFeatured"
             >
-              {{ submittingFeatured ? 'Guardando destacados...' : 'Guardar selección de destacados' }}
+              {{
+                submittingFeatured
+                  ? "Guardando destacados..."
+                  : "Guardar selección de destacados"
+              }}
             </button>
           </div>
         </div>
@@ -920,19 +1181,19 @@ const getTypeLabel = (type: BlockType) => {
 
 .admin-card__header {
   display: grid;
-  gap: .5rem;
+  gap: 0.5rem;
   padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--admin-border);
 }
 
 .admin-card__tag {
   display: inline-block;
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
   color: var(--admin-primary);
-  margin-bottom: .25rem;
+  margin-bottom: 0.25rem;
 }
 
 .admin-card__header h2 {
@@ -942,7 +1203,7 @@ const getTypeLabel = (type: BlockType) => {
 
 .admin-card__header p {
   color: var(--color-muted);
-  font-size: .95rem;
+  font-size: 0.95rem;
   margin: 0;
 }
 
@@ -951,17 +1212,17 @@ const getTypeLabel = (type: BlockType) => {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: .75rem;
+  gap: 0.75rem;
 }
 
 /* Counter badge */
 .counter-badge {
-  padding: .35rem .75rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 999px;
   background: var(--admin-soft);
   color: var(--admin-primary-dark);
   border: 1px solid var(--admin-border);
-  font-size: .85rem;
+  font-size: 0.85rem;
   font-weight: 800;
 }
 
@@ -979,12 +1240,12 @@ const getTypeLabel = (type: BlockType) => {
 
 .form-group {
   display: grid;
-  gap: .4rem;
+  gap: 0.4rem;
 }
 
 .form-group label {
   font-weight: 700;
-  font-size: .92rem;
+  font-size: 0.92rem;
   color: var(--color-ink);
 }
 
@@ -996,12 +1257,14 @@ const getTypeLabel = (type: BlockType) => {
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: .75rem .95rem;
+  padding: 0.75rem 0.95rem;
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-sm);
   background: white;
   color: var(--color-ink);
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .form-group input:focus,
@@ -1024,18 +1287,18 @@ const getTypeLabel = (type: BlockType) => {
 }
 
 .field-hint {
-  font-size: .82rem;
+  font-size: 0.82rem;
   color: var(--color-muted);
 }
 
 .field-error {
   color: var(--color-danger);
-  font-size: .85rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
 .field-error--banner {
-  padding: .65rem .85rem;
+  padding: 0.65rem 0.85rem;
   background: #ffebee;
   border-radius: var(--radius-sm);
 }
@@ -1044,22 +1307,22 @@ const getTypeLabel = (type: BlockType) => {
 .form-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: .75rem;
-  margin-top: .5rem;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .primary-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: .75rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   background: var(--admin-primary);
   color: white;
   border: 1px solid var(--admin-primary-dark);
   border-radius: var(--radius-sm);
   font-weight: 750;
   cursor: pointer;
-  transition: background .15s ease;
+  transition: background 0.15s ease;
 }
 
 .primary-btn:hover:not(:disabled) {
@@ -1067,7 +1330,7 @@ const getTypeLabel = (type: BlockType) => {
 }
 
 .primary-btn:disabled {
-  opacity: .55;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -1075,7 +1338,7 @@ const getTypeLabel = (type: BlockType) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: .75rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   background: white;
   color: var(--color-ink);
   border: 1px solid var(--admin-border);
@@ -1089,7 +1352,7 @@ const getTypeLabel = (type: BlockType) => {
 }
 
 .retry-btn {
-  padding: .6rem 1.2rem;
+  padding: 0.6rem 1.2rem;
   background: var(--admin-primary);
   color: white;
   border: 0;
@@ -1126,12 +1389,14 @@ const getTypeLabel = (type: BlockType) => {
 
 .announcement-item {
   display: grid;
-  gap: .65rem;
+  gap: 0.65rem;
   padding: 1.15rem;
   background: #fbfdfc;
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-sm);
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .announcement-item--editing {
@@ -1146,18 +1411,18 @@ const getTypeLabel = (type: BlockType) => {
 }
 
 .type-pill {
-  font-size: .78rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  padding: .2rem .55rem;
+  padding: 0.2rem 0.55rem;
   background: var(--admin-soft);
   color: var(--admin-primary-dark);
   border-radius: 999px;
 }
 
 .status-pill {
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: .15rem .45rem;
+  padding: 0.15rem 0.45rem;
   border-radius: 999px;
 }
 
@@ -1179,7 +1444,7 @@ const getTypeLabel = (type: BlockType) => {
 .announcement-item__body {
   margin: 0;
   color: var(--color-muted);
-  font-size: .9rem;
+  font-size: 0.9rem;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -1187,24 +1452,24 @@ const getTypeLabel = (type: BlockType) => {
 }
 
 .announcement-item__link {
-  font-size: .82rem;
+  font-size: 0.82rem;
   color: var(--color-muted);
 }
 
 .announcement-item__actions {
   display: flex;
-  gap: .5rem;
-  margin-top: .5rem;
-  padding-top: .65rem;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.65rem;
   border-top: 1px solid var(--admin-border);
 }
 
 .action-btn {
-  padding: .35rem .7rem;
+  padding: 0.35rem 0.7rem;
   border: 1px solid var(--admin-border);
   background: white;
-  border-radius: .4rem;
-  font-size: .82rem;
+  border-radius: 0.4rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -1224,7 +1489,7 @@ const getTypeLabel = (type: BlockType) => {
 
 /* Unified form wrapper */
 .unified-form-wrapper {
-  margin-top: .75rem;
+  margin-top: 0.75rem;
   padding: clamp(1rem, 2.5vw, 1.5rem);
   background: #fafcfb;
   border: 1px solid var(--admin-border);
@@ -1233,7 +1498,7 @@ const getTypeLabel = (type: BlockType) => {
 
 .announcement-preview {
   display: grid;
-  gap: .85rem;
+  gap: 0.85rem;
   margin-top: 1.5rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--admin-border);
@@ -1271,7 +1536,7 @@ const getTypeLabel = (type: BlockType) => {
 .announcement-preview__content {
   display: grid;
   align-content: start;
-  gap: .55rem;
+  gap: 0.55rem;
   padding: 1rem;
 }
 
@@ -1286,12 +1551,12 @@ const getTypeLabel = (type: BlockType) => {
 
 .announcement-preview__content p {
   color: var(--color-muted);
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
 
 .announcement-preview__link {
   color: var(--admin-primary-dark);
-  font-size: .85rem;
+  font-size: 0.85rem;
   font-weight: 750;
 }
 
@@ -1305,9 +1570,9 @@ const getTypeLabel = (type: BlockType) => {
 }
 
 .limit-warning {
-  margin: .4rem 0 0;
+  margin: 0.4rem 0 0;
   color: #b78103;
-  font-size: .9rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
@@ -1324,13 +1589,13 @@ const getTypeLabel = (type: BlockType) => {
 
 .featured-block__header {
   display: grid;
-  gap: .25rem;
+  gap: 0.25rem;
 }
 
 .title-with-pill {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: 0.75rem;
 }
 
 .title-with-pill h3 {
@@ -1341,19 +1606,21 @@ const getTypeLabel = (type: BlockType) => {
 .selection-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: .75rem;
+  gap: 0.75rem;
 }
 
 .selectable-card {
   display: flex;
   align-items: flex-start;
-  gap: .75rem;
-  padding: .9rem 1rem;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
   background: white;
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: border-color .15s ease, background .15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .selectable-card:hover:not(.selectable-card--disabled) {
@@ -1367,12 +1634,12 @@ const getTypeLabel = (type: BlockType) => {
 }
 
 .selectable-card--disabled {
-  opacity: .5;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .selectable-card__checkbox {
-  margin-top: .2rem;
+  margin-top: 0.2rem;
   accent-color: var(--admin-primary);
   width: 1.15rem;
   height: 1.15rem;
@@ -1381,18 +1648,18 @@ const getTypeLabel = (type: BlockType) => {
 
 .selectable-card__info {
   display: grid;
-  gap: .2rem;
+  gap: 0.2rem;
   min-width: 0;
 }
 
 .card-meta {
-  font-size: .78rem;
+  font-size: 0.78rem;
   font-weight: 750;
   color: var(--admin-primary-dark);
 }
 
 .card-title {
-  font-size: .92rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--color-ink);
   line-height: 1.35;

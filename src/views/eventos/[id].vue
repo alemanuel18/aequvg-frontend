@@ -1,85 +1,97 @@
 <script setup lang="ts">
-import { usePublicContentService } from '~/services/public-content'
+import { usePublicContentService } from "~/services/public-content";
 
-const route = useRoute()
-const id = Number(route.params.id)
+const route = useRoute();
+const id = Number(route.params.id);
 
 if (!Number.isSafeInteger(id) || id < 1) {
-  throw createError({ statusCode: 404, statusMessage: 'Evento no encontrado' })
+  throw createError({ statusCode: 404, statusMessage: "Evento no encontrado" });
 }
 
-const service = usePublicContentService()
-const { data: event, status, error, refresh } = await useAsyncData(
-  `public-event-${id}`,
-  () => service.eventById(id),
-  { default: () => null }
-)
+const service = usePublicContentService();
+const {
+  data: event,
+  status,
+  error,
+  refresh,
+} = await useAsyncData(`public-event-${id}`, () => service.eventById(id), {
+  default: () => null,
+});
 
 if (error.value) {
-  const err = error.value as { status?: number; statusCode?: number; code?: string }
-  const isNotFound = err?.status === 404 || err?.statusCode === 404 || err?.code === 'EVENT_NOT_FOUND'
+  const err = error.value as {
+    status?: number;
+    statusCode?: number;
+    code?: string;
+  };
+  const isNotFound =
+    err?.status === 404 ||
+    err?.statusCode === 404 ||
+    err?.code === "EVENT_NOT_FOUND";
   if (isNotFound) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Evento no encontrado',
-      fatal: true
-    })
+      statusMessage: "Evento no encontrado",
+      fatal: true,
+    });
   }
 }
 
 useSeoMeta({
-  title: () => event.value?.name || 'Evento',
-  description: () => event.value?.description || 'Consulta la información de este evento de AsoQuímica UVG.'
-})
+  title: () => event.value?.name || "Evento",
+  description: () =>
+    event.value?.description ||
+    "Consulta la información de este evento de AsoQuímica UVG.",
+});
 
-const mounted = ref(false)
+const mounted = ref(false);
 
 onMounted(() => {
-  mounted.value = true
-})
+  mounted.value = true;
+});
 
 const isEventPast = computed(() => {
-  if (!mounted.value || !event.value?.startsAt) return false
-  const time = new Date(event.value.startsAt).getTime()
-  return !Number.isNaN(time) && time <= Date.now()
-})
+  if (!mounted.value || !event.value?.startsAt) return false;
+  const time = new Date(event.value.startsAt).getTime();
+  return !Number.isNaN(time) && time <= Date.now();
+});
 
-const localAvailableCapacity = ref<number | null>(null)
+const localAvailableCapacity = ref<number | null>(null);
 
 watch(
   () => event.value?.availableCapacity,
   (val) => {
-    if (typeof val === 'number') {
-      localAvailableCapacity.value = val
+    if (typeof val === "number") {
+      localAvailableCapacity.value = val;
     }
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 const currentAvailableCapacity = computed(() => {
-  return localAvailableCapacity.value ?? event.value?.availableCapacity ?? 0
-})
+  return localAvailableCapacity.value ?? event.value?.availableCapacity ?? 0;
+});
 
 const isFull = computed(() => {
-  return currentAvailableCapacity.value <= 0
-})
+  return currentAvailableCapacity.value <= 0;
+});
 
 const onEventFull = () => {
-  localAvailableCapacity.value = 0
-}
+  localAvailableCapacity.value = 0;
+};
 
 const formatEventDate = (value: string | null | undefined) => {
-  if (!value) return 'Fecha por confirmar'
+  if (!value) return "Fecha por confirmar";
   try {
-    return new Intl.DateTimeFormat('es-GT', {
-      dateStyle: 'full',
-      timeStyle: 'short',
-      timeZone: 'America/Guatemala'
-    }).format(new Date(value))
+    return new Intl.DateTimeFormat("es-GT", {
+      dateStyle: "full",
+      timeStyle: "short",
+      timeZone: "America/Guatemala",
+    }).format(new Date(value));
   } catch {
-    return value
+    return value;
   }
-}
+};
 </script>
 
 <template>
@@ -101,38 +113,60 @@ const formatEventDate = (value: string | null | undefined) => {
         title="No pudimos cargar la información del evento"
         message="Ocurrió un error al obtener la información de la actividad. Por favor intenta de nuevo."
       >
-        <AppButton to="/eventos" variant="secondary">Volver a eventos</AppButton>
+        <AppButton to="/eventos" variant="secondary"
+          >Volver a eventos</AppButton
+        >
         <button @click="() => refresh()">Reintentar</button>
       </StatePanel>
       <div v-else-if="event" class="event-detail-wrapper">
         <article class="event-detail">
           <div class="event-detail__meta">
-            <time :datetime="event.startsAt">📅 {{ formatEventDate(event.startsAt) }}</time>
+            <time :datetime="event.startsAt"
+              >📅 {{ formatEventDate(event.startsAt) }}</time
+            >
             <span class="event-detail__location">📍 {{ event.location }}</span>
           </div>
           <h1>{{ event.name }}</h1>
           <div class="event-detail__capacity">
             <div class="capacity-item">
               <span class="capacity-label">Capacidad máxima:</span>
-              <span class="capacity-value">{{ event.maximumCapacity }} asistentes</span>
+              <span class="capacity-value"
+                >{{ event.maximumCapacity }} asistentes</span
+              >
             </div>
             <div class="capacity-item capacity-availability" aria-live="polite">
               <span class="capacity-label">Disponibilidad:</span>
-              <span v-if="isEventPast" class="availability-status availability-status--closed">
+              <span
+                v-if="isEventPast"
+                class="availability-status availability-status--closed"
+              >
                 Este evento ya inició. Las inscripciones se encuentran cerradas.
               </span>
-              <span v-else-if="isFull" class="availability-status availability-status--full">
+              <span
+                v-else-if="isFull"
+                class="availability-status availability-status--full"
+              >
                 Cupo lleno
               </span>
-              <span v-else class="availability-status availability-status--available">
-                {{ currentAvailableCapacity === 1 ? '1 cupo disponible' : `${currentAvailableCapacity} cupos disponibles` }}
+              <span
+                v-else
+                class="availability-status availability-status--available"
+              >
+                {{
+                  currentAvailableCapacity === 1
+                    ? "1 cupo disponible"
+                    : `${currentAvailableCapacity} cupos disponibles`
+                }}
               </span>
             </div>
           </div>
           <div class="event-detail__description">
             {{ event.description }}
           </div>
-          <div v-if="event.additionalInformation" class="event-detail__additional">
+          <div
+            v-if="event.additionalInformation"
+            class="event-detail__additional"
+          >
             <h3>Información adicional</h3>
             <p>{{ event.additionalInformation }}</p>
           </div>
@@ -144,7 +178,9 @@ const formatEventDate = (value: string | null | undefined) => {
             >
               Inscribirme a este evento ↓
             </AppButton>
-            <AppButton to="/eventos" variant="secondary">← Ver todos los eventos</AppButton>
+            <AppButton to="/eventos" variant="secondary"
+              >← Ver todos los eventos</AppButton
+            >
           </div>
         </article>
 
@@ -190,9 +226,9 @@ const formatEventDate = (value: string | null | undefined) => {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: .75rem;
+  gap: 0.75rem;
   color: var(--color-muted);
-  font-size: .95rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
@@ -213,17 +249,17 @@ const formatEventDate = (value: string | null | undefined) => {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: .85rem 1.15rem;
+  padding: 0.85rem 1.15rem;
   background: var(--color-soft);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  font-size: .95rem;
+  font-size: 0.95rem;
 }
 
 .capacity-item {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .capacity-label {
@@ -238,9 +274,9 @@ const formatEventDate = (value: string | null | undefined) => {
 
 .availability-status {
   font-weight: 700;
-  padding: .2rem .55rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-sm);
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
 
 .availability-status--available {
@@ -276,7 +312,7 @@ const formatEventDate = (value: string | null | undefined) => {
 }
 
 .event-detail__additional h3 {
-  margin: 0 0 .5rem;
+  margin: 0 0 0.5rem;
   font-size: 1.05rem;
   color: var(--color-primary);
 }
@@ -285,7 +321,7 @@ const formatEventDate = (value: string | null | undefined) => {
   margin: 0;
   white-space: pre-line;
   color: var(--color-muted);
-  font-size: .95rem;
+  font-size: 0.95rem;
   line-height: 1.55;
 }
 
@@ -294,7 +330,7 @@ const formatEventDate = (value: string | null | undefined) => {
   flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
-  margin-top: .5rem;
+  margin-top: 0.5rem;
 }
 
 @media (max-width: 620px) {

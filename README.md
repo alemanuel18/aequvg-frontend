@@ -257,6 +257,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
 | `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
 | `/administrador/eventos` | Gestión de eventos: listado, búsqueda, filtros, creación, edición, archivado y eliminación confirmada. Requiere `EVENTS_MANAGE`. |
+| `/administrador/investigacion` | Gestión de proyectos de investigación: búsqueda, filtros, paginación, formulario con PDF, detalle, edición, revisión y eliminación confirmada. Requiere `PROJECTS_MANAGE`. |
 | `/administrador/contenido` | Gestión del Hero, anuncios institucionales y destacados. Requiere `INSTITUTIONAL_MANAGE`. |
 
 ### Acceso al panel administrativo
@@ -286,6 +287,8 @@ En `/administrador/contenido`, el permiso `INSTITUTIONAL_MANAGE` habilita la edi
 ### Uso administrativo de eventos
 
 En `/administrador/eventos`, una cuenta con `EVENTS_MANAGE` puede consultar el listado, buscar por texto, filtrar por estado y administrar la paginación. El formulario permite crear y editar eventos con confirmación, mientras que archivar realiza un retiro lógico y eliminar realiza un borrado físico. La eliminación es rechazada con `EVENT_HAS_REGISTRATIONS` cuando el evento tiene participantes; en ese caso debe archivarse.
+
+En `/administrador/investigacion`, una cuenta con `PROJECTS_MANAGE` puede buscar por título, descripción o autoría, filtrar por estado/tipo y paginar. La junta directiva registra título, slug, descripción, tipo, enlaces y PDF (hasta 25 MB); el backend atribuye el proyecto a la cuenta administrativa y lo crea en `EN_REVISION`. No hay envío por estudiantes. Los estados disponibles son `EN_REVISION`, `APROBADO` y `NO_APROBADO`; el detalle refleja revisor y motivo de rechazo. La carga y consulta del PDF requieren `PROJECTS_MANAGE`. Crear, editar y eliminar piden confirmación y anuncian el resultado con toast.
 
 La acción `Participantes` abre la consulta administrativa del evento seleccionado. Permite buscar por nombre, correo o teléfono, filtrar por estado (`CONFIRMADA` o `CANCELADA`) y recorrer los resultados mediante paginación. Una cuenta autorizada puede ver nombre, correo, teléfono, estado y fecha de inscripción; estos datos se consultan bajo demanda, permanecen solo en memoria mientras el panel está abierto y se limpian al cerrar o cambiar de evento.
 
