@@ -72,6 +72,12 @@ const project = {
 
 const secondProject = { ...project, id: 21, title: 'Tesis de segunda página', slug: 'tesis-segunda-pagina', type: 'TESIS' }
 
+let nextBoardMemberId = 103
+let boardMembers = [
+  { id: 101, photoId: null, name: 'Ana Pérez', position: 'Presidenta', description: null, institutionalEmail: 'ana@uvg.edu.gt', term: '2026', termStartsAt: '2026-01-01T00:00:00.000Z', termEndsAt: '2026-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null },
+  { id: 102, photoId: null, name: 'Luis Morales', position: 'Presidente', description: null, institutionalEmail: 'luis@uvg.edu.gt', term: '2025', termStartsAt: '2025-01-01T00:00:00.000Z', termEndsAt: '2025-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null }
+]
+
 const institutionalBlocks = [
   {
     id: 1,
@@ -144,6 +150,17 @@ const limitedUser = {
 }
 let adminSessionActive = false
 let activeUser = adminUser
+let contactMethods = [
+  { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
+  { id: 2, type: 'UBICACION', label: 'Campus Central UVG', value: 'Campus Central UVG, zona 15, Ciudad de Guatemala', url: 'https://www.google.com/maps/search/?api=1&query=Universidad+del+Valle+de+Guatemala', displayOrder: 2, active: true },
+  { id: 3, type: 'OTRO', label: 'TikTok', value: '@aeq_uvg', url: 'https://www.tiktok.com/@aeq_uvg', displayOrder: 3, active: true }
+]
+let nextContactMethodId = 4
+const sortedContactMethods = () => [...contactMethods].sort((a, b) =>
+  Number(a.type === 'UBICACION') - Number(b.type === 'UBICACION')
+  || a.displayOrder - b.displayOrder
+  || a.id - b.id
+)
 
 const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => Response.json(body, {
   status,
@@ -155,7 +172,7 @@ const json = (body: unknown, status = 200, extraHeaders: Record<string, string> 
 })
 
 Bun.serve({
-  port: 3002,
+  port: Number(process.env.PLAYWRIGHT_API_PORT || 3002),
   async fetch(request) {
     const url = new URL(request.url)
     if (request.method === 'OPTIONS') {
@@ -236,7 +253,62 @@ Bun.serve({
     }
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
     if (url.pathname === '/api/v1/institutional-content') return json(institutionalBlocks)
-    if (url.pathname === '/api/v1/board-members' || url.pathname === '/api/v1/contact-methods') return json([])
+    if (url.pathname === '/api/v1/board-members') return json(boardMembers.filter(member => member.status === 'ACTIVO'))
+    if (url.pathname === '/api/v1/admin/board-members' || url.pathname === '/api/v1/admin/board-members/order' || url.pathname.match(/^\/api\/v1\/admin\/board-members\/\d+$/)) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      if (request.method === 'GET') return json(boardMembers)
+      if (request.method === 'PUT' && url.pathname === '/api/v1/admin/board-members/order') {
+        const body = await request.json() as { items: Array<{ id: number; displayOrder: number }> }
+        body.items.forEach(item => { const index = boardMembers.findIndex(member => member.id === item.id); if (index >= 0) boardMembers[index] = { ...boardMembers[index]!, displayOrder: item.displayOrder } })
+        return json(body.items.map(item => boardMembers.find(member => member.id === item.id)))
+      }
+      if (request.method === 'POST') {
+        const body = await request.json() as Record<string, unknown>
+        const startYear = String(body.termStartsAt).slice(0, 4); const endYear = String(body.termEndsAt).slice(0, 4)
+        const created = { id: nextBoardMemberId++, photoId: null, photo: null, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, displayOrder: boardMembers.length, ...body }
+        boardMembers.push(created as typeof boardMembers[number]); return json(created, 201)
+      }
+      const id = Number(url.pathname.split('/').at(-1)); const index = boardMembers.findIndex(member => member.id === id)
+      if (request.method === 'PUT') {
+        const body = await request.json() as Record<string, unknown>
+        const startYear = String(body.termStartsAt).slice(0, 4); const endYear = String(body.termEndsAt).slice(0, 4)
+        boardMembers[index] = { ...boardMembers[index]!, ...body, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, photo: null }; return json(boardMembers[index])
+      }
+      if (request.method === 'DELETE') {
+        boardMembers[index] = { ...boardMembers[index]!, status: 'INACTIVO' }; return json(boardMembers[index])
+      }
+    }
+    if (request.method === 'GET' && url.pathname === '/api/v1/contact-methods') return json(sortedContactMethods().filter(method => method.active))
+    if (request.method === 'POST' && url.pathname === '/api/v1/contact-requests') return json({ accepted: true }, 202)
+    if (url.pathname === '/api/v1/admin/contact-methods') {
+      if (request.method === 'GET') return json(sortedContactMethods())
+      if (request.method === 'POST') {
+        const body = await request.json() as Record<string, unknown>
+        const nextOrder = Math.max(-1, ...contactMethods.filter(method => method.type !== 'UBICACION').map(method => method.displayOrder)) + 1
+        const created = { id: nextContactMethodId++, displayOrder: body.type === 'UBICACION' ? 0 : nextOrder, ...body }
+        contactMethods.push(created as typeof contactMethods[number])
+        return json(created, 201)
+      }
+    }
+    if (request.method === 'PUT' && url.pathname === '/api/v1/admin/contact-methods/order') {
+      const body = await request.json() as { orderedIds: number[] }
+      body.orderedIds.forEach((id, displayOrder) => {
+        const index = contactMethods.findIndex(method => method.id === id)
+        if (index >= 0) contactMethods[index] = { ...contactMethods[index]!, displayOrder }
+      })
+      return json(sortedContactMethods())
+    }
+    if (url.pathname.match(/^\/api\/v1\/admin\/contact-methods\/\d+$/)) {
+      const id = Number(url.pathname.split('/').pop())
+      const index = contactMethods.findIndex(method => method.id === id)
+      if (index < 0) return json({ error: { code: 'CONTACT_METHOD_NOT_FOUND', message: 'El medio de contacto no existe.' } }, 404)
+      if (request.method === 'PUT') {
+        const body = await request.json() as Record<string, unknown>
+        contactMethods[index] = { ...contactMethods[index]!, ...body } as typeof contactMethods[number]
+      } else if (request.method === 'DELETE') contactMethods[index] = { ...contactMethods[index]!, active: false }
+      return json(contactMethods[index])
+    }
     if (url.pathname === '/api/v1/admin/institutional-content/featured') {
       if (request.method === 'GET') return json({ newsIds: [7], eventIds: [10] })
       if (request.method === 'PUT') {
