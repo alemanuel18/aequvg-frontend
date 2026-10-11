@@ -256,6 +256,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
 | `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
 | `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
+| `/administrador/eventos` | Gestión de eventos: listado, búsqueda, filtros, creación, edición, archivado y eliminación confirmada. Requiere `EVENTS_MANAGE`. |
 | `/administrador/contenido` | Gestión del Hero, anuncios institucionales y destacados. Requiere `INSTITUTIONAL_MANAGE`. |
 
 ### Acceso al panel administrativo
@@ -281,6 +282,12 @@ Los estados de carga, vacío, error y éxito se muestran en la misma vista. Los 
 En `/administrador/noticias`, una persona autorizada puede buscar por texto, categoría y estado; crear o editar una noticia con resumen, contenido e imagen asociada por `imageId`; previsualizarla; cambiar su estado y confirmar su eliminación. El frontend muestra validaciones visibles, estados de carga/vacío/error/éxito y evita envíos duplicados, pero el backend sigue siendo la autoridad para permisos, categorías, imágenes y publicación.
 
 En `/administrador/contenido`, el permiso `INSTITUTIONAL_MANAGE` habilita la edición del Hero, anuncios de cuatro categorías y destacados de inicio. El límite de anuncios es global: máximo tres activos publicados, sin importar la categoría. Las imágenes de anuncios usan `imageUrl` HTTP/HTTPS; un borrador no ocupa el cupo público.
+
+### Uso administrativo de eventos
+
+En `/administrador/eventos`, una cuenta con `EVENTS_MANAGE` puede consultar el listado, buscar por texto, filtrar por estado y administrar la paginación. El formulario permite crear y editar eventos con confirmación, mientras que archivar realiza un retiro lógico y eliminar realiza un borrado físico. La eliminación es rechazada con `EVENT_HAS_REGISTRATIONS` cuando el evento tiene participantes; en ese caso debe archivarse.
+
+Al editar, las imágenes existentes se conservan. El formulario todavía no permite cargar imágenes nuevas porque no existe un flujo de archivos compatible con `EVENTS_MANAGE`.
 
 Para el contrato HTTP, ejemplos, matriz de permisos, casos de prueba y resultados reproducibles consulta [`aequvg-backend/docs/admin-news-institutional-flow.md`](../aequvg-backend/docs/admin-news-institutional-flow.md). Las credenciales, cookies y tokens nunca deben incluirse en la evidencia.
 

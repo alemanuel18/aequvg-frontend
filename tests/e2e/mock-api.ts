@@ -49,6 +49,16 @@ const secondEvent = {
   availableCapacity: 1
 }
 
+const eventWithRegistrations = { ...event, id: 13, name: 'Evento con participantes', availableCapacity: 0 }
+const initialAdminEvents = () => [
+  { ...event, createdAt: '2026-01-15T12:00:00.000Z', createdById: 1, createdBy: { id: 1, name: 'Administración de prueba' }, imageId: null },
+  { ...secondEvent, status: 'BORRADOR', createdAt: '2026-01-15T12:00:00.000Z', createdById: 1, createdBy: { id: 1, name: 'Administración de prueba' }, imageId: 17 },
+  { ...eventWithRegistrations, createdAt: '2026-01-15T12:00:00.000Z', createdById: 1, createdBy: { id: 1, name: 'Administración de prueba' }, imageId: null },
+  ...Array.from({ length: 8 }, (_, index) => ({ ...event, id: 20 + index, name: `Evento administrativo ${index + 1}`, status: 'BORRADOR', createdAt: '2026-01-15T12:00:00.000Z', createdById: 1, createdBy: { id: 1, name: 'Administración de prueba' }, imageId: null }))
+]
+let adminEvents = initialAdminEvents()
+let nextAdminEventId = 14
+
 const fullEvent = {
   ...event,
   id: 12,
@@ -198,6 +208,8 @@ Bun.serve({
       adminSessionActive = true
       adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
       adminResource = { ...resource }
+      adminEvents = initialAdminEvents()
+      nextAdminEventId = 14
       activeUser = body.email === 'editor@uvg.edu.gt' ? limitedUser : adminUser
       const response = json({ user: activeUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
@@ -334,11 +346,46 @@ Bun.serve({
         return json(body)
       }
     }
-    if (url.pathname === '/api/v1/admin/events') {
-      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) {
-        return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+    if (url.pathname === '/api/v1/admin/events' || url.pathname.match(/^\/api\/v1\/admin\/events\/\d+(\/archive)?$/)) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (!activeUser.permissions.includes('EVENTS_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para administrar eventos.' } }, 403)
+      if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      if (request.method === 'GET' && url.pathname === '/api/v1/admin/events') {
+        const q = (url.searchParams.get('q') || '').toLowerCase()
+        const status = url.searchParams.get('status')
+        const page = Number(url.searchParams.get('page') || 1)
+        const pageSize = Number(url.searchParams.get('pageSize') || 10)
+        const filtered = adminEvents.filter(item => (!q || `${item.name} ${item.description} ${item.location}`.toLowerCase().includes(q)) && (!status || item.status === status))
+        return json({ items: filtered.slice((page - 1) * pageSize, page * pageSize), pagination: { page, pageSize, total: filtered.length } })
       }
-      return json({ items: [event], pagination: { page: 1, pageSize: 50, total: 1 } })
+      if (request.method === 'POST' && url.pathname === '/api/v1/admin/events') {
+        const body = await request.json() as Record<string, unknown>
+        if (typeof body.name !== 'string' || !body.name.trim() || typeof body.description !== 'string' || !body.description.trim() || typeof body.startsAt !== 'string' || typeof body.location !== 'string' || Number(body.maximumCapacity) < 1) return json({ error: { code: 'VALIDATION_ERROR', message: 'Los datos del evento no son válidos.' } }, 422)
+        const created = { ...body, id: nextAdminEventId++, imageId: body.imageId ?? null, availableCapacity: Number(body.maximumCapacity), createdAt: new Date().toISOString(), createdById: 1, createdBy: { id: 1, name: 'Administración de prueba' }, status: body.status || 'BORRADOR' }
+        adminEvents.push(created as typeof adminEvents[number])
+        return json(created, 201)
+      }
+      const id = Number(url.pathname.match(/\/events\/(\d+)/)?.[1])
+      const current = adminEvents.find(item => item.id === id)
+      if (!current) return json({ error: { code: 'EVENT_NOT_FOUND', message: 'El evento no existe.' } }, 404)
+      if (request.method === 'GET') return json(current)
+      if (request.method === 'PUT') {
+        const body = await request.json() as Record<string, unknown>
+        if (typeof body.name !== 'string' || !body.name.trim() || typeof body.description !== 'string' || !body.description.trim() || typeof body.startsAt !== 'string' || typeof body.location !== 'string' || Number(body.maximumCapacity) < 1) return json({ error: { code: 'VALIDATION_ERROR', message: 'Los datos del evento no son válidos.' } }, 422)
+        const updated = { ...current, ...body, imageId: body.imageId ?? current.imageId }
+        adminEvents = adminEvents.map(item => item.id === id ? updated : item)
+        return json(updated)
+      }
+      if (request.method === 'PATCH') {
+        const archived = { ...current, status: 'ARCHIVADO' }
+        adminEvents = adminEvents.map(item => item.id === id ? archived : item)
+        return json(archived)
+      }
+      if (request.method === 'DELETE') {
+        if (id === eventWithRegistrations.id) return json({ error: { code: 'EVENT_HAS_REGISTRATIONS', message: 'No se puede eliminar un evento que tiene inscripciones.' } }, 409)
+        adminEvents = adminEvents.filter(item => item.id !== id)
+        return json(current)
+      }
     }
     if (url.pathname === '/api/v1/admin/institutional-content') {
       if (request.method === 'GET') return json(institutionalBlocks)
