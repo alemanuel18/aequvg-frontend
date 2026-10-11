@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import type { ContactMethod } from '~/types/api'
+import { contactMethodAction, contactMethodIcon } from '~/utils/contact-methods'
 
 const props = defineProps<{ method: ContactMethod }>()
 
-const details = {
-  EMAIL: { icon: 'mail', description: 'Escríbenos y atenderemos tu consulta.', action: 'Enviar correo' },
-  TELEFONO: { icon: 'phone', description: 'Comunícate directamente con la Asociación.', action: 'Llamar ahora' },
-  UBICACION: { icon: 'map-pin', description: 'Encuéntranos dentro del campus universitario.', action: 'Ver ubicación' },
-  INSTAGRAM: { icon: 'instagram', description: 'Conoce nuestras actividades y novedades.', action: 'Visitar Instagram' },
-  FACEBOOK: { icon: 'facebook', description: 'Sigue las noticias de nuestra comunidad.', action: 'Visitar Facebook' },
-  OTRO: { icon: 'link', description: 'Consulta este medio oficial de la Asociación.', action: 'Abrir enlace' },
+const descriptions = {
+  EMAIL: 'Escríbenos y atenderemos tu consulta.', TELEFONO: 'Comunícate directamente con la Asociación.',
+  UBICACION: 'Encuéntranos dentro del campus universitario.', INSTAGRAM: 'Conoce nuestras actividades y novedades.',
+  FACEBOOK: 'Sigue las noticias de nuestra comunidad.', OTRO: 'Consulta este canal oficial de la Asociación.'
 } as const
-
-const detail = computed(() => details[props.method.type])
+const icon = computed(() => contactMethodIcon(props.method))
 const opensNewWindow = computed(() => props.method.url?.startsWith('http') ?? false)
 </script>
 
@@ -20,12 +17,12 @@ const opensNewWindow = computed(() => props.method.url?.startsWith('http') ?? fa
   <article class="contact-method">
     <div class="contact-method__header">
       <span class="contact-method__icon">
-        <AppIcon :name="detail.icon" :size="22" />
+        <AppIcon :name="icon" :size="22" />
       </span>
       <span class="contact-method__label">{{ method.label }}</span>
     </div>
     <strong class="contact-method__value">{{ method.value }}</strong>
-    <p class="contact-method__description">{{ detail.description }}</p>
+    <p class="contact-method__description">{{ descriptions[method.type] }}</p>
     <a
       v-if="method.url"
       class="contact-method__action"
@@ -33,7 +30,7 @@ const opensNewWindow = computed(() => props.method.url?.startsWith('http') ?? fa
       :target="opensNewWindow ? '_blank' : undefined"
       :rel="opensNewWindow ? 'noopener noreferrer' : undefined"
     >
-      {{ detail.action }}
+      {{ contactMethodAction(method) }}
       <AppIcon name="arrow-up-right" :size="17" />
     </a>
   </article>

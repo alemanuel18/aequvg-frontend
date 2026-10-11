@@ -43,6 +43,10 @@ tests/
 
 Las páginas consumen `src/services/api.ts`; no contienen URLs duplicadas. Ese servicio selecciona la URL correcta para navegador o SSR y normaliza errores. La identidad visual está centralizada en `src/assets/styles/main.css`.
 
+## Junta Directiva
+
+La ruta pública `/junta-directiva` muestra por defecto el año más reciente y permite consultar años anteriores. Los integrantes aparecen en cada año comprendido entre el inicio y el fin de su periodo. `/administrador/junta-directiva` requiere sesión y `BOARD_MANAGE`; permite agregar, editar, ordenar con flechas y retirar integrantes con nombre, cargo seleccionado de un catálogo, correo institucional, fechas de periodo y estado. La fotografía queda fuera del formulario actual. Todas las mutaciones requieren confirmación, anuncian éxito o error mediante toast, bloquean envíos repetidos y conservan foco y diseño utilizable desde 320 px.
+
 ## Variables de entorno
 
 ```bash
@@ -182,6 +186,14 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 ```
 
 La imagen utiliza un usuario sin privilegios, healthcheck y rotación local de logs. Antes de publicar todavía deben definirse dominio, TLS/proxy inverso, observabilidad centralizada y la infraestructura definitiva del backend.
+
+## Flujo de contacto
+
+La página `/contacto` consulta los medios activos, muestra iconos según el canal y representa la ubicación con un mapa de Google Maps al final de los demás medios. El mismo catálogo ordenado alimenta el footer; no hay correos, teléfonos o direcciones fijos en componentes. Las redes nuevas se agregan como `OTRO`: TikTok, YouTube, LinkedIn y X reciben un icono reconocido por etiqueta/URL, y cualquier otra usa un icono de enlace seguro.
+
+`/administrador/contacto` requiere sesión y permiso `CONTACT_MANAGE`. Ofrece estados de carga, vacío y error, formulario con validaciones visibles, confirmación antes de cada escritura, toasts de resultado y edición/reactivación de medios inactivos. El orden numérico no se expone: los medios se acomodan con flechas y un botón guarda la secuencia completa, mientras que las ubicaciones permanecen fijas al final. El primer correo `EMAIL` activo de la lista se identifica como destinatario del formulario. No existe pantalla ni bandeja de solicitudes.
+
+El formulario público conserva consentimiento, honeypot y validación local; bloquea envíos repetidos mientras la petición está en curso. El backend responde `202` después de que el proveedor acepta el correo. Una falla de entrega se anuncia sin limpiar el formulario.
 
 ## Seed y datos mostrados
 
