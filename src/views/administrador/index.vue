@@ -6,6 +6,7 @@ definePageMeta({ layout: false })
 useSeoMeta({ title: 'Acceso administrativo', description: 'Acceso privado al panel administrativo de AsoQuímica UVG.', robots: 'noindex, nofollow' })
 
 const route = useRoute()
+const sessionExpired = computed(() => route.query.reason === 'expired')
 const session = useAdminSession()
 const fields = reactive({ email: '', password: '' })
 const errors = ref<AdminLoginErrors>({})
@@ -81,6 +82,7 @@ const submit = async () => {
           <h2>Iniciar sesión</h2>
           <p class="login-card__hint">Usa tus credenciales institucionales de UVG.</p>
         </div>
+        <p v-if="sessionExpired" class="form-message" role="status">Tu sesión expiró. Inicia sesión nuevamente para continuar.</p>
 
         <div class="field">
           <label for="admin-email">Correo institucional</label>
@@ -123,6 +125,8 @@ const submit = async () => {
         <AppButton type="submit" :disabled="submitting || checkingSession">
           {{ checkingSession ? 'Comprobando sesión…' : submitting ? 'Verificando acceso…' : 'Iniciar sesión' }}
         </AppButton>
+        <NuxtLink class="recovery-link" to="/administrador/recover-access">¿Necesitas recuperar el acceso?</NuxtLink>
+        <NuxtLink class="recovery-link" to="/administrador/sign-up">Solicitar una cuenta administrativa</NuxtLink>
       </form>
     </main>
   </div>
@@ -159,6 +163,8 @@ const submit = async () => {
 .form-message { padding: .75rem; background: #fff0f0; border: 1px solid #d99; border-radius: .55rem; }
 .login-card :deep(.button) { width: 100%; background: var(--admin-primary); border-color: var(--admin-primary); }
 .login-card :deep(.button:hover) { background: var(--admin-primary-dark); }
+.recovery-link { justify-self: center; color: var(--admin-primary-dark); font-weight: 800; text-underline-offset: .2em; }
+.login-card a:focus-visible { outline: 3px solid #e6aa32; outline-offset: 3px; }
 @media (max-width: 720px) {
   .login-header { min-height: 4.5rem; }
   .brand small { display: none; }
