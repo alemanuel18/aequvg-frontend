@@ -834,8 +834,11 @@ td small {
 }
 .actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.35rem;
+}
+.actions > button {
+  white-space: nowrap;
 }
 .primary,
 .secondary,
@@ -987,7 +990,15 @@ button:disabled {
     text-transform: uppercase;
   }
   .actions {
-    grid-column: 2;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.3rem;
+  }
+  .actions > button {
+    min-width: 0;
+    padding-inline: 0.3rem;
+    font-size: 0.72rem;
   }
   .detail dl {
     grid-template-columns: 1fr;
@@ -1006,9 +1017,6 @@ button:disabled {
   }
   .page-heading > .primary {
     width: 100%;
-  }
-  .actions > * {
-    flex: 1;
   }
   .pagination > div > * {
     min-width: 0;
