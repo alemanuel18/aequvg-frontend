@@ -71,7 +71,7 @@ El Compose del frontend no levanta PostgreSQL ni el backend. Inícialos primero 
 ### 1. Iniciar el backend
 
 ```bash
-cd ../../Back/aequvg-backend
+cd ../aequvg-backend
 cp .env.example .env
 docker compose up --build -d
 docker compose exec backend bun run migrate:deploy
@@ -200,20 +200,20 @@ El formulario público conserva consentimiento, honeypot y validación local; bl
 El frontend no guarda datos ni posee un seed independiente. Inicio, junta y contacto consultan la API. Los datos iniciales se administran en:
 
 ```text
-Back/aequvg-backend/prisma/seed.ts
+../aequvg-backend/prisma/seed.ts
 ```
 
 Con Docker:
 
 ```bash
-cd ../../Back/aequvg-backend
+cd ../aequvg-backend
 docker compose exec backend bun run db:seed
 ```
 
 Sin Docker:
 
 ```bash
-cd ../../Back/aequvg-backend
+cd ../aequvg-backend
 bun run db:seed
 ```
 
@@ -254,6 +254,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
 | `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
 | `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
+| `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
 | `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
 | `/administrador/contenido` | Gestión del Hero, anuncios institucionales y destacados. Requiere `INSTITUTIONAL_MANAGE`. |
 
@@ -268,6 +269,12 @@ http://localhost:3001/administrador
 Inicia sesión con una cuenta institucional activa creada en el backend. Después de validar la sesión, el frontend redirige a `/administrador/panel`; si se intenta abrir directamente una ruta protegida sin sesión, se vuelve a `/administrador` y se conserva el destino solicitado.
 
 Los módulos visibles dependen de los permisos devueltos por el backend. Las credenciales, sesiones y permisos no se configuran ni se almacenan en el frontend.
+
+### Uso administrativo de recursos
+
+En `/administrador/recursos`, el listado permite buscar, filtrar por categoría o estado y editar, archivar o eliminar recursos con confirmación. El formulario valida de forma visible título, descripción, categoría, destino y enlaces. La selección de un PDF, DOC, DOCX o ZIP inicia la carga multipart y completa el `fileId`; no se envían binarios dentro del JSON del recurso. La edición puede sustituir el archivo y reemplazar los enlaces. Durante carga y guardado se deshabilitan las acciones para evitar envíos duplicados.
+
+Los estados de carga, vacío, error y éxito se muestran en la misma vista. Los controles tienen etiquetas accesibles, foco visible y orden navegable por teclado; el diseño se adapta desde 320 px. La autorización definitiva permanece en el backend: el frontend oculta módulos sin permiso, pero una llamada directa no autorizada debe ser rechazada por la API.
 
 ### Flujo de anuncios y noticias
 
