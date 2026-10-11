@@ -110,11 +110,22 @@ export interface ResourceFile { id: number; originalName: string; mimeType: stri
 export interface ResourceLink { id: number; label: string; url: string; displayOrder: number }
 export interface PublicResource {
   id: number; categoryId: number; fileId: number | null; title: string; description: string; status: 'PUBLICADO'
-  createdAt: string; publishedAt: string | null; category: ResourceCategory; file: ResourceFile | null; links: ResourceLink[]
+  createdAt: string; updatedAt?: string; publishedAt: string | null; category: ResourceCategory; file: ResourceFile | null; links: ResourceLink[]
   createdBy: { id: number; name: string }
 }
 export interface PublicResourceList { items: PublicResource[]; pagination: Pagination }
 export interface PublicResourceQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
+export interface AdminResource extends Omit<PublicResource, 'status'> { status: ContentStatus }
+export interface AdminResourceList { items: AdminResource[]; pagination: Pagination }
+export interface ResourceInput {
+  categoryId: number
+  fileId?: number | null
+  title: string
+  description: string
+  status?: ContentStatus
+  publishedAt?: string | null
+  links?: Array<{ label: string; url: string; displayOrder?: number }>
+}
 
 export interface PublicEvent {
   id: number
