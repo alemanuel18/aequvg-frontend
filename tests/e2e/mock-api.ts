@@ -15,7 +15,7 @@ const news = {
 }
 
 const secondNews = { ...news, id: 8, title: 'Anuncio de segunda página', summary: 'Contenido para validar la paginación.' }
-const adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
+let adminNews: typeof news | null = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
 let reflectedNews: typeof news | null = null
 
 const resource = {
@@ -196,6 +196,8 @@ Bun.serve({
         return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
       }
       adminSessionActive = true
+      adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
+      const response = json({ user: adminUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       activeUser = body.email === 'editor@uvg.edu.gt' ? limitedUser : adminUser
       const response = json({ user: activeUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
@@ -249,18 +251,22 @@ Bun.serve({
       }
       if (request.method === 'POST') {
         const body = await request.json() as Record<string, unknown>
+        adminNews = { ...news, id: 30, ...body, category: { id: body.categoryId, name: 'Convocatorias', active: true }, createdBy: adminUser }
         reflectedNews = { ...news, id: 30, ...body, category: { id: body.categoryId, name: 'Convocatorias', active: true }, createdBy: adminUser } as typeof news
-        return json(reflectedNews, 201)
+        return json(adminNews, 201)
       }
       const id = Number(url.pathname.split('/')[5])
       if (request.method === 'PUT') {
         const body = await request.json() as Record<string, unknown>
-        return json({ ...adminNews, id, ...body, category: { id: body.categoryId || 2, name: 'Convocatorias', active: true }, createdBy: adminUser })
+        adminNews = { ...news, id, ...body, category: { id: body.categoryId || 2, name: 'Convocatorias', active: true }, createdBy: adminUser }
+        return json(adminNews)
       }
-      if (request.method === 'PATCH') return json({ ...adminNews, id, status: 'ARCHIVADO', publishedAt: null })
+      if (request.method === 'PATCH') { adminNews = adminNews ? { ...adminNews, id, status: 'ARCHIVADO', publishedAt: null } : null; return json(adminNews) }
       if (request.method === 'DELETE') {
+        const removed = adminNews ? { ...adminNews, id, status: 'ARCHIVADO', publishedAt: null } : { ...news, id, status: 'ARCHIVADO', publishedAt: null }
+        adminNews = null
         if (id === 30) reflectedNews = null
-        return json({ ...adminNews, id, status: 'ARCHIVADO', publishedAt: null })
+        return json(removed)
       }
     }
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })

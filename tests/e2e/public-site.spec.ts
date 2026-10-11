@@ -181,6 +181,7 @@ test('administra noticias con filtros, previsualización y confirmación', async
   await page.getByRole('button', { name: 'Previsualizar' }).click()
   await expect(page.getByRole('heading', { name: 'Título de la noticia', level: 3 })).toBeVisible()
 
+  await page.getByRole('button', { name: 'Nueva noticia' }).click()
   await page.locator('#news-title').fill('Nueva noticia de prueba')
   await page.getByLabel('Resumen').fill('Resumen suficientemente descriptivo.')
   await page.getByLabel('Contenido').fill('Contenido suficientemente extenso para publicar una noticia.')
@@ -190,13 +191,24 @@ test('administra noticias con filtros, previsualización y confirmación', async
   await page.getByRole('button', { name: 'Crear noticia' }).click()
   await expect(page.getByText('La noticia se creó correctamente.')).toBeVisible()
 
+  const createdCard = page.locator('.news-item').filter({ hasText: 'Nueva noticia de prueba' })
+  await expect(createdCard).toBeVisible()
+  await createdCard.getByRole('button', { name: 'Editar' }).click()
+  await page.locator('#news-title').fill('Noticia actualizada de prueba')
+  await page.getByRole('button', { name: 'Actualizar noticia' }).click()
+  await expect(page.getByRole('heading', { name: '¿Actualizar noticia?' })).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'Actualizar noticia' }).click()
+  await expect(page.getByText('La noticia se actualizó correctamente.')).toBeVisible()
+  const updatedCard = page.locator('.news-item').filter({ hasText: 'Noticia actualizada de prueba' })
+  await expect(updatedCard).toBeVisible()
   await page.goto('/noticias?q=Nueva%20noticia%20de%20prueba')
   await expect(page.getByRole('link', { name: /Leer noticia: Nueva noticia de prueba/ })).toBeVisible()
   await page.goto('/administrador/noticias')
-
-  await page.getByRole('button', { name: 'Eliminar' }).first().click()
+  await updatedCard.getByRole('button', { name: 'Eliminar' }).click()
   await expect(page.getByRole('heading', { name: '¿Eliminar noticia permanentemente?' })).toBeVisible()
   await page.getByRole('button', { name: 'Eliminar permanentemente' }).click()
+  await expect(page.getByText('La noticia se eliminó correctamente.')).toBeVisible()
+  await expect(page.locator('.news-item').filter({ hasText: 'Noticia actualizada de prueba' })).toHaveCount(0)
 })
 
 test('cerrar sesión invalida acciones posteriores y protege el acceso directo', async ({ page }) => {
