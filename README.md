@@ -287,6 +287,10 @@ En `/administrador/contenido`, el permiso `INSTITUTIONAL_MANAGE` habilita la edi
 
 En `/administrador/eventos`, una cuenta con `EVENTS_MANAGE` puede consultar el listado, buscar por texto, filtrar por estado y administrar la paginación. El formulario permite crear y editar eventos con confirmación, mientras que archivar realiza un retiro lógico y eliminar realiza un borrado físico. La eliminación es rechazada con `EVENT_HAS_REGISTRATIONS` cuando el evento tiene participantes; en ese caso debe archivarse.
 
+La acción `Participantes` abre la consulta administrativa del evento seleccionado. Permite buscar por nombre, correo o teléfono, filtrar por estado (`CONFIRMADA` o `CANCELADA`) y recorrer los resultados mediante paginación. Una cuenta autorizada puede ver nombre, correo, teléfono, estado y fecha de inscripción; estos datos se consultan bajo demanda, permanecen solo en memoria mientras el panel está abierto y se limpian al cerrar o cambiar de evento.
+
+La capacidad máxima puede ajustarse desde el formulario de edición. El backend rechaza con `CAPACITY_BELOW_REGISTRATIONS` cualquier reducción por debajo de las inscripciones confirmadas. El panel no permite editar, cancelar, reactivar ni exportar participantes, y no calcula una disponibilidad administrativa desde páginas parciales.
+
 Al editar, las imágenes existentes se conservan. El formulario todavía no permite cargar imágenes nuevas porque no existe un flujo de archivos compatible con `EVENTS_MANAGE`.
 
 Para el contrato HTTP, ejemplos, matriz de permisos, casos de prueba y resultados reproducibles consulta [`aequvg-backend/docs/admin-news-institutional-flow.md`](../aequvg-backend/docs/admin-news-institutional-flow.md). Las credenciales, cookies y tokens nunca deben incluirse en la evidencia.

@@ -267,6 +267,161 @@ test('archiva y elimina eventos, mostrando la restricción de inscripciones', as
   expect(csrfMethods.has('DELETE')).toBe(true)
 })
 
+test('consulta participantes aislados por evento con búsqueda, filtros y paginación', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/eventos')
+
+  const eventARow = page.locator('tr').filter({ hasText: 'Taller de Espectrometría UV-Vis' })
+  await eventARow.getByRole('button', { name: 'Participantes' }).click()
+  await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis', level: 2 })).toBeFocused()
+  await expect(page.getByText('Ana Evento A')).toBeVisible()
+  await expect(page.getByText('ana.evento.a@uvg.edu.gt')).toBeVisible()
+  await expect(page.getByText('5555-1000')).toBeVisible()
+  const anaRegistrationRow = page.locator('tr').filter({ hasText: 'Ana Evento A' })
+  await expect(anaRegistrationRow.getByText('Confirmada')).toBeVisible()
+  await expect(page.getByText('Página 1 de 2')).toBeVisible()
+
+  await page.getByLabel('Buscar participante').fill('ana.evento.a@uvg.edu.gt')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(page.getByText('Ana Evento A')).toBeVisible()
+  await page.getByLabel('Buscar participante').fill('5555-1000')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(page.getByText('Ana Evento A')).toBeVisible()
+  await page.getByLabel('Buscar participante').fill('')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await page.locator('#registration-status').selectOption('CANCELADA')
+  await expect(page.getByText('Participante Evento A 2')).toBeVisible()
+  await expect(page.getByText('Ana Evento A')).not.toBeVisible()
+
+  await page.locator('#registration-status').selectOption('')
+  await page.getByRole('button', { name: 'Siguiente ›' }).click()
+  await expect(page.getByText('Página 2 de 2')).toBeVisible()
+  await expect(page.getByText('Participante Evento A 21')).toBeVisible()
+  await expect(page.getByText('Ana Evento A')).not.toBeVisible()
+
+  await page.getByRole('button', { name: 'Cerrar participantes' }).click()
+  await expect(page.getByText('ana.evento.a@uvg.edu.gt')).not.toBeVisible()
+  await expect(eventARow.getByRole('button', { name: 'Participantes' })).toBeFocused()
+
+  const eventBRow = page.locator('tr').filter({ hasText: 'Simposio de Química Verde' })
+  await eventBRow.getByRole('button', { name: 'Participantes' }).click()
+  await expect(page.getByRole('heading', { name: 'Simposio de Química Verde', level: 2 })).toBeFocused()
+  await expect(page.getByText('Bruno Evento B')).toBeVisible()
+  await expect(page.getByText('ana.evento.a@uvg.edu.gt')).not.toBeVisible()
+  expect(await page.evaluate(() => ({ local: Object.keys(localStorage), session: Object.keys(sessionStorage), url: location.href }))).toEqual({ local: [], session: [], url: 'http://127.0.0.1:3001/administrador/eventos' })
+})
+
+test('descarta respuestas de participantes obsoletas al cambiar de evento', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/eventos')
+
+  let releaseEventA!: () => void
+  const eventAResponse = new Promise<void>(resolve => { releaseEventA = resolve })
+  await page.route('**/api/v1/admin/events/*/registrations*', async route => {
+    if (route.request().url().includes('/events/10/')) {
+      await eventAResponse
+    }
+    await route.continue()
+  })
+
+  await page.locator('tr').filter({ hasText: 'Taller de Espectrometría UV-Vis' }).getByRole('button', { name: 'Participantes' }).click()
+  await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis', level: 2 })).toBeFocused()
+  await page.locator('tr').filter({ hasText: 'Simposio de Química Verde' }).getByRole('button', { name: 'Participantes' }).click()
+  await expect(page.getByRole('heading', { name: 'Simposio de Química Verde', level: 2 })).toBeFocused()
+  await expect(page.getByText('Bruno Evento B')).toBeVisible()
+  releaseEventA()
+  await expect(page.getByText('Bruno Evento B')).toBeVisible()
+  await expect(page.getByText('ana.evento.a@uvg.edu.gt')).not.toBeVisible()
+  await page.unroute('**/api/v1/admin/events/*/registrations*')
+})
+
+test('protege la consulta de participantes y muestra estados vacío y error recuperable', async ({ page }) => {
+  const unauthorized = await page.request.get('/api/v1/admin/events/10/registrations')
+  expect(unauthorized.status()).toBe(401)
+
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('editor@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  const forbidden = await page.request.get('/api/v1/admin/events/10/registrations')
+  expect(forbidden.status()).toBe(403)
+
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click()
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  const authorized = await page.request.get('/api/v1/admin/events/10/registrations?page=1&pageSize=20')
+  expect(authorized.status()).toBe(200)
+  const missingEvent = await page.request.get('/api/v1/admin/events/999/registrations')
+  expect(missingEvent.status()).toBe(404)
+  const invalidQuery = await page.request.get('/api/v1/admin/events/10/registrations?page=0')
+  expect(invalidQuery.status()).toBe(422)
+  await page.goto('/administrador/eventos')
+  const eventARow = page.locator('tr').filter({ hasText: 'Taller de Espectrometría UV-Vis' })
+  await eventARow.getByRole('button', { name: 'Participantes' }).click()
+  await page.getByLabel('Buscar participante').fill('sin-resultados')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(page.getByRole('heading', { name: 'No hay participantes' })).toBeVisible()
+
+  await page.route('**/api/v1/admin/events/10/registrations*', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Servicio no disponible.' } }) }))
+  await page.getByLabel('Buscar participante').fill('Ana Evento A')
+  await page.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await expect(page.getByRole('heading', { name: 'No se pudieron cargar los participantes' })).toBeVisible()
+  await page.unroute('**/api/v1/admin/events/10/registrations*')
+  await page.getByRole('button', { name: 'Reintentar consulta' }).click()
+  await expect(page.getByText('Ana Evento A')).toBeVisible()
+})
+
+test('actualiza capacidad y conserva el formulario ante CAPACITY_BELOW_REGISTRATIONS', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/eventos')
+
+  const csrfMethods = new Set<string>()
+  page.on('request', request => {
+    if (request.url().includes('/api/v1/admin/events') && request.method() === 'PUT' && request.headers()['x-csrf-token'] === 'csrf-e2e') csrfMethods.add(request.method())
+  })
+  const eventRow = page.locator('tr').filter({ hasText: 'Evento con participantes' })
+  await eventRow.getByRole('button', { name: 'Editar' }).click()
+  const initialEvent = await page.request.get('/api/v1/admin/events/13')
+  expect(initialEvent.status()).toBe(200)
+  const initialCapacity = (await initialEvent.json()).maximumCapacity
+  expect(initialCapacity).toBe(30)
+
+  await page.getByLabel('Capacidad máxima *').fill('3')
+  await page.getByRole('button', { name: 'Actualizar evento' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Actualizar evento' }).click()
+  await expect(page.getByText('El evento se actualizó correctamente.')).toBeVisible()
+  const capacityAtConfirmedCount = await page.request.get('/api/v1/admin/events/13')
+  expect((await capacityAtConfirmedCount.json()).maximumCapacity).toBe(3)
+
+  await page.locator('tr').filter({ hasText: 'Evento con participantes' }).getByRole('button', { name: 'Editar' }).click()
+  await page.getByLabel('Capacidad máxima *').fill('2')
+  await page.getByRole('button', { name: 'Actualizar evento' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Actualizar evento' }).click()
+  await expect(page.getByText('La capacidad no puede ser menor al número de inscripciones confirmadas actuales.')).toBeVisible()
+  await expect(page.getByLabel('Capacidad máxima *')).toHaveValue('2')
+  const capacityAfterRejection = await page.request.get('/api/v1/admin/events/13')
+  expect(capacityAfterRejection.status()).toBe(200)
+  expect((await capacityAfterRejection.json()).maximumCapacity).toBe(3)
+
+  await page.getByLabel('Capacidad máxima *').fill('5')
+  await page.getByRole('button', { name: 'Actualizar evento' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Actualizar evento' }).click()
+  await expect(page.getByText('El evento se actualizó correctamente.')).toBeVisible()
+  expect(csrfMethods.has('PUT')).toBe(true)
+  const finalEvent = await page.request.get('/api/v1/admin/events/13')
+  expect((await finalEvent.json()).maximumCapacity).toBe(5)
+})
+
 test('el panel administrativo funciona con teclado y a 320 px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await page.goto('/administrador')
