@@ -47,6 +47,12 @@ Las páginas consumen `src/services/api.ts`; no contienen URLs duplicadas. Ese s
 
 La ruta pública `/junta-directiva` muestra por defecto el año más reciente y permite consultar años anteriores. Los integrantes aparecen en cada año comprendido entre el inicio y el fin de su periodo. `/administrador/junta-directiva` requiere sesión y `BOARD_MANAGE`; permite agregar, editar, ordenar con flechas y retirar integrantes con nombre, cargo seleccionado de un catálogo, correo institucional, fechas de periodo y estado. La fotografía queda fuera del formulario actual. Todas las mutaciones requieren confirmación, anuncian éxito o error mediante toast, bloquean envíos repetidos y conservan foco y diseño utilizable desde 320 px.
 
+## Acceso administrativo y proyectos
+
+El inicio de sesión está en `/administrador`; el panel muestra los módulos habilitados por los permisos de la sesión. La gestión de proyectos está en `/administrador/proyectos` y requiere `PROJECTS_MANAGE`. La guía API del backend describe permisos, contratos y casos: [`admin-access-flow.md`](../aequvg-backend/docs/admin-access-flow.md) y [`projects-admin-flow.md`](../aequvg-backend/docs/projects-admin-flow.md).
+
+Estado actual de interfaz: el login y cierre de sesión están disponibles. Las pantallas frontend de solicitud de alta, recuperación/restablecimiento de contraseña y acceso Microsoft no están implementadas; `/administrador/usuarios` sigue en construcción aunque el backend ofrece endpoints para gestión. Consultar la evidencia y defectos registrados en [`admin-flows-evidence.md`](../aequvg-backend/docs/admin-flows-evidence.md).
+
 ## Variables de entorno
 
 ```bash
