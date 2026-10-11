@@ -115,6 +115,25 @@ test('protege el panel y valida el inicio de sesión administrativo', async ({ p
   await expect(page.getByRole('heading', { name: 'Cargando panel', level: 2 })).not.toBeVisible()
 })
 
+test('protege el acceso directo al módulo de noticias', async ({ page }) => {
+  await page.goto('/administrador/noticias')
+  await expect(page).toHaveURL(/\/administrador\?returnTo=\/administrador\/noticias/)
+  await expect(page.getByRole('heading', { name: 'Panel administrativo', level: 1 })).toBeVisible()
+})
+
+test('redirecciona una cuenta autenticada sin NEWS_MANAGE al panel', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('editor@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  await page.goto('/administrador/noticias')
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+  await expect(page.getByRole('heading', { name: 'Módulos disponibles', level: 2 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toHaveCount(0)
+})
+
 test('el panel administrativo funciona con teclado y a 320 px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await page.goto('/administrador')
@@ -156,6 +175,10 @@ test('administra noticias con filtros, previsualización y confirmación', async
   await expect(page.getByRole('heading', { name: '¿Crear noticia?' })).toBeVisible()
   await page.getByRole('button', { name: 'Crear noticia' }).click()
   await expect(page.getByText('La noticia se creó correctamente.')).toBeVisible()
+
+  await page.goto('/noticias?q=Nueva%20noticia%20de%20prueba')
+  await expect(page.getByRole('link', { name: /Leer noticia: Nueva noticia de prueba/ })).toBeVisible()
+  await page.goto('/administrador/noticias')
 
   await page.getByRole('button', { name: 'Eliminar' }).first().click()
   await expect(page.getByRole('heading', { name: '¿Eliminar noticia permanentemente?' })).toBeVisible()
@@ -405,13 +428,13 @@ test('la página de inicio muestra el Hero dinámico, la sección Conocer la Lic
   await expect(page.getByRole('link', { name: 'Conocer la carrera' })).toBeVisible()
 
   // Valida la sección unificada de anuncios (máximo 3)
-  await expect(page.getByRole('heading', { name: 'Conocer la Licenciatura de Química', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Conoce la Licenciatura en Química', level: 2 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Laboratorios Especializados', level: 3 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Oportunidades Laborales', level: 3 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Experiencia de Estudiantes', level: 3 })).toBeVisible()
 
   // Valida que no se pierden las secciones de noticias y eventos destacados
-  await expect(page.getByRole('heading', { name: 'Próximos eventos destacados', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Eventos destacados', level: 2 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis' })).toBeVisible()
 
   await expect(page.getByRole('heading', { name: 'Noticias destacadas', level: 2 })).toBeVisible()
@@ -433,7 +456,7 @@ test('el módulo administrativo de contenido institucional interactúa con modal
   await expect(page.getByRole('heading', { name: 'Contenido Institucional', level: 1 })).toBeVisible()
 
   // Verifica que cargue el Hero y los bloques de anuncios
-  await expect(page.getByLabel('Título principal *')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
+  await expect(page.getByLabel('Título principal')).toHaveValue('Licenciatura en Química Farmacéutica y Pura')
   await expect(page.getByText('3 de 3 anuncios activos')).toBeVisible()
 
   // Intenta guardar el Hero: debe levantar el modal de confirmación primero

@@ -16,6 +16,7 @@ const news = {
 
 const secondNews = { ...news, id: 8, title: 'Anuncio de segunda página', summary: 'Contenido para validar la paginación.' }
 const adminNews = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
+let reflectedNews: typeof news | null = null
 
 const resource = {
   id: 9, categoryId: 3, fileId: 4, title: 'Guía de seguridad de laboratorio', description: 'Material para preparar prácticas de laboratorio de forma segura.', status: 'PUBLICADO',
@@ -87,7 +88,7 @@ const institutionalBlocks = [
     body: 'Formamos profesionales con capacidad analítica, ética y liderazgo para innovar en la ciencia.',
     imageUrl: null,
     actionLabel: 'Conocer la carrera',
-    actionUrl: '/#conocer-carrera',
+    actionUrl: '/contacto',
     displayOrder: 0,
     status: 'PUBLICADO',
     publishedAt: '2026-01-01T00:00:00.000Z'
@@ -142,7 +143,14 @@ const adminUser = {
   role: 'Administrador',
   permissions: ['ADMIN_ACCESS', 'BOARD_MANAGE', 'CONTACT_MANAGE', 'EVENTS_MANAGE', 'INSTITUTIONAL_MANAGE', 'NEWS_MANAGE', 'PROJECTS_MANAGE', 'RESOURCES_MANAGE', 'USERS_MANAGE']
 }
+const limitedUser = {
+  ...adminUser,
+  name: 'Cuenta sin permiso de noticias',
+  email: 'editor@uvg.edu.gt',
+  permissions: ['ADMIN_ACCESS', 'CONTACT_MANAGE']
+}
 let adminSessionActive = false
+let activeUser = adminUser
 let contactMethods = [
   { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
   { id: 2, type: 'UBICACION', label: 'Campus Central UVG', value: 'Campus Central UVG, zona 15, Ciudad de Guatemala', url: 'https://www.google.com/maps/search/?api=1&query=Universidad+del+Valle+de+Guatemala', displayOrder: 2, active: true },
@@ -179,11 +187,13 @@ Bun.serve({
     if (url.pathname === '/health') return json({ status: 'ok' })
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') {
       const body = await request.json() as { email?: string; password?: string }
-      if (body.email !== 'admin@uvg.edu.gt' || body.password !== 'Acceso123!') {
+      const validEmail = body.email === 'admin@uvg.edu.gt' || body.email === 'editor@uvg.edu.gt'
+      if (!validEmail || body.password !== 'Acceso123!') {
         return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
       }
       adminSessionActive = true
-      const response = json({ user: adminUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
+      activeUser = body.email === 'editor@uvg.edu.gt' ? limitedUser : adminUser
+      const response = json({ user: activeUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
       response.headers.append('set-cookie', 'aequvg_device=device-e2e; Path=/; HttpOnly; SameSite=Lax')
       response.headers.append('set-cookie', 'aequvg_csrf=csrf-e2e; Path=/; SameSite=Lax')
@@ -191,7 +201,7 @@ Bun.serve({
     }
     if (request.method === 'GET' && url.pathname === '/api/v1/auth/me') {
       return adminSessionActive && request.headers.get('cookie')?.includes('aequvg_session=session-e2e')
-        ? json({ user: adminUser })
+        ? json({ user: activeUser })
         : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/logout') {
@@ -229,10 +239,14 @@ Bun.serve({
     if (url.pathname === '/api/v1/admin/news' || url.pathname.match(/^\/api\/v1\/admin\/news\/\d+(\/archive)?$/)) {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
-      if (request.method === 'GET' && url.pathname === '/api/v1/admin/news') return json({ items: [adminNews, secondNews], pagination: { page: 1, pageSize: 9, total: 2 } })
+      if (request.method === 'GET' && url.pathname === '/api/v1/admin/news') {
+        const items = [reflectedNews ?? adminNews, secondNews]
+        return json({ items, pagination: { page: 1, pageSize: 9, total: items.length } })
+      }
       if (request.method === 'POST') {
         const body = await request.json() as Record<string, unknown>
-        return json({ ...adminNews, id: 30, ...body, category: { id: body.categoryId, name: 'Convocatorias', active: true }, createdBy: adminUser }, 201)
+        reflectedNews = { ...news, id: 30, ...body, category: { id: body.categoryId, name: 'Convocatorias', active: true }, createdBy: adminUser } as typeof news
+        return json(reflectedNews, 201)
       }
       const id = Number(url.pathname.split('/')[5])
       if (request.method === 'PUT') {
@@ -240,7 +254,10 @@ Bun.serve({
         return json({ ...adminNews, id, ...body, category: { id: body.categoryId || 2, name: 'Convocatorias', active: true }, createdBy: adminUser })
       }
       if (request.method === 'PATCH') return json({ ...adminNews, id, status: 'ARCHIVADO', publishedAt: null })
-      if (request.method === 'DELETE') return json({ ...adminNews, id, status: 'ARCHIVADO', publishedAt: null })
+      if (request.method === 'DELETE') {
+        if (id === 30) reflectedNews = null
+        return json({ ...adminNews, id, status: 'ARCHIVADO', publishedAt: null })
+      }
     }
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
     if (url.pathname === '/api/v1/institutional-content') return json(institutionalBlocks)
@@ -335,6 +352,7 @@ Bun.serve({
       const query = url.searchParams.get('q')?.toLowerCase() || ''
       if (query === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0 } })
       if (query === 'error-prueba') return json({ error: { code: 'REQUEST_FAILED', message: 'Error simulado.' } }, 503)
+      if (query === 'nueva noticia de prueba') return json({ items: reflectedNews ? [reflectedNews] : [], pagination: { page: 1, pageSize: 9, total: reflectedNews ? 1 : 0 } })
       const page = Number(url.searchParams.get('page') || 1)
       return json({ items: page === 2 ? [secondNews] : [news], pagination: { page, pageSize: Number(url.searchParams.get('pageSize') || 9), total: 10 } })
     }
