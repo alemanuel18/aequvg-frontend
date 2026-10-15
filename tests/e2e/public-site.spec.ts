@@ -24,6 +24,44 @@ test('no genera desplazamiento horizontal a 320 px', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Abrir menú de navegación' })).toBeVisible()
 })
 
+test('registra, conserva y cierra una sesión estudiantil desde el portal', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Ingresar / Registrarse' }).click()
+  await expect(page).toHaveURL(/\/acceso$/)
+  await page.getByRole('link', { name: '¿Aún no tienes cuenta? Regístrate' }).click()
+  await page.getByRole('button', { name: 'Crear cuenta' }).click()
+  await expect(page.getByText('Debes confirmar que actualmente eres estudiante de UVG.')).toBeVisible()
+
+  await page.getByLabel('Nombre completo').fill('Estudiante de prueba')
+  await page.getByLabel('Correo institucional').fill('estudiante@uvg.edu.gt')
+  await page.getByLabel('Contraseña', { exact: true }).fill('Estudiante123!')
+  await page.getByLabel('Confirmar contraseña').fill('Estudiante123!')
+  await page.getByRole('checkbox', { name: /actualmente soy estudiante/ }).check()
+  await page.getByRole('button', { name: 'Crear cuenta' }).click()
+  await expect(page).toHaveURL(/\/mi-cuenta$/)
+  await expect(page.getByRole('heading', { name: 'Hola, Estudiante de prueba' })).toBeVisible()
+  await expect(page.getByLabel('Foto de perfil genérica')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir mi cuenta estudiantil' })).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Hola, Estudiante de prueba' })).toBeVisible()
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('link', { name: 'Ingresar / Registrarse' })).toBeVisible()
+})
+
+test('muestra fecha y canal de revisión según el bloqueo estudiantil', async ({ page }) => {
+  await page.goto('/acceso')
+  await page.getByLabel('Correo institucional').fill('bloqueado.temporal@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Estudiante123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page.getByRole('alert')).toContainText('bloqueada temporalmente hasta')
+
+  await page.getByLabel('Correo institucional').fill('bloqueado.permanente@uvg.edu.gt')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page.getByRole('alert')).toContainText('revision@uvg.edu.gt')
+})
+
 test('consulta el historial de la Junta Directiva por periodo a 320 px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await page.goto('/junta-directiva')

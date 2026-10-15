@@ -182,6 +182,8 @@ const limitedUser = {
 }
 let adminSessionActive = false
 let activeUser = adminUser
+const studentUser = { id: 51, name: 'Estudiante de prueba', email: 'estudiante@uvg.edu.gt', isStudent: true, status: 'ACTIVO', role: 'STUDENT' }
+let studentSessionActive = false
 let contactMethods = [
   { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
   { id: 2, type: 'UBICACION', label: 'Campus Central UVG', value: 'Campus Central UVG, zona 15, Ciudad de Guatemala', url: 'https://www.google.com/maps/search/?api=1&query=Universidad+del+Valle+de+Guatemala', displayOrder: 2, active: true },
@@ -219,6 +221,40 @@ Bun.serve({
     if (url.pathname === '/health') return json({ status: 'ok' })
     if (request.method === 'GET' && url.pathname === '/materials/guia-seguridad.pdf') {
       return new Response('contenido PDF e2e', { status: 200, headers: { 'content-type': 'application/pdf', 'content-disposition': 'attachment; filename="guia-seguridad.pdf"' } })
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/student-auth/register') {
+      const body = await request.json() as Record<string, unknown>
+      if (body.isStudent !== true || body.email !== studentUser.email || body.role !== undefined) {
+        return json({ error: { code: 'VALIDATION_ERROR', message: 'Revisa los datos enviados.' } }, 422)
+      }
+      return json({ ...studentUser, name: body.name }, 201)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/student-auth/login') {
+      const body = await request.json() as { email?: string; password?: string }
+      if (body.email === 'bloqueado.temporal@uvg.edu.gt') return json({ error: { code: 'ACCOUNT_TEMPORARILY_BLOCKED', message: 'La cuenta está bloqueada temporalmente.', details: { blockedUntil: '2030-01-15T18:00:00.000Z' } } }, 403)
+      if (body.email === 'bloqueado.permanente@uvg.edu.gt') return json({ error: { code: 'ACCOUNT_PERMANENTLY_BLOCKED', message: 'La cuenta está bloqueada permanentemente.', details: { reviewChannel: 'revision@uvg.edu.gt' } } }, 403)
+      if (body.email !== studentUser.email || body.password !== 'Estudiante123!') return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
+      studentSessionActive = true
+      const response = json({ user: studentUser, csrfToken: 'student-csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
+      response.headers.append('set-cookie', 'aequvg_student_session=student-session-e2e; Path=/; HttpOnly; SameSite=Lax')
+      response.headers.append('set-cookie', 'aequvg_student_device=student-device-e2e; Path=/; HttpOnly; SameSite=Lax')
+      response.headers.append('set-cookie', 'aequvg_student_csrf=student-csrf-e2e; Path=/; SameSite=Lax')
+      return response
+    }
+    if (request.method === 'GET' && url.pathname === '/api/v1/student-auth/me') {
+      return studentSessionActive && request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')
+        ? json({ user: studentUser })
+        : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/student-auth/logout') {
+      if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+      if (request.headers.get('x-csrf-token') !== 'student-csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      studentSessionActive = false
+      return new Response(null, { status: 204, headers: {
+        'access-control-allow-origin': allowedOrigin,
+        'access-control-allow-credentials': 'true',
+        'set-cookie': 'aequvg_student_session=; Max-Age=0; Path=/'
+      } })
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') {
       const body = await request.json() as { email?: string; password?: string }
