@@ -73,6 +73,23 @@ export interface AdminLoginInput {
   password: string
 }
 
+export type StudentAccountStatus = 'ACTIVO' | 'BLOQUEADO_TEMPORAL' | 'BLOQUEADO_PERMANENTE' | 'ELIMINADO'
+export interface StudentUser {
+  id: number
+  name: string
+  email: string
+  isStudent: true
+  status: StudentAccountStatus
+  role: 'STUDENT'
+}
+export interface StudentSessionResponse {
+  user: StudentUser
+  csrfToken?: string
+  expiresAt?: string
+}
+export interface StudentLoginInput { email: string; password: string }
+export interface StudentRegistrationInput extends StudentLoginInput { name: string; isStudent: true }
+
 export type AdminAccountStatus = 'ACTIVO' | 'INACTIVO' | 'BLOQUEADO'
 export interface AdminRole { id: number; name: string; description: string | null; permissions: string[] }
 export interface ManagedAdminUser {

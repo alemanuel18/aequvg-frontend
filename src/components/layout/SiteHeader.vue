@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { publicNavigation } from "~/router/navigation";
 const route = useRoute();
+const studentSession = useStudentSession();
 const open = ref(false);
 const ready = ref(false);
 watch(
@@ -16,6 +17,7 @@ const closeMenu = () => {
 
 onMounted(() => {
   ready.value = true;
+  void studentSession.load();
   window.addEventListener("keydown", handleEscape);
 });
 onBeforeUnmount(() => window.removeEventListener("keydown", handleEscape));
@@ -63,6 +65,24 @@ function handleEscape(event: KeyboardEvent) {
           @click="closeMenu"
           >{{ item.label }}</NuxtLink
         >
+        <NuxtLink
+          v-if="studentSession.user"
+          class="profile-link"
+          to="/mi-cuenta"
+          aria-label="Abrir mi cuenta estudiantil"
+          :aria-current="route.path === '/mi-cuenta' ? 'page' : undefined"
+          @click="closeMenu"
+        >
+          <span class="profile-link__image" aria-hidden="true"><AppIcon name="users" :size="18" /></span>
+          <span class="profile-link__label">Mi cuenta</span>
+        </NuxtLink>
+        <NuxtLink
+          v-else
+          class="access-link"
+          to="/acceso"
+          :aria-current="['/acceso', '/registro'].includes(route.path) ? 'page' : undefined"
+          @click="closeMenu"
+        >Ingresar / Registrarse</NuxtLink>
       </nav>
     </div>
   </header>
@@ -149,6 +169,12 @@ function handleEscape(event: KeyboardEvent) {
   background: rgb(255 255 255 / 15%);
 }
 
+.site-nav .access-link { margin-left: .45rem; color: var(--color-primary-dark); background: var(--color-soft); }
+.site-nav .access-link:hover, .site-nav .access-link[aria-current="page"] { color: var(--color-primary-dark); background: white; }
+.site-nav .profile-link { min-width: 2.75rem; display: inline-flex; align-items: center; justify-content: center; margin-left: .45rem; padding: .25rem; }
+.profile-link__image { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; color: var(--color-primary); background: var(--color-soft); border: 2px solid rgb(255 255 255 / 70%); border-radius: 50%; }
+.profile-link__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+
 .nav-toggle {
   display: none;
   width: 2.85rem;
@@ -184,7 +210,7 @@ function handleEscape(event: KeyboardEvent) {
   transform: translateY(-0.52rem) rotate(-45deg);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1080px) {
   .nav-toggle {
     display: block;
   }
@@ -240,6 +266,9 @@ function handleEscape(event: KeyboardEvent) {
     color: white;
     background: var(--color-primary);
   }
+  .site-nav .access-link, .site-nav .profile-link { margin-left: 0; }
+  .site-nav .profile-link { justify-content: flex-start; gap: .65rem; }
+  .profile-link__label { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
 }
 
 @media (max-width: 620px) {
