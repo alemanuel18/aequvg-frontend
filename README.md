@@ -53,6 +53,18 @@ El inicio de sesión está en `/administrador`; el panel muestra los módulos ha
 
 Estado actual de interfaz: el login y cierre de sesión están disponibles. Las pantallas frontend de solicitud de alta, recuperación/restablecimiento de contraseña y acceso Microsoft no están implementadas; `/administrador/usuarios` sigue en construcción aunque el backend ofrece endpoints para gestión. Consultar la evidencia y defectos registrados en [`admin-flows-evidence.md`](../aequvg-backend/docs/admin-flows-evidence.md).
 
+## Acceso de estudiantes
+
+El acceso estudiantil vive dentro del portal público y está separado del administrativo:
+
+- `/acceso` inicia sesión con una cuenta de estudiante.
+- `/registro` crea cuentas únicamente para estudiantes actuales de UVG; exige correo `@uvg.edu.gt`, contraseña robusta y confirmación de la condición estudiantil. No contempla aspirantes.
+- `/mi-cuenta` es el panel personal y permite cerrar la sesión.
+
+Sin sesión, la esquina derecha del navbar muestra `Ingresar / Registrarse`; con sesión muestra una foto de perfil genérica enlazada al panel personal. Registro e inicio correctos redirigen a `/mi-cuenta`. Un bloqueo temporal presenta su fecha de finalización y uno permanente presenta el canal de revisión enviado por la API.
+
+El frontend no envía roles ni calcula permisos. Las cookies estudiantiles son independientes de las administrativas y las credenciales nunca se guardan en `localStorage` o `sessionStorage`. El contrato completo, los estados de cuenta y la matriz de acceso están en [`student-access-flow.md`](../aequvg-backend/docs/student-access-flow.md).
+
 ## Variables de entorno
 
 ```bash
@@ -258,6 +270,9 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/eventos` | Conectado a la API: listado, detalle, disponibilidad e inscripción pública. |
 | `/recursos` | Catálogo público de recursos con categorías, búsqueda, paginación, enlaces y materiales disponibles. |
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
+| `/acceso` | Inicio de sesión para estudiantes de UVG. |
+| `/registro` | Alta de estudiantes actuales con correo institucional. |
+| `/mi-cuenta` | Panel personal protegido y cierre de sesión estudiantil. |
 | `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
 | `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
 | `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
