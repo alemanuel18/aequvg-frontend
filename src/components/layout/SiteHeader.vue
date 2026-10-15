@@ -66,7 +66,7 @@ function handleEscape(event: KeyboardEvent) {
           >{{ item.label }}</NuxtLink
         >
         <NuxtLink
-          v-if="studentSession.user"
+          v-if="studentSession.user.value"
           class="profile-link"
           to="/mi-cuenta"
           aria-label="Abrir mi cuenta estudiantil"
