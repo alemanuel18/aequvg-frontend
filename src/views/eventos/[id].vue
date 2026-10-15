@@ -199,7 +199,7 @@ const formatEventDate = (value: string | null | undefined) => {
           aria-labelledby="registration-heading"
         >
           <EventRegistrationForm
-            v-if="studentSession.user.value"
+            v-if="studentSession.user.value || isFull || isEventPast"
             :event-id="event.id"
             :event-name="event.name"
             :starts-at="event.startsAt"

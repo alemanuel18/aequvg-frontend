@@ -59,12 +59,12 @@ const submit = async () => {
     <form novalidate @submit.prevent="submit">
       <div class="field">
         <label for="student-email">Correo institucional</label>
-        <input id="student-email" v-model="fields.email" name="email" type="email" inputmode="email" autocomplete="username" maxlength="254" :disabled="submitting" :aria-invalid="Boolean(errors.email)" :aria-describedby="errors.email ? 'student-email-error' : undefined">
+        <input id="student-email" v-model="fields.email" name="email" type="email" inputmode="email" autocomplete="username" maxlength="254" :disabled="!ready || submitting" :aria-invalid="Boolean(errors.email)" :aria-describedby="errors.email ? 'student-email-error' : undefined">
         <p v-if="errors.email" id="student-email-error" class="field-error">{{ errors.email }}</p>
       </div>
       <div class="field">
         <label for="student-password">Contraseña</label>
-        <input id="student-password" v-model="fields.password" name="password" type="password" autocomplete="current-password" maxlength="256" :disabled="submitting" :aria-invalid="Boolean(errors.password)" :aria-describedby="errors.password ? 'student-password-error' : undefined">
+        <input id="student-password" v-model="fields.password" name="password" type="password" autocomplete="current-password" maxlength="256" :disabled="!ready || submitting" :aria-invalid="Boolean(errors.password)" :aria-describedby="errors.password ? 'student-password-error' : undefined">
         <p v-if="errors.password" id="student-password-error" class="field-error">{{ errors.password }}</p>
       </div>
       <p v-if="requestError" class="form-message" role="alert">{{ requestError }}</p>
