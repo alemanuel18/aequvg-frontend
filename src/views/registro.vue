@@ -10,13 +10,18 @@ const fields = reactive({ name: '', email: '', password: '', passwordConfirmatio
 const errors = ref<StudentRegistrationErrors>({})
 const requestError = ref('')
 const submitting = ref(false)
+const ready = ref(false)
 
 onMounted(async () => {
-  if (await session.load()) await navigateTo('/mi-cuenta', { replace: true })
+  if (await session.load()) {
+    await navigateTo('/mi-cuenta', { replace: true })
+    return
+  }
+  ready.value = true
 })
 
 const submit = async () => {
-  if (submitting.value) return
+  if (!ready.value || submitting.value) return
   errors.value = validateStudentRegistration(fields)
   requestError.value = ''
   if (Object.keys(errors.value).length) return
@@ -66,7 +71,7 @@ const submit = async () => {
       <p v-if="errors.isStudent" id="registration-student-error" class="field-error">{{ errors.isStudent }}</p>
       <p v-if="requestError" class="form-message" role="alert">{{ requestError }}</p>
       <p class="sr-only" aria-live="polite">{{ submitting ? 'Creando la cuenta e iniciando sesión.' : '' }}</p>
-      <AppButton type="submit" :disabled="submitting">{{ submitting ? 'Creando cuenta…' : 'Crear cuenta' }}</AppButton>
+      <AppButton type="submit" :disabled="!ready || submitting">{{ submitting ? 'Creando cuenta…' : 'Crear cuenta' }}</AppButton>
       <NuxtLink class="auth-switch" to="/acceso">¿Ya tienes cuenta? Inicia sesión</NuxtLink>
     </form>
   </StudentAuthCard>

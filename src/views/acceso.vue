@@ -9,6 +9,7 @@ const fields = reactive({ email: '', password: '' })
 const errors = ref<StudentLoginErrors>({})
 const requestError = ref('')
 const submitting = ref(false)
+const ready = ref(false)
 
 const safeReturnTo = computed(() => {
   const value = typeof route.query.returnTo === 'string' ? route.query.returnTo : ''
@@ -16,7 +17,11 @@ const safeReturnTo = computed(() => {
 })
 
 onMounted(async () => {
-  if (await session.load()) await navigateTo(safeReturnTo.value, { replace: true })
+  if (await session.load()) {
+    await navigateTo(safeReturnTo.value, { replace: true })
+    return
+  }
+  ready.value = true
 })
 
 const errorMessage = (error: unknown) => {
@@ -33,7 +38,7 @@ const errorMessage = (error: unknown) => {
 }
 
 const submit = async () => {
-  if (submitting.value) return
+  if (!ready.value || submitting.value) return
   errors.value = validateStudentLogin(fields)
   requestError.value = ''
   if (Object.keys(errors.value).length) return
@@ -64,7 +69,7 @@ const submit = async () => {
       </div>
       <p v-if="requestError" class="form-message" role="alert">{{ requestError }}</p>
       <p class="sr-only" aria-live="polite">{{ submitting ? 'Verificando credenciales.' : '' }}</p>
-      <AppButton type="submit" :disabled="submitting">{{ submitting ? 'Ingresando…' : 'Iniciar sesión' }}</AppButton>
+      <AppButton type="submit" :disabled="!ready || submitting">{{ submitting ? 'Ingresando…' : 'Iniciar sesión' }}</AppButton>
       <NuxtLink class="auth-switch" to="/registro">¿Aún no tienes cuenta? Regístrate</NuxtLink>
     </form>
   </StudentAuthCard>
