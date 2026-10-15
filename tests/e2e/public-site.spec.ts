@@ -792,7 +792,7 @@ test('permite inscribirse a un evento público y muestra confirmación', async (
 
   await expect(page.getByRole('heading', { name: '¡Inscripción confirmada!' })).toBeVisible()
   await expect(page.getByText('Has quedado inscrito exitosamente en Taller de Espectrometría UV-Vis.')).toBeVisible()
-  await expect(page.getByRole('link', { name: '← Ver todos los eventos' })).toBeVisible()
+  await expect(page.locator('#formulario-inscripcion').getByRole('link', { name: '← Ver todos los eventos' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Inscribirme al evento' })).not.toBeVisible()
 })
 
@@ -803,8 +803,8 @@ test('valida campos obligatorios y consentimiento en la inscripción', async ({ 
   await page.getByLabel('Correo electrónico').fill('')
   await page.getByRole('button', { name: 'Inscribirme al evento' }).click()
 
-  await expect(page.getByText('Escribe tu nombre completo.')).toBeVisible()
-  await expect(page.getByText('Escribe un correo válido.')).toBeVisible()
+  await expect(page.getByLabel('Nombre completo')).toHaveValue('Estudiante de prueba')
+  await expect(page.getByLabel('Correo electrónico')).toHaveValue('estudiante@uvg.edu.gt')
   await expect(page.getByText('Escribe un número de teléfono válido.')).toBeVisible()
   await expect(page.getByText('Debes aceptar la política de privacidad.')).toBeVisible()
 })
