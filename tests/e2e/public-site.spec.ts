@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test'
 
+const loginAsStudent = async (page: import('@playwright/test').Page) => {
+  await page.goto('/acceso')
+  await page.getByLabel('Correo institucional').fill('estudiante@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Estudiante123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/mi-cuenta$/)
+}
+
 test('la navegación principal funciona con teclado', async ({ page }) => {
   await page.goto('/')
   await page.keyboard.press('Tab')
@@ -757,6 +765,8 @@ test('navega desde /eventos al detalle público de evento', async ({ page }) => 
   await expect(page.getByText('Capacidad máxima:')).toBeVisible()
   await expect(page.getByText('30 asistentes')).toBeVisible()
   await expect(page.getByText('12 cupos disponibles')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Inicia sesión para inscribirte' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Inicia sesión para inscribirte' })).toBeVisible()
 })
 
 test('muestra error 404 al consultar un evento inexistente', async ({ page }) => {
@@ -767,6 +777,7 @@ test('muestra error 404 al consultar un evento inexistente', async ({ page }) =>
 })
 
 test('permite inscribirse a un evento público y muestra confirmación', async ({ page }) => {
+  await loginAsStudent(page)
   await page.goto('/eventos/10')
   await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis', level: 1 })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Inscribirme a este evento ↓' })).toBeVisible()
@@ -786,7 +797,10 @@ test('permite inscribirse a un evento público y muestra confirmación', async (
 })
 
 test('valida campos obligatorios y consentimiento en la inscripción', async ({ page }) => {
+  await loginAsStudent(page)
   await page.goto('/eventos/10')
+  await page.getByLabel('Nombre completo').fill('')
+  await page.getByLabel('Correo electrónico').fill('')
   await page.getByRole('button', { name: 'Inscribirme al evento' }).click()
 
   await expect(page.getByText('Escribe tu nombre completo.')).toBeVisible()
@@ -796,6 +810,7 @@ test('valida campos obligatorios y consentimiento en la inscripción', async ({ 
 })
 
 test('maneja error cuando el usuario ya está registrado en el evento', async ({ page }) => {
+  await loginAsStudent(page)
   await page.goto('/eventos/10')
   await page.getByLabel('Nombre completo').fill('Estudiante Registrado')
   await page.getByLabel('Correo electrónico').fill('duplicado@uvg.edu.gt')
@@ -810,6 +825,7 @@ test('maneja error cuando el usuario ya está registrado en el evento', async ({
 })
 
 test('maneja error cuando el evento ha alcanzado el cupo máximo', async ({ page }) => {
+  await loginAsStudent(page)
   await page.goto('/eventos/10')
   await page.getByLabel('Nombre completo').fill('Estudiante Sin Cupo')
   await page.getByLabel('Correo electrónico').fill('lleno@uvg.edu.gt')

@@ -295,6 +295,8 @@ Bun.serve({
       } })
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/events/10/registrations') {
+      if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+      if (request.headers.get('x-csrf-token') !== 'student-csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
       const body = await request.json() as Record<string, unknown>
       if (body.website) {
         return json({ error: { code: 'INVALID_REQUEST', message: 'La solicitud no es válida.' } }, 400)
