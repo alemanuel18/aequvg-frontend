@@ -56,6 +56,8 @@ export interface ApiError { error?: { code?: string; message?: string; details?:
 export interface AdminUser {
   id: number
   name: string
+  firstNames: string
+  lastNames: string
   email: string
   status: string
   role: string
@@ -73,13 +75,32 @@ export interface AdminLoginInput {
   password: string
 }
 
+export type StudentAccountStatus = 'ACTIVO' | 'BLOQUEADO_TEMPORAL' | 'BLOQUEADO_PERMANENTE' | 'ELIMINADO'
+export interface StudentUser {
+  id: number
+  name: string
+  firstNames: string
+  lastNames: string
+  email: string
+  isStudent: true
+  status: StudentAccountStatus
+  role: 'STUDENT'
+}
+export interface StudentSessionResponse {
+  user: StudentUser
+  csrfToken?: string
+  expiresAt?: string
+}
+export interface StudentLoginInput { email: string; password: string }
+export interface StudentRegistrationInput extends StudentLoginInput { firstNames: string; lastNames: string; isStudent: true }
+
 export type AdminAccountStatus = 'ACTIVO' | 'INACTIVO' | 'BLOQUEADO'
 export interface AdminRole { id: number; name: string; description: string | null; permissions: string[] }
 export interface ManagedAdminUser {
-  id: number; name: string; email: string; status: AdminAccountStatus; role: { id: number; name: string }
+  id: number; name: string; firstNames: string; lastNames: string; email: string; status: AdminAccountStatus; role: { id: number; name: string }
   authenticationProviders: Array<'PASSWORD' | 'MICROSOFT'>; createdAt: string; updatedAt: string
 }
-export interface AdminRegistrationRequest { id: number; name: string; email: string; status: 'PENDIENTE'; createdAt: string }
+export interface AdminRegistrationRequest { id: number; name: string; firstNames: string; lastNames: string; email: string; status: 'PENDIENTE'; createdAt: string }
 
 export interface NewsCategory { id: number; name: string; active?: boolean }
 

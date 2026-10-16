@@ -16,7 +16,7 @@ const loading = ref(true)
 const loadError = ref('')
 const requestsLoadError = ref('')
 const saving = ref(false)
-const form = reactive({ name: '', email: '', roleId: '', password: '' })
+const form = reactive({ firstNames: '', lastNames: '', email: '', roleId: '', password: '' })
 const fieldErrors = ref<Record<string, string>>({})
 const confirm = reactive({ open: false, title: '', message: '', label: 'Guardar cambios', action: null as null | (() => Promise<void>) })
 const selfId = computed(() => session.user.value?.id)
@@ -42,7 +42,8 @@ const load = async () => {
 onMounted(load)
 const validate = () => {
   const errors: Record<string, string> = {}
-  if (form.name.trim().length < 2) errors.name = 'Escribe al menos 2 caracteres.'
+  if (form.firstNames.trim().length < 2) errors.firstNames = 'Escribe los nombres.'
+  if (form.lastNames.trim().length < 2) errors.lastNames = 'Escribe los apellidos.'
   if (!/^[^\s@]+@uvg\.edu\.gt$/i.test(form.email.trim())) errors.email = 'Usa un correo institucional @uvg.edu.gt.'
   if (!form.roleId || !roles.value.some(role => role.id === Number(form.roleId))) errors.roleId = 'Selecciona un rol disponible.'
   if (form.password && !(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,128}$/).test(form.password)) errors.password = 'Usa 12–128 caracteres con mayúscula, minúscula, número y símbolo.'
@@ -58,8 +59,8 @@ const askCreate = () => {
   confirm.message = `Se creará ${form.email.trim()} con el rol seleccionado. Los permisos corresponden al rol y no se pueden ampliar desde el formulario.`
   confirm.label = 'Crear cuenta'
   confirm.action = async () => {
-    const created = await api.create({ name: form.name.trim(), email: form.email.trim().toLowerCase(), roleId: Number(form.roleId), ...(form.password ? { password: form.password } : {}) })
-    users.value.unshift(created); form.name = ''; form.email = ''; form.roleId = ''; form.password = ''
+    const created = await api.create({ firstNames: form.firstNames.trim(), lastNames: form.lastNames.trim(), email: form.email.trim().toLowerCase(), roleId: Number(form.roleId), ...(form.password ? { password: form.password } : {}) })
+    users.value.unshift(created); form.firstNames = ''; form.lastNames = ''; form.email = ''; form.roleId = ''; form.password = ''
     toast.success('La cuenta administrativa se creó correctamente.')
   }
   confirm.open = true
@@ -119,7 +120,8 @@ const execute = async () => {
         <h2 id="create-title">Dar de alta una cuenta</h2>
         <p class="hint">Solo se permiten correos institucionales. Deja la contraseña vacía si la cuenta usará el inicio de sesión institucional habilitado.</p>
         <form class="create-form" novalidate @submit.prevent="askCreate">
-          <label>Nombre<input v-model="form.name" autocomplete="name" :aria-invalid="!!fieldErrors.name" :aria-describedby="fieldErrors.name ? 'name-error' : undefined"><span v-if="fieldErrors.name" id="name-error" class="error">{{ fieldErrors.name }}</span></label>
+          <label>Nombres<input v-model="form.firstNames" autocomplete="given-name" maxlength="80" :aria-invalid="!!fieldErrors.firstNames" :aria-describedby="fieldErrors.firstNames ? 'first-names-error' : undefined"><span v-if="fieldErrors.firstNames" id="first-names-error" class="error">{{ fieldErrors.firstNames }}</span></label>
+          <label>Apellidos<input v-model="form.lastNames" autocomplete="family-name" maxlength="80" :aria-invalid="!!fieldErrors.lastNames" :aria-describedby="fieldErrors.lastNames ? 'last-names-error' : undefined"><span v-if="fieldErrors.lastNames" id="last-names-error" class="error">{{ fieldErrors.lastNames }}</span></label>
           <label>Correo institucional<input v-model="form.email" type="email" inputmode="email" autocomplete="email" :aria-invalid="!!fieldErrors.email" :aria-describedby="fieldErrors.email ? 'email-error' : undefined"><span v-if="fieldErrors.email" id="email-error" class="error">{{ fieldErrors.email }}</span></label>
           <label>Rol<select v-model="form.roleId" :aria-invalid="!!fieldErrors.roleId" :aria-describedby="fieldErrors.roleId ? 'role-error' : undefined"><option value="" disabled>Selecciona un rol</option><option v-for="role in roles" :key="role.id" :value="String(role.id)">{{ role.name }}</option></select><span v-if="fieldErrors.roleId" id="role-error" class="error">{{ fieldErrors.roleId }}</span></label>
           <label>Contraseña inicial (opcional)<input v-model="form.password" type="password" autocomplete="new-password" :aria-invalid="!!fieldErrors.password" :aria-describedby="fieldErrors.password ? 'password-error' : undefined"><span v-if="fieldErrors.password" id="password-error" class="error">{{ fieldErrors.password }}</span></label>

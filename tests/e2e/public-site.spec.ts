@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test'
 
+const loginAsStudent = async (page: import('@playwright/test').Page) => {
+  await page.goto('/acceso')
+  await page.getByLabel('Correo institucional').fill('estudiante@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Estudiante123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/mi-cuenta$/)
+}
+
 test('la navegación principal funciona con teclado', async ({ page }) => {
   await page.goto('/')
   await page.keyboard.press('Tab')
@@ -22,6 +30,60 @@ test('no genera desplazamiento horizontal a 320 px', async ({ page }) => {
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: 'Abrir menú de navegación' })).toBeVisible()
+})
+
+test('registra, conserva y cierra una sesión estudiantil desde el portal', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Ingresar / Registrarse' }).click()
+  await expect(page).toHaveURL(/\/acceso$/)
+  await page.getByRole('link', { name: '¿Aún no tienes cuenta? Regístrate' }).click()
+  await page.getByRole('button', { name: 'Crear cuenta' }).click()
+  await expect(page.getByText('Debes confirmar que actualmente eres estudiante de UVG.')).toBeVisible()
+
+  await page.getByLabel('Nombres').fill('Estudiante')
+  await page.getByLabel('Apellidos').fill('de prueba')
+  await page.getByLabel('Correo institucional').fill('estudiante@uvg.edu.gt')
+  await page.getByLabel('Contraseña', { exact: true }).fill('Estudiante123!')
+  await page.getByLabel('Confirmar contraseña').fill('Estudiante123!')
+  await page.getByRole('checkbox', { name: /actualmente soy estudiante/ }).check()
+  await page.getByRole('button', { name: 'Crear cuenta' }).click()
+  await expect(page).toHaveURL(/\/mi-cuenta$/)
+  await expect(page.getByRole('heading', { name: 'Hola, Estudiante de prueba' })).toBeVisible()
+  await expect(page.getByLabel('Foto de perfil genérica')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir mi cuenta estudiantil' })).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Hola, Estudiante de prueba' })).toBeVisible()
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('link', { name: 'Ingresar / Registrarse' })).toBeVisible()
+})
+
+test('muestra fecha y canal de revisión según el bloqueo estudiantil', async ({ page }) => {
+  await page.goto('/acceso')
+  await page.getByLabel('Correo institucional').fill('bloqueado.temporal@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Estudiante123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page.getByRole('alert')).toContainText('bloqueada temporalmente hasta')
+
+  await page.getByLabel('Correo institucional').fill('bloqueado.permanente@uvg.edu.gt')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page.getByRole('alert')).toContainText('revision@uvg.edu.gt')
+})
+
+test('solicita nombres y apellidos separados para una cuenta administrativa', async ({ page }) => {
+  await page.goto('/administrador/sign-up')
+  await page.getByRole('button', { name: 'Enviar solicitud' }).click()
+  await expect(page.getByText('Escribe tus nombres.')).toBeVisible()
+  await expect(page.getByText('Escribe tus apellidos.')).toBeVisible()
+
+  await page.getByLabel('Nombres').fill('María Fernanda')
+  await page.getByLabel('Apellidos').fill('López Pérez')
+  await page.getByLabel('Correo institucional').fill('maria.lopez@uvg.edu.gt')
+  await page.getByLabel(/^Contraseña/).fill('Administrativa123!')
+  await page.getByLabel(/^Confirmar contraseña/).fill('Administrativa123!')
+  await page.getByRole('button', { name: 'Enviar solicitud' }).click()
+  await expect(page.getByRole('heading', { name: 'Tu solicitud está pendiente' })).toBeVisible()
 })
 
 test('consulta el historial de la Junta Directiva por periodo a 320 px', async ({ page }) => {
@@ -719,6 +781,8 @@ test('navega desde /eventos al detalle público de evento', async ({ page }) => 
   await expect(page.getByText('Capacidad máxima:')).toBeVisible()
   await expect(page.getByText('30 asistentes')).toBeVisible()
   await expect(page.getByText('12 cupos disponibles')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Inicia sesión para inscribirte' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Inicia sesión para inscribirte' })).toBeVisible()
 })
 
 test('muestra error 404 al consultar un evento inexistente', async ({ page }) => {
@@ -729,6 +793,7 @@ test('muestra error 404 al consultar un evento inexistente', async ({ page }) =>
 })
 
 test('permite inscribirse a un evento público y muestra confirmación', async ({ page }) => {
+  await loginAsStudent(page)
   await page.goto('/eventos/10')
   await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis', level: 1 })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Inscribirme a este evento ↓' })).toBeVisible()
@@ -743,21 +808,25 @@ test('permite inscribirse a un evento público y muestra confirmación', async (
 
   await expect(page.getByRole('heading', { name: '¡Inscripción confirmada!' })).toBeVisible()
   await expect(page.getByText('Has quedado inscrito exitosamente en Taller de Espectrometría UV-Vis.')).toBeVisible()
-  await expect(page.getByRole('link', { name: '← Ver todos los eventos' })).toBeVisible()
+  await expect(page.locator('#formulario-inscripcion').getByRole('link', { name: '← Ver todos los eventos' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Inscribirme al evento' })).not.toBeVisible()
 })
 
 test('valida campos obligatorios y consentimiento en la inscripción', async ({ page }) => {
+  await loginAsStudent(page)
   await page.goto('/eventos/10')
+  await page.getByLabel('Nombre completo').fill('')
+  await page.getByLabel('Correo electrónico').fill('')
   await page.getByRole('button', { name: 'Inscribirme al evento' }).click()
 
-  await expect(page.getByText('Escribe tu nombre completo.')).toBeVisible()
-  await expect(page.getByText('Escribe un correo válido.')).toBeVisible()
+  await expect(page.getByLabel('Nombre completo')).toHaveValue('Estudiante de prueba')
+  await expect(page.getByLabel('Correo electrónico')).toHaveValue('estudiante@uvg.edu.gt')
   await expect(page.getByText('Escribe un número de teléfono válido.')).toBeVisible()
   await expect(page.getByText('Debes aceptar la política de privacidad.')).toBeVisible()
 })
 
 test('maneja error cuando el usuario ya está registrado en el evento', async ({ page }) => {
+  await loginAsStudent(page)
   await page.goto('/eventos/10')
   await page.getByLabel('Nombre completo').fill('Estudiante Registrado')
   await page.getByLabel('Correo electrónico').fill('duplicado@uvg.edu.gt')
@@ -772,6 +841,7 @@ test('maneja error cuando el usuario ya está registrado en el evento', async ({
 })
 
 test('maneja error cuando el evento ha alcanzado el cupo máximo', async ({ page }) => {
+  await loginAsStudent(page)
   await page.goto('/eventos/10')
   await page.getByLabel('Nombre completo').fill('Estudiante Sin Cupo')
   await page.getByLabel('Correo electrónico').fill('lleno@uvg.edu.gt')

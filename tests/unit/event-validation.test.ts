@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { datetimeLocalToIsoUtc, eventFormPayload, isoUtcToDatetimeLocal, validateEventForm, type EventFormState } from '~/composables/event-validation'
+import { datetimeLocalToIsoUtc, eventFormPayload, isoUtcToDatetimeLocal, validateEventForm, type EventFormState } from '../../src/composables/event-validation'
 
 const validForm = (): EventFormState => ({
   imageId: '', name: 'Taller de laboratorio', description: 'Descripción suficientemente extensa para el evento.',

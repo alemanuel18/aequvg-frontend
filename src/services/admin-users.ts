@@ -10,7 +10,7 @@ export const useAdminUsersApi = () => {
     roles: () => api<AdminRole[]>('/admin/roles', { credentials: 'include' }),
     requests: () => api<AdminRegistrationRequest[]>('/admin/registration-requests', { credentials: 'include' }),
     reviewRequest: (id: number, decision: { status: 'APROBADA'; roleId: number } | { status: 'RECHAZADA' }) => api<{ id: number; status: 'APROBADA' | 'RECHAZADA' }>(`/admin/registration-requests/${id}/review`, { method: 'POST', body: decision, credentials: 'include', headers: writeHeaders() }),
-    create: (body: { name: string; email: string; roleId: number; password?: string }) => api<ManagedAdminUser>('/admin/users', { method: 'POST', body, credentials: 'include', headers: writeHeaders() }),
-    update: (id: number, body: { roleId?: number; status?: ManagedAdminUser['status'] }) => api<ManagedAdminUser>(`/admin/users/${id}`, { method: 'PATCH', body, credentials: 'include', headers: writeHeaders() }),
+    create: (body: { firstNames: string; lastNames: string; email: string; roleId: number; password?: string }) => api<ManagedAdminUser>('/admin/users', { method: 'POST', body, credentials: 'include', headers: writeHeaders() }),
+    update: (id: number, body: { firstNames?: string; lastNames?: string; roleId?: number; status?: ManagedAdminUser['status'] }) => api<ManagedAdminUser>(`/admin/users/${id}`, { method: 'PATCH', body, credentials: 'include', headers: writeHeaders() }),
   }
 }

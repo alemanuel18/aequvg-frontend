@@ -16,8 +16,7 @@ export const isoUtcToDatetimeLocal = (value: string, timeZone = browserTimeZone(
 export const datetimeLocalToIsoUtc = (value: string, timeZone = browserTimeZone()): string | null => {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)
   if (!match) return null
-  const [, year, month, day, hour, minute] = match
-  const numbers = [year, month, day, hour, minute].map(Number)
+  const numbers = match.slice(1).map(Number) as [number, number, number, number, number]
   if (numbers[1] < 1 || numbers[1] > 12 || numbers[2] < 1 || numbers[2] > 31 || numbers[3] > 23 || numbers[4] > 59) return null
   const desiredUtc = Date.UTC(numbers[0], numbers[1] - 1, numbers[2], numbers[3], numbers[4])
   const check = new Date(desiredUtc)
