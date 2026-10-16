@@ -5,7 +5,7 @@ export const useAdminAuthApi = () => {
   const api = useApi()
 
   return {
-    requestRegistration: (input: AdminLoginInput & { name: string }) => api<{ message: string }>('/auth/registration-requests', { method: 'POST', body: input }),
+    requestRegistration: (input: AdminLoginInput & { firstNames: string; lastNames: string }) => api<{ message: string }>('/auth/registration-requests', { method: 'POST', body: input }),
     requestPasswordRecovery: (email: string) => api<{ message: string }>('/auth/password-recovery-requests', { method: 'POST', body: { email } }),
     resetPassword: (token: string, password: string) => api<{ message: string }>('/auth/password-resets', { method: 'POST', body: { token, password } }),
     login: (input: AdminLoginInput) => api<AdminSessionResponse>('/auth/login', {

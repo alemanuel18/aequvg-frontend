@@ -6,7 +6,7 @@ import { useStudentAuthApi } from '~/services/student-auth'
 useSeoMeta({ title: 'Registro estudiantil', description: 'Creación de cuenta para estudiantes actuales de UVG.' })
 const session = useStudentSession()
 const authApi = useStudentAuthApi()
-const fields = reactive({ name: '', email: '', password: '', passwordConfirmation: '', isStudent: false })
+const fields = reactive({ firstNames: '', lastNames: '', email: '', password: '', passwordConfirmation: '', isStudent: false })
 const errors = ref<StudentRegistrationErrors>({})
 const requestError = ref('')
 const submitting = ref(false)
@@ -28,7 +28,7 @@ const submit = async () => {
   submitting.value = true
   try {
     const credentials = { email: fields.email.trim().toLowerCase(), password: fields.password }
-    await authApi.register({ name: fields.name.trim(), ...credentials, isStudent: true })
+    await authApi.register({ firstNames: fields.firstNames.trim(), lastNames: fields.lastNames.trim(), ...credentials, isStudent: true })
     await session.login(credentials)
     await navigateTo('/mi-cuenta', { replace: true })
   } catch (error) {
@@ -43,9 +43,14 @@ const submit = async () => {
   <StudentAuthCard title="Crear tu cuenta" hint="Registro exclusivo para estudiantes actuales de UVG. Las personas aspirantes todavía no forman parte de este acceso.">
     <form novalidate @submit.prevent="submit">
       <div class="field">
-        <label for="registration-name">Nombre completo</label>
-        <input id="registration-name" v-model="fields.name" name="name" type="text" autocomplete="name" maxlength="160" :disabled="!ready || submitting" :aria-invalid="Boolean(errors.name)" :aria-describedby="errors.name ? 'registration-name-error' : undefined">
-        <p v-if="errors.name" id="registration-name-error" class="field-error">{{ errors.name }}</p>
+        <label for="registration-first-names">Nombres</label>
+        <input id="registration-first-names" v-model="fields.firstNames" name="firstNames" type="text" autocomplete="given-name" maxlength="80" :disabled="!ready || submitting" :aria-invalid="Boolean(errors.firstNames)" :aria-describedby="errors.firstNames ? 'registration-first-names-error' : undefined">
+        <p v-if="errors.firstNames" id="registration-first-names-error" class="field-error">{{ errors.firstNames }}</p>
+      </div>
+      <div class="field">
+        <label for="registration-last-names">Apellidos</label>
+        <input id="registration-last-names" v-model="fields.lastNames" name="lastNames" type="text" autocomplete="family-name" maxlength="80" :disabled="!ready || submitting" :aria-invalid="Boolean(errors.lastNames)" :aria-describedby="errors.lastNames ? 'registration-last-names-error' : undefined">
+        <p v-if="errors.lastNames" id="registration-last-names-error" class="field-error">{{ errors.lastNames }}</p>
       </div>
       <div class="field">
         <label for="registration-email">Correo institucional</label>

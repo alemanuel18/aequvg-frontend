@@ -1,5 +1,5 @@
 export interface StudentLoginFields { email: string; password: string }
-export interface StudentRegistrationFields extends StudentLoginFields { name: string; passwordConfirmation: string; isStudent: boolean }
+export interface StudentRegistrationFields extends StudentLoginFields { firstNames: string; lastNames: string; passwordConfirmation: string; isStudent: boolean }
 export type StudentLoginErrors = Partial<Record<keyof StudentLoginFields, string>>
 export type StudentRegistrationErrors = Partial<Record<keyof StudentRegistrationFields, string>>
 
@@ -20,9 +20,12 @@ export const validateStudentLogin = validateCredentials
 
 export const validateStudentRegistration = (fields: StudentRegistrationFields): StudentRegistrationErrors => {
   const errors: StudentRegistrationErrors = { ...validateCredentials(fields) }
-  const name = fields.name.trim()
-  if (name.length < 2) errors.name = 'Escribe tu nombre completo.'
-  else if (name.length > 160) errors.name = 'El nombre supera la longitud permitida.'
+  const firstNames = fields.firstNames.trim()
+  const lastNames = fields.lastNames.trim()
+  if (firstNames.length < 2) errors.firstNames = 'Escribe tus nombres.'
+  else if (firstNames.length > 80) errors.firstNames = 'Los nombres superan la longitud permitida.'
+  if (lastNames.length < 2) errors.lastNames = 'Escribe tus apellidos.'
+  else if (lastNames.length > 80) errors.lastNames = 'Los apellidos superan la longitud permitida.'
   if (fields.password && !strongPassword.test(fields.password)) errors.password = 'Usa al menos 12 caracteres con mayúscula, minúscula, número y símbolo.'
   if (fields.passwordConfirmation !== fields.password) errors.passwordConfirmation = 'Las contraseñas no coinciden.'
   if (!fields.isStudent) errors.isStudent = 'Debes confirmar que actualmente eres estudiante de UVG.'
