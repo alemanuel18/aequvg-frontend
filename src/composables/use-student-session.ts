@@ -34,6 +34,12 @@ export const useStudentSession = () => {
     return session.user
   }
 
+  const updateProfile = async (input: { firstNames: string; lastNames: string }) => {
+    const response = await authApi.updateProfile(input, csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || '')
+    user.value = response.user
+    return response.user
+  }
+
   const logout = async () => {
     const browserCsrf = useCookie<string | null>('aequvg_student_csrf').value ?? ''
     await authApi.logout(csrfToken.value || browserCsrf)
@@ -42,5 +48,5 @@ export const useStudentSession = () => {
     checked.value = true
   }
 
-  return { user, csrfToken, checked, loading, load, login, logout }
+  return { user, csrfToken, checked, loading, load, login, logout, updateProfile }
 }

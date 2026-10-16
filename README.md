@@ -59,7 +59,8 @@ El acceso estudiantil vive dentro del portal público y está separado del admin
 
 - `/acceso` inicia sesión con una cuenta de estudiante.
 - `/registro` crea cuentas únicamente para estudiantes actuales de UVG; solicita nombres y apellidos por separado, exige correo `@uvg.edu.gt`, contraseña robusta y confirmación de la condición estudiantil. No contempla aspirantes.
-- `/mi-cuenta` es el panel personal y permite cerrar la sesión.
+- `/mi-cuenta` es el panel personal: permite editar nombres y apellidos, consulta el correo institucional como solo lectura y permite cerrar la sesión. La cuenta permanece identificada como Estudiante UVG; el usuario no puede editar ID, tipo, rol ni estado.
+- La navegación del panel incluye las pestañas `Mi perfil`, `Mis eventos` y `Mis comentarios`. En esta entrega las dos últimas quedan como navegación protegida con su estado informativo; sus listados se integran desde los equipos responsables de eventos y comentarios.
 
 Sin sesión, la esquina derecha del navbar muestra `Ingresar / Registrarse`; con sesión muestra una foto de perfil genérica enlazada al panel personal. Registro e inicio correctos redirigen a `/mi-cuenta`. Un bloqueo temporal presenta su fecha de finalización y uno permanente presenta el canal de revisión enviado por la API.
 
@@ -272,7 +273,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
 | `/acceso` | Inicio de sesión para estudiantes de UVG. |
 | `/registro` | Alta de estudiantes actuales con correo institucional. |
-| `/mi-cuenta` | Panel personal protegido y cierre de sesión estudiantil. |
+| `/mi-cuenta` | Panel protegido para editar el perfil propio y cerrar sesión. |
 | `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
 | `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
 | `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
