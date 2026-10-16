@@ -58,7 +58,7 @@ Estado actual de interfaz: el login y cierre de sesión están disponibles. Las 
 El acceso estudiantil vive dentro del portal público y está separado del administrativo:
 
 - `/acceso` inicia sesión con una cuenta de estudiante.
-- `/registro` crea cuentas únicamente para estudiantes actuales de UVG; exige correo `@uvg.edu.gt`, contraseña robusta y confirmación de la condición estudiantil. No contempla aspirantes.
+- `/registro` crea cuentas únicamente para estudiantes actuales de UVG; solicita nombres y apellidos por separado, exige correo `@uvg.edu.gt`, contraseña robusta y confirmación de la condición estudiantil. No contempla aspirantes.
 - `/mi-cuenta` es el panel personal y permite cerrar la sesión.
 
 Sin sesión, la esquina derecha del navbar muestra `Ingresar / Registrarse`; con sesión muestra una foto de perfil genérica enlazada al panel personal. Registro e inicio correctos redirigen a `/mi-cuenta`. Un bloqueo temporal presenta su fecha de finalización y uno permanente presenta el canal de revisión enviado por la API.
