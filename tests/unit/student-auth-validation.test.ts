@@ -12,7 +12,8 @@ describe('validación de acceso estudiantil', () => {
 
   it('exige condición de estudiante, contraseña robusta y confirmación coincidente', () => {
     expect(validateStudentRegistration({
-      name: 'Estudiante UVG',
+      firstNames: 'Estudiante',
+      lastNames: 'UVG',
       email: 'estudiante@uvg.edu.gt',
       password: 'debil',
       passwordConfirmation: 'otra',
@@ -22,7 +23,8 @@ describe('validación de acceso estudiantil', () => {
 
   it('acepta el registro completo de un estudiante actual', () => {
     expect(validateStudentRegistration({
-      name: 'Estudiante UVG',
+      firstNames: 'Estudiante',
+      lastNames: 'UVG',
       email: 'estudiante@uvg.edu.gt',
       password: 'Estudiante123!',
       passwordConfirmation: 'Estudiante123!',

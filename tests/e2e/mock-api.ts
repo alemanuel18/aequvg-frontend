@@ -169,6 +169,8 @@ const allowedOrigin = `http://127.0.0.1:${process.env.PLAYWRIGHT_FRONTEND_PORT |
 const adminUser = {
   id: 1,
   name: 'Administración de prueba',
+  firstNames: 'Administración',
+  lastNames: 'de prueba',
   email: 'admin@uvg.edu.gt',
   status: 'ACTIVO',
   role: 'Administrador',
@@ -177,12 +179,14 @@ const adminUser = {
 const limitedUser = {
   ...adminUser,
   name: 'Cuenta sin permiso de noticias',
+  firstNames: 'Cuenta sin permiso',
+  lastNames: 'de noticias',
   email: 'editor@uvg.edu.gt',
   permissions: ['ADMIN_ACCESS', 'CONTACT_MANAGE']
 }
 let adminSessionActive = false
 let activeUser = adminUser
-const studentUser = { id: 51, name: 'Estudiante de prueba', email: 'estudiante@uvg.edu.gt', isStudent: true, status: 'ACTIVO', role: 'STUDENT' }
+const studentUser = { id: 51, name: 'Estudiante de prueba', firstNames: 'Estudiante', lastNames: 'de prueba', email: 'estudiante@uvg.edu.gt', isStudent: true, status: 'ACTIVO', role: 'STUDENT' }
 let studentSessionActive = false
 let contactMethods = [
   { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
@@ -224,10 +228,10 @@ Bun.serve({
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/student-auth/register') {
       const body = await request.json() as Record<string, unknown>
-      if (body.isStudent !== true || body.email !== studentUser.email || body.role !== undefined) {
+      if (body.isStudent !== true || body.email !== studentUser.email || body.role !== undefined || typeof body.firstNames !== 'string' || typeof body.lastNames !== 'string') {
         return json({ error: { code: 'VALIDATION_ERROR', message: 'Revisa los datos enviados.' } }, 422)
       }
-      return json({ ...studentUser, name: body.name }, 201)
+      return json({ ...studentUser, firstNames: body.firstNames, lastNames: body.lastNames, name: `${body.firstNames} ${body.lastNames}` }, 201)
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/student-auth/login') {
       const body = await request.json() as { email?: string; password?: string }
@@ -255,6 +259,13 @@ Bun.serve({
         'access-control-allow-credentials': 'true',
         'set-cookie': 'aequvg_student_session=; Max-Age=0; Path=/'
       } })
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/auth/registration-requests') {
+      const body = await request.json() as Record<string, unknown>
+      if (typeof body.firstNames !== 'string' || typeof body.lastNames !== 'string' || typeof body.email !== 'string' || typeof body.password !== 'string') {
+        return json({ error: { code: 'VALIDATION_ERROR', message: 'Revisa los datos enviados.' } }, 422)
+      }
+      return json({ message: 'La solicitud fue enviada para revisión administrativa.' }, 202)
     }
     if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') {
       const body = await request.json() as { email?: string; password?: string }

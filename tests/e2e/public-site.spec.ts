@@ -40,7 +40,8 @@ test('registra, conserva y cierra una sesión estudiantil desde el portal', asyn
   await page.getByRole('button', { name: 'Crear cuenta' }).click()
   await expect(page.getByText('Debes confirmar que actualmente eres estudiante de UVG.')).toBeVisible()
 
-  await page.getByLabel('Nombre completo').fill('Estudiante de prueba')
+  await page.getByLabel('Nombres').fill('Estudiante')
+  await page.getByLabel('Apellidos').fill('de prueba')
   await page.getByLabel('Correo institucional').fill('estudiante@uvg.edu.gt')
   await page.getByLabel('Contraseña', { exact: true }).fill('Estudiante123!')
   await page.getByLabel('Confirmar contraseña').fill('Estudiante123!')
@@ -68,6 +69,21 @@ test('muestra fecha y canal de revisión según el bloqueo estudiantil', async (
   await page.getByLabel('Correo institucional').fill('bloqueado.permanente@uvg.edu.gt')
   await page.getByRole('button', { name: 'Iniciar sesión' }).click()
   await expect(page.getByRole('alert')).toContainText('revision@uvg.edu.gt')
+})
+
+test('solicita nombres y apellidos separados para una cuenta administrativa', async ({ page }) => {
+  await page.goto('/administrador/sign-up')
+  await page.getByRole('button', { name: 'Enviar solicitud' }).click()
+  await expect(page.getByText('Escribe tus nombres.')).toBeVisible()
+  await expect(page.getByText('Escribe tus apellidos.')).toBeVisible()
+
+  await page.getByLabel('Nombres').fill('María Fernanda')
+  await page.getByLabel('Apellidos').fill('López Pérez')
+  await page.getByLabel('Correo institucional').fill('maria.lopez@uvg.edu.gt')
+  await page.getByLabel(/^Contraseña/).fill('Administrativa123!')
+  await page.getByLabel(/^Confirmar contraseña/).fill('Administrativa123!')
+  await page.getByRole('button', { name: 'Enviar solicitud' }).click()
+  await expect(page.getByRole('heading', { name: 'Tu solicitud está pendiente' })).toBeVisible()
 })
 
 test('consulta el historial de la Junta Directiva por periodo a 320 px', async ({ page }) => {
