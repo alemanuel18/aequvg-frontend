@@ -76,9 +76,11 @@ const logout = async () => {
           <input id="first-names" v-model="firstNames" name="firstNames" autocomplete="given-name" minlength="2" maxlength="80" required>
           <label for="last-names">Apellidos</label>
           <input id="last-names" v-model="lastNames" name="lastNames" autocomplete="family-name" minlength="2" maxlength="80" required>
-          <label for="email">Correo institucional</label>
-          <input id="email" :value="session.user.value.email" autocomplete="email" readonly aria-describedby="email-help">
-          <small id="email-help">El correo no forma parte de los datos editables del perfil.</small>
+          <div class="email-field" aria-describedby="email-help">
+            <span class="email-field__label">Correo institucional</span>
+            <p class="email-field__value">{{ session.user.value.email }}</p>
+            <small id="email-help">El correo no forma parte de los datos editables del perfil.</small>
+          </div>
           <p class="student-type">Tipo de cuenta: Estudiante UVG</p>
           <p v-if="requestError" class="form-error" role="alert">{{ requestError }}</p>
           <div class="actions">
@@ -99,9 +101,11 @@ const logout = async () => {
 .account__heading h2 { margin-block: .6rem; font-size: clamp(1.8rem, 6vw, 2.8rem); overflow-wrap: anywhere; }
 .account__heading p, .profile-form small { color: var(--color-muted); }
 .profile-form { grid-column: 1 / -1; display: grid; gap: .65rem; }
-.profile-form label { margin-top: .5rem; font-weight: 750; }
+.profile-form label, .email-field__label { margin-top: .5rem; font-weight: 750; }
 .profile-form input { width: 100%; min-height: 2.8rem; padding: .65rem .8rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: .5rem; font: inherit; }
-.profile-form input[readonly] { background: var(--color-soft); }
+.email-field { display: grid; gap: .65rem; margin-top: .5rem; }
+.email-field__value { width: 100%; min-height: 2.8rem; display: flex; align-items: center; margin: 0; padding: .65rem .8rem; color: var(--color-muted); background: var(--color-soft); border: 1px solid var(--color-border); border-radius: .5rem; overflow-wrap: anywhere; }
+.email-field small { color: var(--color-muted); }
 .student-type { display: flex; align-items: center; gap: .5rem; margin-block: .75rem; color: var(--color-primary); font-weight: 750; }
 .form-error { color: var(--color-danger); font-weight: 700; }
 .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .5rem; }

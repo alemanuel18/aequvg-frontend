@@ -57,7 +57,8 @@ test('registra, conserva y cierra una sesión estudiantil desde el portal', asyn
   await page.getByRole('button', { name: 'Guardar cambios' }).click()
   await expect(page.getByRole('heading', { name: 'Hola, Ana María López Pérez' })).toBeVisible()
   await expect(page.getByText('Tu perfil se actualizó correctamente.')).toBeVisible()
-  await expect(page.getByLabel('Correo institucional')).toHaveAttribute('readonly', '')
+  await expect(page.getByText('estudiante@uvg.edu.gt', { exact: true })).toBeVisible()
+  await expect(page.locator('#email')).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Mis eventos' })).toHaveAttribute('href', '/mi-cuenta?section=events')
   await expect(page.getByRole('link', { name: 'Mis comentarios' })).toHaveAttribute('href', '/mi-cuenta?section=comments')
 
