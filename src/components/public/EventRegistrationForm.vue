@@ -16,6 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const service = usePublicContentService();
+const studentSession = useStudentSession();
 const privacyVersion = useRuntimeConfig().public.privacyVersion;
 
 const submitting = ref(false);
@@ -36,6 +37,12 @@ const form = reactive({
   phone: "",
   consent: false,
   website: "",
+});
+
+watchEffect(() => {
+  if (!studentSession.user.value) return;
+  if (!form.fullName) form.fullName = studentSession.user.value.name;
+  if (!form.email) form.email = studentSession.user.value.email;
 });
 
 const clearForm = () => {
@@ -95,12 +102,18 @@ const submit = async () => {
       website: form.website || undefined,
     };
 
-    await service.registerForEvent(props.eventId, body);
+    const browserCsrf = useCookie<string | null>("aequvg_student_csrf").value ?? "";
+    await service.registerForEvent(props.eventId, body, studentSession.csrfToken.value || browserCsrf);
     success.value = true;
     clearForm();
   } catch (error) {
     if (error instanceof PublicApiError) {
       switch (error.code) {
+        case "UNAUTHORIZED":
+        case "INVALID_SESSION":
+        case "SESSION_REVOKED":
+          await navigateTo(`/acceso?returnTo=${encodeURIComponent(`/eventos/${props.eventId}#formulario-inscripcion`)}`);
+          break;
         case "ALREADY_REGISTERED":
           errorMessage.value =
             "Ya existe una inscripción registrada con este correo electrónico para este evento.";

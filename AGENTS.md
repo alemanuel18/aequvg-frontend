@@ -20,6 +20,12 @@ src/
     recursos.vue, investigacion.vue # aviso reutilizable de desarrollo
     administrador/
       contenido.vue               # gestión de Hero, anuncios (máx 3) y destacados (máx 3 noticias/eventos)
+      index.vue                   # inicio de sesión administrativo independiente
+      sign-up.vue                 # solicitud de cuenta administrativa
+      users.vue                   # gestión de cuentas, roles y estados administrativos
+    acceso.vue                    # inicio de sesión de estudiantes normales
+    registro.vue                  # alta exclusiva para estudiantes UVG
+    mi-cuenta.vue                 # panel de la sesión estudiantil
   components/common/              # AppButton, AppIcon, AppSection, PageHero,
                                   # ContentCard, EyebrowBadge, StatePanel,
                                   # AppConfirmModal (modal accesible reutilizable),
@@ -45,6 +51,17 @@ tests/e2e/public-site.spec.ts    # teclado, 320px y contacto
 ```
 
 Los componentes `common`, `layout` y `public` deben ser reutilizables mediante props/emits. `PageHero`, `EyebrowBadge`, `StatePanel` y `UnderConstructionPage` son piezas compartidas para encabezados, cápsulas y estados. Las vistas componen estas piezas; no dupliques HTML o mensajes de carga/error.
+
+## Acceso administrativo y estudiantil
+
+- **Flujos separados**: `/administrador` pertenece exclusivamente al acceso administrativo. `/acceso`, `/registro` y `/mi-cuenta` pertenecen al portal de estudiantes normales. No reutilices una sesión como respaldo de la otra ni muestres opciones administrativas dentro del flujo estudiantil.
+- **Navegación pública**: el extremo derecho del navbar muestra las acciones para registrarse o iniciar sesión cuando no existe una sesión estudiantil. Con sesión activa muestra un avatar placeholder, ya que todavía no se almacenan fotografías, y enlaza al panel personal. La navegación pública debe seguir disponible con o sin sesión.
+- **Nombres separados**: todos los formularios de alta y edición de ambos perfiles solicitan `firstNames` (Nombres) y `lastNames` (Apellidos), con `autocomplete="given-name"` y `autocomplete="family-name"` cuando corresponda. No reintroduzcas un único input `name`; el backend puede devolver `name` como texto compuesto únicamente para presentación y compatibilidad.
+- **Contrato estudiantil**: el registro exige correo `@uvg.edu.gt`, confirmación explícita de que la persona es estudiante actual y contraseña fuerte. No existe registro para aspirantes ni selector de rol. El cliente nunca debe enviar un rol administrativo desde este formulario.
+- **Servicios y estado**: usa `services/student-auth.ts` y `use-student-session.ts` para estudiantes; usa `services/admin-auth.ts` y `use-admin-session.ts` para administración. Los tipos compartidos están en `types/api.ts`, pero cookies, endpoints y estados de sesión permanecen separados.
+- **Seguridad de sesión**: ambos logins comparten las mismas reglas de formato y tratamiento de errores. Las credenciales viajan únicamente al backend y nunca se guardan en `localStorage`, logs o estado persistente. Las cookies de sesión son administradas por el servidor; las peticiones autenticadas se realizan con credenciales y las mutaciones incluyen el token CSRF entregado por la sesión.
+- **Estados de cuenta estudiantil**: presenta el fin del bloqueo cuando sea temporal y el canal de revisión cuando sea permanente. Una cuenta eliminada no puede acceder. La baja propia debe conservar el flujo de verificación restringida de identidad aunque la cuenta esté bloqueada.
+- **Pruebas mínimas**: cualquier cambio de autenticación debe cubrir separación de nombres, errores/carga, registro e inicio de sesión estudiantil, logout, recarga y ausencia de regresiones en el login administrativo. Los mocks E2E deben respetar los mismos campos y respuestas del backend; no simplifiques el contrato usando `name`.
 
 ## Estándar Obligatorio: Modales de Confirmación y Notificaciones Toast
 

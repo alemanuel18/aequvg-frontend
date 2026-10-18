@@ -13,8 +13,10 @@ export const usePublicContentService = () => {
     newsById: (id: number) => api<PublicNews>(`/news/${id}`),
     events: (query: PublicEventQuery = {}) => api<PublicEventList>('/events', { query }),
     eventById: (id: number) => api<PublicEvent>(`/events/${id}`),
-    registerForEvent: (eventId: number, body: EventRegistrationInput) =>
-      api<EventRegistrationResponse>(`/events/${eventId}/registrations`, { method: 'POST', body }),
+    registerForEvent: (eventId: number, body: EventRegistrationInput, csrfToken: string) =>
+      api<EventRegistrationResponse>(`/events/${eventId}/registrations`, {
+        method: 'POST', body, credentials: 'include', headers: { 'x-csrf-token': csrfToken }
+      }),
     projects: (query: PublicProjectQuery = {}) => api<PublicProjectList>('/projects', { query }),
     projectById: (id: number) => api<PublicProject>(`/projects/${id}`),
     resources: (query: PublicResourceQuery = {}) => api<PublicResourceList>('/resources', { query }),

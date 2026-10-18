@@ -9,6 +9,7 @@ if (!Number.isSafeInteger(id) || id < 1) {
 }
 
 const service = usePublicContentService();
+const studentSession = useStudentSession();
 const {
   data: event,
   status,
@@ -48,7 +49,10 @@ const mounted = ref(false);
 
 onMounted(() => {
   mounted.value = true;
+  void studentSession.load();
 });
+
+const registrationLoginUrl = computed(() => `/acceso?returnTo=${encodeURIComponent(`/eventos/${id}#formulario-inscripcion`)}`);
 
 const isEventPast = computed(() => {
   if (!mounted.value || !event.value?.startsAt) return false;
@@ -172,12 +176,17 @@ const formatEventDate = (value: string | null | undefined) => {
           </div>
           <div class="event-detail__actions">
             <AppButton
-              v-if="!isEventPast && !isFull"
+              v-if="!isEventPast && !isFull && studentSession.user.value"
               href="#formulario-inscripcion"
               variant="primary"
             >
               Inscribirme a este evento ↓
             </AppButton>
+            <AppButton
+              v-else-if="!isEventPast && !isFull"
+              :to="registrationLoginUrl"
+              variant="primary"
+            >Inicia sesión para inscribirte</AppButton>
             <AppButton to="/eventos" variant="secondary"
               >← Ver todos los eventos</AppButton
             >
@@ -190,11 +199,24 @@ const formatEventDate = (value: string | null | undefined) => {
           aria-labelledby="registration-heading"
         >
           <EventRegistrationForm
+            v-if="studentSession.user.value || isFull || isEventPast"
             :event-id="event.id"
             :event-name="event.name"
             :starts-at="event.startsAt"
             :available-capacity="currentAvailableCapacity"
             @full="onEventFull"
+          />
+          <StatePanel
+            v-else-if="studentSession.checked.value"
+            title="Inicia sesión para inscribirte"
+            message="Las inscripciones están disponibles para estudiantes de UVG con una sesión activa."
+          >
+            <AppButton :to="registrationLoginUrl">Iniciar sesión o registrarme</AppButton>
+          </StatePanel>
+          <StatePanel
+            v-else
+            title="Comprobando tu sesión"
+            message="Espera un momento mientras verificamos tu acceso estudiantil."
           />
         </section>
       </div>
