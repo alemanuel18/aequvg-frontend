@@ -12,9 +12,9 @@ import { useAdminContentService } from "~/services/admin-content";
 import { PublicApiError } from "~/services/api";
 import type {
   BlockType,
+  FeaturedEventCandidate,
+  FeaturedNewsCandidate,
   InstitutionalBlock,
-  PublicEvent,
-  PublicNews,
 } from "~/types/api";
 
 definePageMeta({
@@ -36,10 +36,73 @@ const loadError = ref("");
 
 // Raw data
 const blocks = ref<InstitutionalBlock[]>([]);
-const availableNews = ref<PublicNews[]>([]);
-const availableEvents = ref<PublicEvent[]>([]);
+const availableNews = ref<FeaturedNewsCandidate[]>([]);
+const availableEvents = ref<FeaturedEventCandidate[]>([]);
+const knownNews = ref<Record<number, FeaturedNewsCandidate>>({});
+const knownEvents = ref<Record<number, FeaturedEventCandidate>>({});
 const selectedNewsIds = ref<number[]>([]);
 const selectedEventIds = ref<number[]>([]);
+const newsSearch = ref("");
+const eventSearch = ref("");
+const newsCandidatesLoading = ref(false);
+const eventCandidatesLoading = ref(false);
+const newsCandidatesError = ref("");
+const eventCandidatesError = ref("");
+let newsRequestVersion = 0;
+let eventRequestVersion = 0;
+const visibleNews = computed(() => [
+  ...selectedNewsIds.value.map((id) => knownNews.value[id]).filter((item): item is FeaturedNewsCandidate => Boolean(item)),
+  ...availableNews.value.filter((item) => !selectedNewsIds.value.includes(item.id)),
+]);
+const visibleEvents = computed(() => [
+  ...selectedEventIds.value.map((id) => knownEvents.value[id]).filter((item): item is FeaturedEventCandidate => Boolean(item)),
+  ...availableEvents.value.filter((item) => !selectedEventIds.value.includes(item.id)),
+]);
+
+const loadNewsCandidates = async (q = "") => {
+  const version = ++newsRequestVersion;
+  newsCandidatesLoading.value = true;
+  newsCandidatesError.value = "";
+  try {
+    const result = await service.newsCandidates(q);
+    if (version !== newsRequestVersion) return;
+    availableNews.value = result.items;
+    knownNews.value = Object.fromEntries([...Object.values(knownNews.value), ...result.selected, ...result.items].map((item) => [item.id, item]));
+  } catch {
+    if (version !== newsRequestVersion) return;
+    availableNews.value = [];
+    newsCandidatesError.value = "No se pudieron cargar las noticias. Intenta buscar de nuevo.";
+  } finally {
+    if (version === newsRequestVersion) newsCandidatesLoading.value = false;
+  }
+};
+
+const loadEventCandidates = async (q = "") => {
+  const version = ++eventRequestVersion;
+  eventCandidatesLoading.value = true;
+  eventCandidatesError.value = "";
+  try {
+    const result = await service.eventCandidates(q);
+    if (version !== eventRequestVersion) return;
+    availableEvents.value = result.items;
+    knownEvents.value = Object.fromEntries([...Object.values(knownEvents.value), ...result.selected, ...result.items].map((item) => [item.id, item]));
+  } catch {
+    if (version !== eventRequestVersion) return;
+    availableEvents.value = [];
+    eventCandidatesError.value = "No se pudieron cargar los eventos. Intenta buscar de nuevo.";
+  } finally {
+    if (version === eventRequestVersion) eventCandidatesLoading.value = false;
+  }
+};
+
+watch(newsSearch, (query, _, onCleanup) => {
+  const timer = setTimeout(() => loadNewsCandidates(query.trim()), 300);
+  onCleanup(() => clearTimeout(timer));
+});
+watch(eventSearch, (query, _, onCleanup) => {
+  const timer = setTimeout(() => loadEventCandidates(query.trim()), 300);
+  onCleanup(() => clearTimeout(timer));
+});
 
 // Section 1: Hero form state
 const heroId = ref<number | null>(null);
@@ -134,16 +197,14 @@ const loadData = async () => {
   loadError.value = "";
 
   try {
-    const [blocksData, featuredData, newsData, eventsData] = await Promise.all([
+    const [blocksData, featuredData] = await Promise.all([
       service.listBlocks(),
       service.featured().catch(() => ({ newsIds: [], eventIds: [] })),
-      service.listNews().catch(() => ({ items: [] })),
-      service.listEvents().catch(() => ({ items: [] })),
+      loadNewsCandidates(),
+      loadEventCandidates(),
     ]);
 
     blocks.value = blocksData;
-    availableNews.value = newsData.items ?? [];
-    availableEvents.value = eventsData.items ?? [];
     selectedNewsIds.value = featuredData.newsIds ?? [];
     selectedEventIds.value = featuredData.eventIds ?? [];
 
@@ -1021,20 +1082,28 @@ const getTypeLabel = (type: BlockType) => {
               </div>
               <p class="field-hint">
                 Selecciona hasta 3 eventos que se destacarán en la página de
-                inicio.
+                inicio. Se muestran los 4 más recientes y los ya seleccionados.
               </p>
             </div>
 
-            <div v-if="availableEvents.length === 0" class="empty-notice">
+            <div class="featured-search">
+              <label for="featured-event-search">Buscar evento para destacar</label>
+              <input id="featured-event-search" v-model="eventSearch" type="search" placeholder="Buscar por nombre" autocomplete="off" maxlength="100" />
+            </div>
+            <p v-if="eventCandidatesLoading" role="status">Buscando eventos…</p>
+            <p v-if="eventCandidatesError" role="alert">{{ eventCandidatesError }}</p>
+            <p v-else-if="!eventCandidatesLoading && eventSearch.trim() && availableEvents.length === 0">No se encontraron eventos con ese nombre.</p>
+
+            <div v-if="!eventCandidatesLoading && !eventCandidatesError && !eventSearch.trim() && visibleEvents.length === 0" class="empty-notice">
               <p>
                 No hay eventos disponibles para destacar. Crea eventos en el
                 módulo correspondiente.
               </p>
             </div>
 
-            <div v-else class="selection-grid">
+            <div v-if="visibleEvents.length" class="selection-grid">
               <label
-                v-for="event in availableEvents"
+                v-for="event in visibleEvents"
                 :key="event.id"
                 :class="[
                   'selectable-card',
@@ -1088,20 +1157,28 @@ const getTypeLabel = (type: BlockType) => {
               </div>
               <p class="field-hint">
                 Selecciona hasta 3 noticias que se destacarán en la página de
-                inicio.
+                inicio. Se muestran las 4 más recientes y las ya seleccionadas.
               </p>
             </div>
 
-            <div v-if="availableNews.length === 0" class="empty-notice">
+            <div class="featured-search">
+              <label for="featured-news-search">Buscar noticia para destacar</label>
+              <input id="featured-news-search" v-model="newsSearch" type="search" placeholder="Buscar por título" autocomplete="off" maxlength="100" />
+            </div>
+            <p v-if="newsCandidatesLoading" role="status">Buscando noticias…</p>
+            <p v-if="newsCandidatesError" role="alert">{{ newsCandidatesError }}</p>
+            <p v-else-if="!newsCandidatesLoading && newsSearch.trim() && availableNews.length === 0">No se encontraron noticias con ese título.</p>
+
+            <div v-if="!newsCandidatesLoading && !newsCandidatesError && !newsSearch.trim() && visibleNews.length === 0" class="empty-notice">
               <p>
                 No hay noticias disponibles para destacar. Crea noticias en el
                 módulo correspondiente.
               </p>
             </div>
 
-            <div v-else class="selection-grid">
+            <div v-if="visibleNews.length" class="selection-grid">
               <label
-                v-for="item in availableNews"
+                v-for="item in visibleNews"
                 :key="item.id"
                 :class="[
                   'selectable-card',
@@ -1601,6 +1678,24 @@ const getTypeLabel = (type: BlockType) => {
 .featured-block__header {
   display: grid;
   gap: 0.25rem;
+}
+
+.featured-search {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 28rem;
+}
+
+.featured-search label {
+  font-weight: 800;
+}
+
+.featured-search input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
 }
 
 .title-with-pill {

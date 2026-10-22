@@ -990,6 +990,35 @@ test('la página de inicio muestra el Hero dinámico, la sección Conocer la Lic
   await expect(page.getByRole('link', { name: 'Ver todas las noticias →' })).toHaveAttribute('href', '/noticias')
 })
 
+test('muestra cuatro recientes por tipo y permite buscar destacados anteriores', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/contenido')
+
+  const events = page.locator('.featured-block').nth(0)
+  const news = page.locator('.featured-block').nth(1)
+  await expect(events.locator('.selectable-card')).toHaveCount(5)
+  await expect(news.locator('.selectable-card')).toHaveCount(5)
+  await expect(events.getByText('Evento reciente 4')).toBeVisible()
+  await expect(news.getByText('Noticia reciente 4')).toBeVisible()
+
+  await page.getByLabel('Buscar evento para destacar').fill('Encuentro histórico')
+  await expect(events.getByText('Encuentro histórico')).toBeVisible()
+  await expect(events.getByText('Taller de Espectrometría UV-Vis')).toBeVisible()
+  await expect(events.getByText('Evento reciente 4')).toHaveCount(0)
+  await expect(news.getByText('Noticia reciente 4')).toBeVisible()
+
+  await page.getByLabel('Buscar noticia para destacar').fill('Investigación histórica')
+  await expect(news.getByText('Investigación histórica')).toBeVisible()
+  await expect(news.getByText('Convocatoria de laboratorio')).toBeVisible()
+  await news.getByText('Investigación histórica').click()
+  await expect(news.locator('.counter-badge')).toContainText('2 / 3')
+  await page.getByLabel('Buscar noticia para destacar').fill('')
+  await expect(news.getByText('Investigación histórica')).toBeVisible()
+})
+
 test('el módulo administrativo de contenido institucional interactúa con modal de confirmación y toasts', async ({ page }) => {
   await page.goto('/administrador')
   await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')

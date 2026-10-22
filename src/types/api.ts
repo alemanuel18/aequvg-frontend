@@ -120,6 +120,10 @@ export interface AdminNewsList {
   pagination: Pagination
 }
 
+export interface FeaturedNewsCandidate { id: number; title: string; status: ContentStatus; category: { name: string } }
+export interface FeaturedEventCandidate { id: number; name: string; location: string; status: EventStatus }
+export interface FeaturedCandidateList<T> { items: T[]; selected: T[] }
+
 export interface NewsInput {
   categoryId: number
   imageId?: number | null
