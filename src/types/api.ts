@@ -42,7 +42,7 @@ export interface BoardMemberInput {
   termStartsAt: string
   termEndsAt: string
   displayOrder?: number
-  status?: 'ACTIVO' | 'INACTIVO'
+  status: 'ACTIVO' | 'INACTIVO'
 }
 
 export type ContactMethodType = 'EMAIL' | 'TELEFONO' | 'UBICACION' | 'INSTAGRAM' | 'FACEBOOK' | 'OTRO'
