@@ -611,7 +611,7 @@ onMounted(async () => {
           <div class="editor-fields">
             <div class="field">
               <label for="news-title"
-                >Título <span aria-hidden="true">*</span></label
+                >Título <span class="required-indicator" aria-hidden="true">*</span></label
               ><input
                 id="news-title"
                 ref="titleInput"
@@ -630,7 +630,7 @@ onMounted(async () => {
             </div>
             <div class="field">
               <label for="news-summary"
-                >Resumen <span aria-hidden="true">*</span></label
+                >Resumen <span class="required-indicator" aria-hidden="true">*</span></label
               ><textarea
                 id="news-summary"
                 v-model="form.summary"
@@ -650,7 +650,7 @@ onMounted(async () => {
             </div>
             <div class="field">
               <label for="news-content"
-                >Contenido <span aria-hidden="true">*</span></label
+                >Contenido <span class="required-indicator" aria-hidden="true">*</span></label
               ><textarea
                 id="news-content"
                 v-model="form.content"
@@ -673,7 +673,7 @@ onMounted(async () => {
             <div class="form-row">
               <div class="field">
                 <label for="news-category"
-                  >Categoría <span aria-hidden="true">*</span></label
+                  >Categoría <span class="required-indicator" aria-hidden="true">*</span></label
                 ><select
                   id="news-category"
                   ref="categorySelect"
@@ -699,7 +699,7 @@ onMounted(async () => {
               </div>
               <div class="field">
                 <label for="news-status"
-                  >Estado <span aria-hidden="true">*</span></label
+                  >Estado <span class="required-indicator" aria-hidden="true">*</span></label
                 ><select id="news-status" v-model="form.status">
                   <option value="BORRADOR">Borrador</option>
                   <option value="PUBLICADO">Publicado</option>

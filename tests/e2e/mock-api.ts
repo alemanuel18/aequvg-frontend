@@ -15,6 +15,11 @@ const news = {
 }
 
 const secondNews = { ...news, id: 8, title: 'Anuncio de segunda página', summary: 'Contenido para validar la paginación.' }
+const featuredNewsCandidates = [
+  ...Array.from({ length: 4 }, (_, index) => ({ id: 40 + index, title: `Noticia reciente ${index + 1}`, status: 'PUBLICADO', category: { name: 'Noticias' } })),
+  { id: 7, title: news.title, status: 'PUBLICADO', category: { name: news.category.name } },
+  { id: 6, title: 'Investigación histórica', status: 'PUBLICADO', category: { name: 'Noticias' } }
+]
 let adminNews: typeof news | null = { ...news, updatedAt: '2026-01-15T12:00:00.000Z' }
 let reflectedNews: typeof news | null = null
 
@@ -48,6 +53,11 @@ const secondEvent = {
   maximumCapacity: 50,
   availableCapacity: 1
 }
+const featuredEventCandidates = [
+  ...Array.from({ length: 4 }, (_, index) => ({ id: 50 + index, name: `Evento reciente ${index + 1}`, location: 'Campus', status: 'PUBLICADO' })),
+  { id: 10, name: event.name, location: event.location, status: 'PUBLICADO' },
+  { id: 9, name: 'Encuentro histórico', location: 'Campus', status: 'PUBLICADO' }
+]
 
 const eventWithRegistrations = { ...event, id: 13, name: 'Evento con participantes', availableCapacity: 0 }
 const initialAdminEvents = () => [
@@ -194,12 +204,17 @@ let contactMethods = [
   { id: 3, type: 'OTRO', label: 'TikTok', value: '@aeq_uvg', url: 'https://www.tiktok.com/@aeq_uvg', displayOrder: 3, active: true },
   { id: 4, type: 'INSTAGRAM', label: 'Instagram', value: '@aeq__uvg', url: 'https://www.instagram.com/aeq__uvg/', displayOrder: 4, active: true }
 ]
-let nextContactMethodId = 4
+let nextContactMethodId = 5
 const sortedContactMethods = () => [...contactMethods].sort((a, b) =>
   Number(a.type === 'UBICACION') - Number(b.type === 'UBICACION')
   || a.displayOrder - b.displayOrder
   || a.id - b.id
 )
+const normalizedContactMethodBody = (body: Record<string, unknown>) => {
+  if (body.type !== 'TELEFONO') return body
+  const number = String(body.value)
+  return { ...body, value: `+502 ${number.slice(0, 4)} ${number.slice(4)}`, url: `tel:+502${number}` }
+}
 
 const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => Response.json(body, {
   status,
@@ -394,7 +409,7 @@ Bun.serve({
     if (url.pathname === '/api/v1/admin/contact-methods') {
       if (request.method === 'GET') return json(sortedContactMethods())
       if (request.method === 'POST') {
-        const body = await request.json() as Record<string, unknown>
+        const body = normalizedContactMethodBody(await request.json() as Record<string, unknown>)
         const nextOrder = Math.max(-1, ...contactMethods.filter(method => method.type !== 'UBICACION').map(method => method.displayOrder)) + 1
         const created = { id: nextContactMethodId++, displayOrder: body.type === 'UBICACION' ? 0 : nextOrder, ...body }
         contactMethods.push(created as typeof contactMethods[number])
@@ -414,10 +429,22 @@ Bun.serve({
       const index = contactMethods.findIndex(method => method.id === id)
       if (index < 0) return json({ error: { code: 'CONTACT_METHOD_NOT_FOUND', message: 'El medio de contacto no existe.' } }, 404)
       if (request.method === 'PUT') {
-        const body = await request.json() as Record<string, unknown>
+        const body = normalizedContactMethodBody(await request.json() as Record<string, unknown>)
         contactMethods[index] = { ...contactMethods[index]!, ...body } as typeof contactMethods[number]
       } else if (request.method === 'DELETE') contactMethods[index] = { ...contactMethods[index]!, active: false }
       return json(contactMethods[index])
+    }
+    if (url.pathname === '/api/v1/admin/institutional-content/featured/candidates') {
+      const kind = url.searchParams.get('kind')
+      const q = (url.searchParams.get('q') || '').toLowerCase()
+      if (kind === 'news') return json({
+        items: featuredNewsCandidates.filter(item => !q || item.title.toLowerCase().includes(q)).slice(0, q ? 10 : 4),
+        selected: featuredNewsCandidates.filter(item => item.id === 7)
+      })
+      return json({
+        items: featuredEventCandidates.filter(item => !q || item.name.toLowerCase().includes(q)).slice(0, q ? 10 : 4),
+        selected: featuredEventCandidates.filter(item => item.id === 10)
+      })
     }
     if (url.pathname === '/api/v1/admin/institutional-content/featured') {
       if (request.method === 'GET') return json({ newsIds: [7], eventIds: [10] })

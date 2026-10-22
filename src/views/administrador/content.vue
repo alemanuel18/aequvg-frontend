@@ -12,9 +12,9 @@ import { useAdminContentService } from "~/services/admin-content";
 import { PublicApiError } from "~/services/api";
 import type {
   BlockType,
+  FeaturedEventCandidate,
+  FeaturedNewsCandidate,
   InstitutionalBlock,
-  PublicEvent,
-  PublicNews,
 } from "~/types/api";
 
 definePageMeta({
@@ -36,10 +36,73 @@ const loadError = ref("");
 
 // Raw data
 const blocks = ref<InstitutionalBlock[]>([]);
-const availableNews = ref<PublicNews[]>([]);
-const availableEvents = ref<PublicEvent[]>([]);
+const availableNews = ref<FeaturedNewsCandidate[]>([]);
+const availableEvents = ref<FeaturedEventCandidate[]>([]);
+const knownNews = ref<Record<number, FeaturedNewsCandidate>>({});
+const knownEvents = ref<Record<number, FeaturedEventCandidate>>({});
 const selectedNewsIds = ref<number[]>([]);
 const selectedEventIds = ref<number[]>([]);
+const newsSearch = ref("");
+const eventSearch = ref("");
+const newsCandidatesLoading = ref(false);
+const eventCandidatesLoading = ref(false);
+const newsCandidatesError = ref("");
+const eventCandidatesError = ref("");
+let newsRequestVersion = 0;
+let eventRequestVersion = 0;
+const visibleNews = computed(() => [
+  ...selectedNewsIds.value.map((id) => knownNews.value[id]).filter((item): item is FeaturedNewsCandidate => Boolean(item)),
+  ...availableNews.value.filter((item) => !selectedNewsIds.value.includes(item.id)),
+]);
+const visibleEvents = computed(() => [
+  ...selectedEventIds.value.map((id) => knownEvents.value[id]).filter((item): item is FeaturedEventCandidate => Boolean(item)),
+  ...availableEvents.value.filter((item) => !selectedEventIds.value.includes(item.id)),
+]);
+
+const loadNewsCandidates = async (q = "") => {
+  const version = ++newsRequestVersion;
+  newsCandidatesLoading.value = true;
+  newsCandidatesError.value = "";
+  try {
+    const result = await service.newsCandidates(q);
+    if (version !== newsRequestVersion) return;
+    availableNews.value = result.items;
+    knownNews.value = Object.fromEntries([...Object.values(knownNews.value), ...result.selected, ...result.items].map((item) => [item.id, item]));
+  } catch {
+    if (version !== newsRequestVersion) return;
+    availableNews.value = [];
+    newsCandidatesError.value = "No se pudieron cargar las noticias. Intenta buscar de nuevo.";
+  } finally {
+    if (version === newsRequestVersion) newsCandidatesLoading.value = false;
+  }
+};
+
+const loadEventCandidates = async (q = "") => {
+  const version = ++eventRequestVersion;
+  eventCandidatesLoading.value = true;
+  eventCandidatesError.value = "";
+  try {
+    const result = await service.eventCandidates(q);
+    if (version !== eventRequestVersion) return;
+    availableEvents.value = result.items;
+    knownEvents.value = Object.fromEntries([...Object.values(knownEvents.value), ...result.selected, ...result.items].map((item) => [item.id, item]));
+  } catch {
+    if (version !== eventRequestVersion) return;
+    availableEvents.value = [];
+    eventCandidatesError.value = "No se pudieron cargar los eventos. Intenta buscar de nuevo.";
+  } finally {
+    if (version === eventRequestVersion) eventCandidatesLoading.value = false;
+  }
+};
+
+watch(newsSearch, (query, _, onCleanup) => {
+  const timer = setTimeout(() => loadNewsCandidates(query.trim()), 300);
+  onCleanup(() => clearTimeout(timer));
+});
+watch(eventSearch, (query, _, onCleanup) => {
+  const timer = setTimeout(() => loadEventCandidates(query.trim()), 300);
+  onCleanup(() => clearTimeout(timer));
+});
 
 // Section 1: Hero form state
 const heroId = ref<number | null>(null);
@@ -134,16 +197,14 @@ const loadData = async () => {
   loadError.value = "";
 
   try {
-    const [blocksData, featuredData, newsData, eventsData] = await Promise.all([
+    const [blocksData, featuredData] = await Promise.all([
       service.listBlocks(),
       service.featured().catch(() => ({ newsIds: [], eventIds: [] })),
-      service.listNews().catch(() => ({ items: [] })),
-      service.listEvents().catch(() => ({ items: [] })),
+      loadNewsCandidates(),
+      loadEventCandidates(),
     ]);
 
     blocks.value = blocksData;
-    availableNews.value = newsData.items ?? [];
-    availableEvents.value = eventsData.items ?? [];
     selectedNewsIds.value = featuredData.newsIds ?? [];
     selectedEventIds.value = featuredData.eventIds ?? [];
 
@@ -154,8 +215,8 @@ const loadData = async () => {
       heroForm.title = existingHero.title;
       heroForm.subtitle = existingHero.subtitle || "";
       heroForm.body = existingHero.body;
-      heroForm.actionLabel = existingHero.actionLabel || "";
-      heroForm.actionUrl = existingHero.actionUrl || "";
+      heroForm.actionLabel = existingHero.actionLabel || "Conocer la carrera";
+      heroForm.actionUrl = existingHero.actionUrl || "/contacto";
       heroForm.status = existingHero.status;
     } else {
       heroId.value = null;
@@ -496,15 +557,16 @@ const getTypeLabel = (type: BlockType) => {
           </p>
         </header>
 
-        <form class="admin-form" @submit.prevent="requestSaveHero">
+        <form class="admin-form" novalidate @submit.prevent="requestSaveHero">
           <div class="form-group">
             <label for="hero-title"
-              >Título principal <span class="required">*</span></label
+              >Título principal <span class="required-indicator">*</span></label
             >
             <input
               id="hero-title"
               ref="heroTitleInput"
               v-model="heroForm.title"
+              required
               type="text"
               maxlength="220"
               :aria-invalid="Boolean(heroErrors.title)"
@@ -539,11 +601,12 @@ const getTypeLabel = (type: BlockType) => {
 
           <div class="form-group">
             <label for="hero-body"
-              >Descripción institucional <span class="required">*</span></label
+              >Descripción institucional <span class="required-indicator">*</span></label
             >
             <textarea
               id="hero-body"
               v-model="heroForm.body"
+              required
               rows="3"
               maxlength="8000"
               :aria-invalid="Boolean(heroErrors.body)"
@@ -563,20 +626,25 @@ const getTypeLabel = (type: BlockType) => {
 
           <div class="form-row">
             <div class="form-group">
-              <label for="hero-action-label">Texto del botón de acción</label>
+              <label for="hero-action-label">Texto del botón de acción <span class="required-indicator">*</span></label>
               <input
                 id="hero-action-label"
                 v-model="heroForm.actionLabel"
+                required
                 type="text"
                 maxlength="100"
                 placeholder="Conocer la carrera"
+                :aria-invalid="Boolean(heroErrors.actionLabel)"
+                aria-describedby="hero-action-label-error"
               />
+              <span v-if="heroErrors.actionLabel" id="hero-action-label-error" class="field-error" role="alert">{{ heroErrors.actionLabel }}</span>
             </div>
             <div class="form-group">
-              <label for="hero-action-url">Enlace del botón de acción</label>
+              <label for="hero-action-url">Enlace del botón de acción <span class="required-indicator">*</span></label>
               <input
                 id="hero-action-url"
                 v-model="heroForm.actionUrl"
+                required
                 type="text"
                 maxlength="2048"
                 placeholder="/contacto"
@@ -733,7 +801,7 @@ const getTypeLabel = (type: BlockType) => {
               </p>
             </div>
 
-            <form class="admin-form" @submit.prevent="requestSaveAnnouncement">
+            <form class="admin-form" novalidate @submit.prevent="requestSaveAnnouncement">
               <div
                 v-if="announcementErrors.general"
                 class="field-error field-error--banner"
@@ -745,12 +813,13 @@ const getTypeLabel = (type: BlockType) => {
               <div class="form-row">
                 <div class="form-group">
                   <label for="announcement-type"
-                    >Tipo de anuncio <span class="required">*</span></label
+                    >Tipo de anuncio <span class="required-indicator">*</span></label
                   >
                   <select
                     id="announcement-type"
                     ref="announcementTypeSelect"
                     v-model="announcementForm.type"
+                  required
                     :aria-invalid="Boolean(announcementErrors.type)"
                   >
                     <option
@@ -783,12 +852,13 @@ const getTypeLabel = (type: BlockType) => {
 
               <div class="form-group">
                 <label for="announcement-title"
-                  >Título del anuncio <span class="required">*</span></label
+                  >Título del anuncio <span class="required-indicator">*</span></label
                 >
                 <input
                   id="announcement-title"
                   ref="announcementTitleInput"
                   v-model="announcementForm.title"
+                  required
                   type="text"
                   maxlength="220"
                   placeholder="Ej. Laboratorio de Química Computacional"
@@ -808,11 +878,12 @@ const getTypeLabel = (type: BlockType) => {
               <div class="form-group">
                 <label for="announcement-body"
                   >Contenido / Descripción
-                  <span class="required">*</span></label
+                  <span class="required-indicator">*</span></label
                 >
                 <textarea
                   id="announcement-body"
                   v-model="announcementForm.body"
+                  required
                   rows="3"
                   maxlength="8000"
                   placeholder="Describe la información que se presentará en la tarjeta de la sección pública..."
@@ -856,21 +927,26 @@ const getTypeLabel = (type: BlockType) => {
               <div class="form-row">
                 <div class="form-group">
                   <label for="announcement-action-label"
-                    >Texto del enlace opcional</label
+                    >Texto del enlace <span v-if="announcementForm.actionUrl.trim()" class="required-indicator">*</span><span v-else>(opcional)</span></label
                   >
                   <input
                     id="announcement-action-label"
                     v-model="announcementForm.actionLabel"
+                    :required="Boolean(announcementForm.actionUrl.trim())"
                     type="text"
                     maxlength="100"
                     placeholder="Ej. Conocer instalaciones"
+                    :aria-invalid="Boolean(announcementErrors.actionLabel)"
+                    aria-describedby="announcement-action-label-error"
                   />
+                  <span v-if="announcementErrors.actionLabel" id="announcement-action-label-error" class="field-error" role="alert">{{ announcementErrors.actionLabel }}</span>
                 </div>
                 <div class="form-group">
-                  <label for="announcement-action-url">Enlace opcional</label>
+                  <label for="announcement-action-url">Enlace <span v-if="announcementForm.actionLabel.trim()" class="required-indicator">*</span><span v-else>(opcional)</span></label>
                   <input
                     id="announcement-action-url"
                     v-model="announcementForm.actionUrl"
+                    :required="Boolean(announcementForm.actionLabel.trim())"
                     type="text"
                     maxlength="2048"
                     placeholder="/contacto o https://..."
@@ -1006,20 +1082,28 @@ const getTypeLabel = (type: BlockType) => {
               </div>
               <p class="field-hint">
                 Selecciona hasta 3 eventos que se destacarán en la página de
-                inicio.
+                inicio. Se muestran los 4 más recientes y los ya seleccionados.
               </p>
             </div>
 
-            <div v-if="availableEvents.length === 0" class="empty-notice">
+            <div class="featured-search">
+              <label for="featured-event-search">Buscar evento para destacar</label>
+              <input id="featured-event-search" v-model="eventSearch" type="search" placeholder="Buscar por nombre" autocomplete="off" maxlength="100" />
+            </div>
+            <p v-if="eventCandidatesLoading" role="status">Buscando eventos…</p>
+            <p v-if="eventCandidatesError" role="alert">{{ eventCandidatesError }}</p>
+            <p v-else-if="!eventCandidatesLoading && eventSearch.trim() && availableEvents.length === 0">No se encontraron eventos con ese nombre.</p>
+
+            <div v-if="!eventCandidatesLoading && !eventCandidatesError && !eventSearch.trim() && visibleEvents.length === 0" class="empty-notice">
               <p>
                 No hay eventos disponibles para destacar. Crea eventos en el
                 módulo correspondiente.
               </p>
             </div>
 
-            <div v-else class="selection-grid">
+            <div v-if="visibleEvents.length" class="selection-grid">
               <label
-                v-for="event in availableEvents"
+                v-for="event in visibleEvents"
                 :key="event.id"
                 :class="[
                   'selectable-card',
@@ -1073,20 +1157,28 @@ const getTypeLabel = (type: BlockType) => {
               </div>
               <p class="field-hint">
                 Selecciona hasta 3 noticias que se destacarán en la página de
-                inicio.
+                inicio. Se muestran las 4 más recientes y las ya seleccionadas.
               </p>
             </div>
 
-            <div v-if="availableNews.length === 0" class="empty-notice">
+            <div class="featured-search">
+              <label for="featured-news-search">Buscar noticia para destacar</label>
+              <input id="featured-news-search" v-model="newsSearch" type="search" placeholder="Buscar por título" autocomplete="off" maxlength="100" />
+            </div>
+            <p v-if="newsCandidatesLoading" role="status">Buscando noticias…</p>
+            <p v-if="newsCandidatesError" role="alert">{{ newsCandidatesError }}</p>
+            <p v-else-if="!newsCandidatesLoading && newsSearch.trim() && availableNews.length === 0">No se encontraron noticias con ese título.</p>
+
+            <div v-if="!newsCandidatesLoading && !newsCandidatesError && !newsSearch.trim() && visibleNews.length === 0" class="empty-notice">
               <p>
                 No hay noticias disponibles para destacar. Crea noticias en el
                 módulo correspondiente.
               </p>
             </div>
 
-            <div v-else class="selection-grid">
+            <div v-if="visibleNews.length" class="selection-grid">
               <label
-                v-for="item in availableNews"
+                v-for="item in visibleNews"
                 :key="item.id"
                 :class="[
                   'selectable-card',
@@ -1247,10 +1339,6 @@ const getTypeLabel = (type: BlockType) => {
   font-weight: 700;
   font-size: 0.92rem;
   color: var(--color-ink);
-}
-
-.required {
-  color: var(--color-danger);
 }
 
 .form-group input,
@@ -1590,6 +1678,24 @@ const getTypeLabel = (type: BlockType) => {
 .featured-block__header {
   display: grid;
   gap: 0.25rem;
+}
+
+.featured-search {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 28rem;
+}
+
+.featured-search label {
+  font-weight: 800;
+}
+
+.featured-search input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
 }
 
 .title-with-pill {
