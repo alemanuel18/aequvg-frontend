@@ -652,12 +652,24 @@ test('envía el formulario una vez y anuncia el éxito', async ({ page }) => {
   expect(submissions).toBe(1)
 })
 
-test('muestra en rojo los asteriscos de campos obligatorios', async ({ page }) => {
+test('muestra en rojo los asteriscos de campos obligatorios como elementos', async ({ page }) => {
   const assertRedMarkers = async () => {
     const markers = page.locator('.required-indicator')
     await expect(markers.first()).toBeVisible()
     const colors = await markers.evaluateAll(elements => elements.map(element => getComputedStyle(element).color))
     expect(colors.every(color => color === 'rgb(163, 45, 45)')).toBe(true)
+    const looseMarkers = await page.locator('label').evaluateAll(labels => labels.flatMap(label => {
+      const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT)
+      const loose: string[] = []
+      while (walker.nextNode()) {
+        const node = walker.currentNode
+        if (node.textContent?.includes('*') && !(node.parentElement?.closest('.required-indicator'))) {
+          loose.push(label.textContent?.trim() ?? '')
+        }
+      }
+      return loose
+    }))
+    expect(looseMarkers).toEqual([])
   }
 
   await page.goto('/contacto')
