@@ -154,8 +154,8 @@ const loadData = async () => {
       heroForm.title = existingHero.title;
       heroForm.subtitle = existingHero.subtitle || "";
       heroForm.body = existingHero.body;
-      heroForm.actionLabel = existingHero.actionLabel || "";
-      heroForm.actionUrl = existingHero.actionUrl || "";
+      heroForm.actionLabel = existingHero.actionLabel || "Conocer la carrera";
+      heroForm.actionUrl = existingHero.actionUrl || "/contacto";
       heroForm.status = existingHero.status;
     } else {
       heroId.value = null;
@@ -496,7 +496,7 @@ const getTypeLabel = (type: BlockType) => {
           </p>
         </header>
 
-        <form class="admin-form" @submit.prevent="requestSaveHero">
+        <form class="admin-form" novalidate @submit.prevent="requestSaveHero">
           <div class="form-group">
             <label for="hero-title"
               >Título principal <span class="required">*</span></label
@@ -505,6 +505,7 @@ const getTypeLabel = (type: BlockType) => {
               id="hero-title"
               ref="heroTitleInput"
               v-model="heroForm.title"
+              required
               type="text"
               maxlength="220"
               :aria-invalid="Boolean(heroErrors.title)"
@@ -544,6 +545,7 @@ const getTypeLabel = (type: BlockType) => {
             <textarea
               id="hero-body"
               v-model="heroForm.body"
+              required
               rows="3"
               maxlength="8000"
               :aria-invalid="Boolean(heroErrors.body)"
@@ -563,20 +565,25 @@ const getTypeLabel = (type: BlockType) => {
 
           <div class="form-row">
             <div class="form-group">
-              <label for="hero-action-label">Texto del botón de acción</label>
+              <label for="hero-action-label">Texto del botón de acción <span class="required">*</span></label>
               <input
                 id="hero-action-label"
                 v-model="heroForm.actionLabel"
+                required
                 type="text"
                 maxlength="100"
                 placeholder="Conocer la carrera"
+                :aria-invalid="Boolean(heroErrors.actionLabel)"
+                aria-describedby="hero-action-label-error"
               />
+              <span v-if="heroErrors.actionLabel" id="hero-action-label-error" class="field-error" role="alert">{{ heroErrors.actionLabel }}</span>
             </div>
             <div class="form-group">
-              <label for="hero-action-url">Enlace del botón de acción</label>
+              <label for="hero-action-url">Enlace del botón de acción <span class="required">*</span></label>
               <input
                 id="hero-action-url"
                 v-model="heroForm.actionUrl"
+                required
                 type="text"
                 maxlength="2048"
                 placeholder="/contacto"
@@ -733,7 +740,7 @@ const getTypeLabel = (type: BlockType) => {
               </p>
             </div>
 
-            <form class="admin-form" @submit.prevent="requestSaveAnnouncement">
+            <form class="admin-form" novalidate @submit.prevent="requestSaveAnnouncement">
               <div
                 v-if="announcementErrors.general"
                 class="field-error field-error--banner"
@@ -751,6 +758,7 @@ const getTypeLabel = (type: BlockType) => {
                     id="announcement-type"
                     ref="announcementTypeSelect"
                     v-model="announcementForm.type"
+                  required
                     :aria-invalid="Boolean(announcementErrors.type)"
                   >
                     <option
@@ -789,6 +797,7 @@ const getTypeLabel = (type: BlockType) => {
                   id="announcement-title"
                   ref="announcementTitleInput"
                   v-model="announcementForm.title"
+                  required
                   type="text"
                   maxlength="220"
                   placeholder="Ej. Laboratorio de Química Computacional"
@@ -813,6 +822,7 @@ const getTypeLabel = (type: BlockType) => {
                 <textarea
                   id="announcement-body"
                   v-model="announcementForm.body"
+                  required
                   rows="3"
                   maxlength="8000"
                   placeholder="Describe la información que se presentará en la tarjeta de la sección pública..."
@@ -856,21 +866,26 @@ const getTypeLabel = (type: BlockType) => {
               <div class="form-row">
                 <div class="form-group">
                   <label for="announcement-action-label"
-                    >Texto del enlace opcional</label
+                    >Texto del enlace {{ announcementForm.actionUrl.trim() ? '*' : '(opcional)' }}</label
                   >
                   <input
                     id="announcement-action-label"
                     v-model="announcementForm.actionLabel"
+                    :required="Boolean(announcementForm.actionUrl.trim())"
                     type="text"
                     maxlength="100"
                     placeholder="Ej. Conocer instalaciones"
+                    :aria-invalid="Boolean(announcementErrors.actionLabel)"
+                    aria-describedby="announcement-action-label-error"
                   />
+                  <span v-if="announcementErrors.actionLabel" id="announcement-action-label-error" class="field-error" role="alert">{{ announcementErrors.actionLabel }}</span>
                 </div>
                 <div class="form-group">
-                  <label for="announcement-action-url">Enlace opcional</label>
+                  <label for="announcement-action-url">Enlace {{ announcementForm.actionLabel.trim() ? '*' : '(opcional)' }}</label>
                   <input
                     id="announcement-action-url"
                     v-model="announcementForm.actionUrl"
+                    :required="Boolean(announcementForm.actionLabel.trim())"
                     type="text"
                     maxlength="2048"
                     placeholder="/contacto o https://..."

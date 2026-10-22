@@ -38,6 +38,7 @@ export const validateHeroForm = (form: HeroFormState) => {
   const title = form.title.trim()
   const body = form.body.trim()
   const actionUrl = form.actionUrl.trim()
+  const actionLabel = form.actionLabel.trim()
 
   if (title.length < 2) {
     errors.title = 'El título principal debe tener al menos 2 caracteres.'
@@ -55,7 +56,9 @@ export const validateHeroForm = (form: HeroFormState) => {
     errors.body = 'La descripción no puede superar los 8000 caracteres.'
   }
 
-  if (actionUrl && !isValidUrl(actionUrl)) {
+  if (!actionLabel) errors.actionLabel = 'Escribe el texto del botón principal.'
+  if (!actionUrl) errors.actionUrl = 'Escribe el enlace del botón principal.'
+  else if (!isValidUrl(actionUrl)) {
     errors.actionUrl = 'El enlace debe iniciar con / o ser una URL válida (http/https).'
   }
 
@@ -72,6 +75,7 @@ export const validateAnnouncementForm = (
   const body = form.body.trim()
   const imageUrl = form.imageUrl?.trim() ?? ''
   const actionUrl = form.actionUrl.trim()
+  const actionLabel = form.actionLabel.trim()
 
   const validTypes: BlockType[] = ['LABORATORIO', 'TESTIMONIO', 'CAMPO_LABORAL', 'PLAN_ESTUDIOS']
   if (!validTypes.includes(form.type)) {
@@ -98,6 +102,8 @@ export const validateAnnouncementForm = (
     errors.imageUrl = 'La imagen debe iniciar con / o ser una URL válida (http/https).'
   }
 
+  if (actionLabel && !actionUrl) errors.actionUrl = 'Escribe el destino del enlace.'
+  if (actionUrl && !actionLabel) errors.actionLabel = 'Escribe el texto del enlace.'
   if (actionUrl && !isValidUrl(actionUrl)) {
     errors.actionUrl = 'El enlace debe iniciar con / o ser una URL válida (http/https).'
   }
