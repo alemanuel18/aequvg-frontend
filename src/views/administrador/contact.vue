@@ -314,11 +314,12 @@ const executeConfirmation = async () => {
           @submit.prevent="requestSave"
         >
           <div class="field">
-            <label for="method-label">Nombre público</label>
+            <label for="method-label">Nombre público *</label>
             <input
               id="method-label"
               ref="firstInput"
               v-model="form.label"
+              required
               :aria-invalid="!!errors.label"
               :aria-describedby="
                 errors.label ? 'method-label-error' : undefined
@@ -332,8 +333,8 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="method-type">Tipo de medio</label>
-            <select id="method-type" v-model="form.type">
+            <label for="method-type">Tipo de medio *</label>
+            <select id="method-type" v-model="form.type" required>
               <option
                 v-for="option in CONTACT_METHOD_TYPES"
                 :key="option.value"
@@ -345,10 +346,11 @@ const executeConfirmation = async () => {
             <small>{{ selectedType.help }}</small>
           </div>
           <div class="field">
-            <label for="method-value">Valor público</label>
+            <label for="method-value">Valor público *</label>
             <input
               id="method-value"
               v-model="form.value"
+              required
               :type="form.type === 'EMAIL' ? 'email' : 'text'"
               :aria-invalid="!!errors.value"
               :aria-describedby="
@@ -366,12 +368,13 @@ const executeConfirmation = async () => {
             <label for="method-url"
               >Enlace
               {{
-                ["EMAIL", "TELEFONO"].includes(form.type) ? "(opcional)" : ""
+                ["EMAIL", "TELEFONO"].includes(form.type) ? "(opcional)" : "*"
               }}</label
             >
             <input
               id="method-url"
               v-model="form.url"
+              :required="!['EMAIL', 'TELEFONO'].includes(form.type)"
               type="url"
               placeholder="https://"
               :aria-invalid="!!errors.url"

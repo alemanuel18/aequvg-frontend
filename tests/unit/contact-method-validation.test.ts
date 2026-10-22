@@ -23,4 +23,10 @@ describe('validación de medios de contacto', () => {
     ]
     expect(sortContactMethods(methods).map(method => method.id)).toEqual([1, 2, 3])
   })
+
+  it('rechaza nombre y valor público vacíos', () => {
+    expect(validateContactMethod({ type: 'EMAIL', label: ' ', value: ' ' })).toMatchObject({
+      label: expect.any(String), value: expect.any(String)
+    })
+  })
 })

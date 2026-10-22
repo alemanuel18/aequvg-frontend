@@ -10,4 +10,10 @@ describe('formulario de contacto', () => {
     const errors = validateContactForm({ ...valid, email: 'incorrecto', message: '', consent: false })
     expect(errors).toMatchObject({ email: expect.any(String), message: expect.any(String), consent: expect.any(String) })
   })
+
+  it('rechaza nombre, teléfono y asunto vacíos', () => {
+    expect(validateContactForm({ ...valid, name: ' ', phone: ' ', subject: ' ' })).toMatchObject({
+      name: expect.any(String), phone: expect.any(String), subject: expect.any(String)
+    })
+  })
 })

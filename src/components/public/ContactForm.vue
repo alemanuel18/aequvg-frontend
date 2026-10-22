@@ -136,17 +136,18 @@ const submit = async () => {
       </div>
       <div class="field">
         <label for="contact-type">¿Cómo podemos ayudarte?</label
-        ><select id="contact-type" v-model="form.type">
+        ><select id="contact-type" v-model="form.type" required>
           <option value="CONSULTA">Quiero hacer una consulta</option>
           <option value="REUNION">Quiero solicitar una reunión</option>
         </select>
       </div>
       <div v-if="form.type === 'REUNION'" class="field field--full">
-        <label for="preferred-at">Fecha y hora tentativa</label
+        <label for="preferred-at">Fecha y hora tentativa *</label
         ><input
           id="preferred-at"
           v-model="form.preferredAt"
           type="datetime-local"
+          required
           :aria-invalid="!!fieldErrors.preferredAt"
           :aria-describedby="
             fieldErrors.preferredAt ? 'preferred-error' : undefined
