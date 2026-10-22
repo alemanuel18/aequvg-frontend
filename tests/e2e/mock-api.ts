@@ -194,7 +194,7 @@ let contactMethods = [
   { id: 3, type: 'OTRO', label: 'TikTok', value: '@aeq_uvg', url: 'https://www.tiktok.com/@aeq_uvg', displayOrder: 3, active: true },
   { id: 4, type: 'INSTAGRAM', label: 'Instagram', value: '@aeq__uvg', url: 'https://www.instagram.com/aeq__uvg/', displayOrder: 4, active: true }
 ]
-let nextContactMethodId = 4
+let nextContactMethodId = 5
 const sortedContactMethods = () => [...contactMethods].sort((a, b) =>
   Number(a.type === 'UBICACION') - Number(b.type === 'UBICACION')
   || a.displayOrder - b.displayOrder
