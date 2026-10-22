@@ -299,7 +299,7 @@ const executeConfirmation = async () => {
           @submit.prevent="requestSave"
         >
           <div class="field">
-            <label for="board-name">Nombre completo *</label
+            <label for="board-name">Nombre completo <span class="required-indicator">*</span></label
             ><input
               id="board-name"
               ref="firstInput"
@@ -317,7 +317,7 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="board-position">Cargo *</label
+            <label for="board-position">Cargo <span class="required-indicator">*</span></label
             ><select
               id="board-position"
               v-model="form.position"
@@ -344,7 +344,7 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="board-email">Correo institucional *</label
+            <label for="board-email">Correo institucional <span class="required-indicator">*</span></label
             ><input
               id="board-email"
               v-model="form.institutionalEmail"
@@ -365,7 +365,7 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="board-start">Inicio del periodo *</label
+            <label for="board-start">Inicio del periodo <span class="required-indicator">*</span></label
             ><input
               id="board-start"
               v-model="form.termStartsAt"
@@ -384,7 +384,7 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="board-end">Fin del periodo *</label
+            <label for="board-end">Fin del periodo <span class="required-indicator">*</span></label
             ><input
               id="board-end"
               v-model="form.termEndsAt"
@@ -412,7 +412,7 @@ const executeConfirmation = async () => {
             />
           </div>
           <div class="field">
-            <label for="board-status">Estado *</label
+            <label for="board-status">Estado <span class="required-indicator">*</span></label
             ><select id="board-status" v-model="form.status" required :aria-invalid="!!errors.status" :aria-describedby="errors.status ? 'board-status-error' : undefined">
               <option value="ACTIVO">Publicado</option>
               <option value="INACTIVO">Inactivo</option>

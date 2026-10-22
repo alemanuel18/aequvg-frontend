@@ -94,7 +94,7 @@ const submit = async () => {
   >
     <div class="form-grid">
       <div class="field">
-        <label for="contact-name">Nombre completo</label
+        <label for="contact-name">Nombre completo <span class="required-indicator" aria-hidden="true">*</span></label
         ><input
           id="contact-name"
           v-model="form.name"
@@ -107,7 +107,7 @@ const submit = async () => {
         }}</span>
       </div>
       <div class="field">
-        <label for="contact-email">Correo electrónico</label
+        <label for="contact-email">Correo electrónico <span class="required-indicator" aria-hidden="true">*</span></label
         ><input
           id="contact-email"
           v-model="form.email"
@@ -121,7 +121,7 @@ const submit = async () => {
         }}</span>
       </div>
       <div class="field">
-        <label for="contact-phone">Teléfono</label
+        <label for="contact-phone">Teléfono <span class="required-indicator" aria-hidden="true">*</span></label
         ><input
           id="contact-phone"
           v-model="form.phone"
@@ -135,14 +135,14 @@ const submit = async () => {
         }}</span>
       </div>
       <div class="field">
-        <label for="contact-type">¿Cómo podemos ayudarte?</label
+        <label for="contact-type">¿Cómo podemos ayudarte? <span class="required-indicator" aria-hidden="true">*</span></label
         ><select id="contact-type" v-model="form.type" required>
           <option value="CONSULTA">Quiero hacer una consulta</option>
           <option value="REUNION">Quiero solicitar una reunión</option>
         </select>
       </div>
       <div v-if="form.type === 'REUNION'" class="field field--full">
-        <label for="preferred-at">Fecha y hora tentativa *</label
+        <label for="preferred-at">Fecha y hora tentativa <span class="required-indicator" aria-hidden="true">*</span></label
         ><input
           id="preferred-at"
           v-model="form.preferredAt"
@@ -160,7 +160,7 @@ const submit = async () => {
         >
       </div>
       <div class="field field--full">
-        <label for="contact-subject">Asunto</label
+        <label for="contact-subject">Asunto <span class="required-indicator" aria-hidden="true">*</span></label
         ><input
           id="contact-subject"
           v-model="form.subject"
@@ -175,7 +175,7 @@ const submit = async () => {
         >
       </div>
       <div class="field field--full">
-        <label for="contact-message">Mensaje</label
+        <label for="contact-message">Mensaje <span class="required-indicator" aria-hidden="true">*</span></label
         ><textarea
           id="contact-message"
           v-model="form.message"
@@ -210,7 +210,7 @@ const submit = async () => {
             required
           /><span
             >Autorizo el tratamiento de mis datos para atender esta solicitud,
-            conforme al aviso de privacidad vigente.</span
+            conforme al aviso de privacidad vigente. <span class="required-indicator" aria-hidden="true">*</span></span
           ></label
         ><span
           v-if="fieldErrors.consent"

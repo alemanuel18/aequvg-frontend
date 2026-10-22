@@ -314,7 +314,7 @@ const executeConfirmation = async () => {
           @submit.prevent="requestSave"
         >
           <div class="field">
-            <label for="method-label">Nombre público *</label>
+            <label for="method-label">Nombre público <span class="required-indicator">*</span></label>
             <input
               id="method-label"
               ref="firstInput"
@@ -333,7 +333,7 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="method-type">Tipo de medio *</label>
+            <label for="method-type">Tipo de medio <span class="required-indicator">*</span></label>
             <select id="method-type" v-model="form.type" required>
               <option
                 v-for="option in CONTACT_METHOD_TYPES"
@@ -346,7 +346,7 @@ const executeConfirmation = async () => {
             <small>{{ selectedType.help }}</small>
           </div>
           <div class="field">
-            <label for="method-value">Valor público *</label>
+            <label for="method-value">Valor público <span class="required-indicator">*</span></label>
             <input
               id="method-value"
               v-model="form.value"
@@ -367,9 +367,8 @@ const executeConfirmation = async () => {
           <div class="field">
             <label for="method-url"
               >Enlace
-              {{
-                ["EMAIL", "TELEFONO"].includes(form.type) ? "(opcional)" : "*"
-              }}</label
+              <span v-if="['EMAIL', 'TELEFONO'].includes(form.type)">(opcional)</span>
+              <span v-else class="required-indicator">*</span></label
             >
             <input
               id="method-url"

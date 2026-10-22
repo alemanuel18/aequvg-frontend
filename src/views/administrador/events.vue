@@ -689,7 +689,7 @@ onMounted(() => {
         <form class="form" novalidate @submit.prevent="requestSave">
           <div class="form-grid">
             <div class="field">
-              <label for="event-name">Nombre *</label
+              <label for="event-name">Nombre <span class="required-indicator">*</span></label
               ><input
                 id="event-name"
                 ref="titleInput"
@@ -702,7 +702,7 @@ onMounted(() => {
               }}</span>
             </div>
             <div class="field">
-              <label for="event-start">Fecha y hora *</label
+              <label for="event-start">Fecha y hora <span class="required-indicator">*</span></label
               ><input
                 id="event-start"
                 v-model="form.startsAt"
@@ -713,7 +713,7 @@ onMounted(() => {
               }}</span>
             </div>
             <div class="field">
-              <label for="event-location">Ubicación *</label
+              <label for="event-location">Ubicación <span class="required-indicator">*</span></label
               ><input
                 id="event-location"
                 v-model="form.location"
@@ -725,7 +725,7 @@ onMounted(() => {
               }}</span>
             </div>
             <div class="field">
-              <label for="event-capacity">Capacidad máxima *</label
+              <label for="event-capacity">Capacidad máxima <span class="required-indicator">*</span></label
               ><input
                 id="event-capacity"
                 v-model="form.maximumCapacity"
@@ -741,7 +741,7 @@ onMounted(() => {
             </div>
           </div>
           <div class="field">
-            <label for="event-description">Descripción *</label
+            <label for="event-description">Descripción <span class="required-indicator">*</span></label
             ><textarea
               id="event-description"
               v-model="form.description"
@@ -755,7 +755,7 @@ onMounted(() => {
           </div>
           <div class="form-grid">
             <div class="field">
-              <label for="event-status-form">Estado *</label
+              <label for="event-status-form">Estado <span class="required-indicator">*</span></label
               ><select id="event-status-form" v-model="form.status">
                 <option
                   v-for="status in statuses"

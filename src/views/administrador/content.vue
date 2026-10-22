@@ -499,7 +499,7 @@ const getTypeLabel = (type: BlockType) => {
         <form class="admin-form" novalidate @submit.prevent="requestSaveHero">
           <div class="form-group">
             <label for="hero-title"
-              >Título principal <span class="required">*</span></label
+              >Título principal <span class="required-indicator">*</span></label
             >
             <input
               id="hero-title"
@@ -540,7 +540,7 @@ const getTypeLabel = (type: BlockType) => {
 
           <div class="form-group">
             <label for="hero-body"
-              >Descripción institucional <span class="required">*</span></label
+              >Descripción institucional <span class="required-indicator">*</span></label
             >
             <textarea
               id="hero-body"
@@ -565,7 +565,7 @@ const getTypeLabel = (type: BlockType) => {
 
           <div class="form-row">
             <div class="form-group">
-              <label for="hero-action-label">Texto del botón de acción <span class="required">*</span></label>
+              <label for="hero-action-label">Texto del botón de acción <span class="required-indicator">*</span></label>
               <input
                 id="hero-action-label"
                 v-model="heroForm.actionLabel"
@@ -579,7 +579,7 @@ const getTypeLabel = (type: BlockType) => {
               <span v-if="heroErrors.actionLabel" id="hero-action-label-error" class="field-error" role="alert">{{ heroErrors.actionLabel }}</span>
             </div>
             <div class="form-group">
-              <label for="hero-action-url">Enlace del botón de acción <span class="required">*</span></label>
+              <label for="hero-action-url">Enlace del botón de acción <span class="required-indicator">*</span></label>
               <input
                 id="hero-action-url"
                 v-model="heroForm.actionUrl"
@@ -752,7 +752,7 @@ const getTypeLabel = (type: BlockType) => {
               <div class="form-row">
                 <div class="form-group">
                   <label for="announcement-type"
-                    >Tipo de anuncio <span class="required">*</span></label
+                    >Tipo de anuncio <span class="required-indicator">*</span></label
                   >
                   <select
                     id="announcement-type"
@@ -791,7 +791,7 @@ const getTypeLabel = (type: BlockType) => {
 
               <div class="form-group">
                 <label for="announcement-title"
-                  >Título del anuncio <span class="required">*</span></label
+                  >Título del anuncio <span class="required-indicator">*</span></label
                 >
                 <input
                   id="announcement-title"
@@ -817,7 +817,7 @@ const getTypeLabel = (type: BlockType) => {
               <div class="form-group">
                 <label for="announcement-body"
                   >Contenido / Descripción
-                  <span class="required">*</span></label
+                  <span class="required-indicator">*</span></label
                 >
                 <textarea
                   id="announcement-body"
@@ -866,7 +866,7 @@ const getTypeLabel = (type: BlockType) => {
               <div class="form-row">
                 <div class="form-group">
                   <label for="announcement-action-label"
-                    >Texto del enlace {{ announcementForm.actionUrl.trim() ? '*' : '(opcional)' }}</label
+                    >Texto del enlace <span v-if="announcementForm.actionUrl.trim()" class="required-indicator">*</span><span v-else>(opcional)</span></label
                   >
                   <input
                     id="announcement-action-label"
@@ -881,7 +881,7 @@ const getTypeLabel = (type: BlockType) => {
                   <span v-if="announcementErrors.actionLabel" id="announcement-action-label-error" class="field-error" role="alert">{{ announcementErrors.actionLabel }}</span>
                 </div>
                 <div class="form-group">
-                  <label for="announcement-action-url">Enlace {{ announcementForm.actionLabel.trim() ? '*' : '(opcional)' }}</label>
+                  <label for="announcement-action-url">Enlace <span v-if="announcementForm.actionLabel.trim()" class="required-indicator">*</span><span v-else>(opcional)</span></label>
                   <input
                     id="announcement-action-url"
                     v-model="announcementForm.actionUrl"
@@ -1262,10 +1262,6 @@ const getTypeLabel = (type: BlockType) => {
   font-weight: 700;
   font-size: 0.92rem;
   color: var(--color-ink);
-}
-
-.required {
-  color: var(--color-danger);
 }
 
 .form-group input,

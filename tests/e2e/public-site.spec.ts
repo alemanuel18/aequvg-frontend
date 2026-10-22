@@ -652,6 +652,36 @@ test('envía el formulario una vez y anuncia el éxito', async ({ page }) => {
   expect(submissions).toBe(1)
 })
 
+test('muestra en rojo los asteriscos de campos obligatorios', async ({ page }) => {
+  const assertRedMarkers = async () => {
+    const markers = page.locator('.required-indicator')
+    await expect(markers.first()).toBeVisible()
+    const colors = await markers.evaluateAll(elements => elements.map(element => getComputedStyle(element).color))
+    expect(colors.every(color => color === 'rgb(163, 45, 45)')).toBe(true)
+  }
+
+  await page.goto('/contacto')
+  await assertRedMarkers()
+
+  await loginAsStudent(page)
+  await page.goto('/eventos/10')
+  await expect(page.getByRole('heading', { name: 'Inscripción al evento' })).toBeVisible()
+  await assertRedMarkers()
+
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  for (const route of ['/administrador/junta-directiva', '/administrador/contacto', '/administrador/contenido', '/administrador/noticias', '/administrador/eventos', '/administrador/recursos', '/administrador/investigacion']) {
+    await page.goto(route)
+    if (route === '/administrador/contacto') await page.getByLabel('Tipo de medio').selectOption('INSTAGRAM')
+    if (route === '/administrador/contenido') await page.locator('#announcement-action-label').fill('Ver más')
+    await assertRedMarkers()
+  }
+})
+
 test('administra medios oficiales con validación y confirmación', async ({ page }) => {
   await page.goto('/administrador')
   await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
