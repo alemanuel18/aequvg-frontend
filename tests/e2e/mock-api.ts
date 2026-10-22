@@ -200,6 +200,11 @@ const sortedContactMethods = () => [...contactMethods].sort((a, b) =>
   || a.displayOrder - b.displayOrder
   || a.id - b.id
 )
+const normalizedContactMethodBody = (body: Record<string, unknown>) => {
+  if (body.type !== 'TELEFONO') return body
+  const number = String(body.value)
+  return { ...body, value: `+502 ${number.slice(0, 4)} ${number.slice(4)}`, url: `tel:+502${number}` }
+}
 
 const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => Response.json(body, {
   status,
@@ -394,7 +399,7 @@ Bun.serve({
     if (url.pathname === '/api/v1/admin/contact-methods') {
       if (request.method === 'GET') return json(sortedContactMethods())
       if (request.method === 'POST') {
-        const body = await request.json() as Record<string, unknown>
+        const body = normalizedContactMethodBody(await request.json() as Record<string, unknown>)
         const nextOrder = Math.max(-1, ...contactMethods.filter(method => method.type !== 'UBICACION').map(method => method.displayOrder)) + 1
         const created = { id: nextContactMethodId++, displayOrder: body.type === 'UBICACION' ? 0 : nextOrder, ...body }
         contactMethods.push(created as typeof contactMethods[number])
@@ -414,7 +419,7 @@ Bun.serve({
       const index = contactMethods.findIndex(method => method.id === id)
       if (index < 0) return json({ error: { code: 'CONTACT_METHOD_NOT_FOUND', message: 'El medio de contacto no existe.' } }, 404)
       if (request.method === 'PUT') {
-        const body = await request.json() as Record<string, unknown>
+        const body = normalizedContactMethodBody(await request.json() as Record<string, unknown>)
         contactMethods[index] = { ...contactMethods[index]!, ...body } as typeof contactMethods[number]
       } else if (request.method === 'DELETE') contactMethods[index] = { ...contactMethods[index]!, active: false }
       return json(contactMethods[index])

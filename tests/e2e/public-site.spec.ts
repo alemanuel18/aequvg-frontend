@@ -728,6 +728,34 @@ test('administra medios oficiales con validación y confirmación', async ({ pag
   await expect(page.getByText('Ubicación fija al final')).toBeVisible()
 })
 
+test('registra teléfonos guatemaltecos y genera el enlace sin solicitarlo', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/contacto')
+
+  await page.getByLabel('Tipo de medio').selectOption('TELEFONO')
+  await expect(page.getByLabel('Número')).toHaveAttribute('type', 'tel')
+  await expect(page.getByText(/sin \+502.*se agregan automáticamente/)).toBeVisible()
+  await expect(page.locator('#method-url')).toHaveCount(0)
+  await page.getByLabel('Nombre público').fill('Teléfono oficial')
+  await page.getByLabel('Número').fill('2368800')
+  await page.getByRole('button', { name: 'Agregar medio' }).click()
+  await expect(page.getByText('Ingresa los 8 dígitos del número, sin +502.')).toBeVisible()
+
+  await page.getByLabel('Número').fill('23688000')
+  await page.getByRole('button', { name: 'Agregar medio' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Agregar medio' }).click()
+  const phoneMethod = page.locator('.method-item').filter({ hasText: 'Teléfono oficial' })
+  await expect(phoneMethod).toContainText('+502 2368 8000')
+  await phoneMethod.getByRole('button', { name: 'Editar' }).click()
+  await expect(page.getByLabel('Número')).toHaveValue('23688000')
+
+  await page.goto('/contacto')
+  await expect(page.getByRole('link', { name: /Llamar ahora/ })).toHaveAttribute('href', 'tel:+50223688000')
+})
+
 test('lista, busca, pagina y muestra estados de noticias', async ({ page }) => {
   await page.goto('/noticias')
   await expect(page.getByRole('heading', { name: 'Noticias', level: 1 })).toBeVisible()
