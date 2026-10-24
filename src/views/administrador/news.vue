@@ -49,6 +49,10 @@ const submitting = ref(false);
 const archivingId = ref<number | null>(null);
 const deletingId = ref<number | null>(null);
 const statusUpdatingId = ref<number | null>(null);
+const categoryName = ref("");
+const categoryFormOpen = ref(false);
+const creatingCategory = ref(false);
+const categoryNameInput = ref<HTMLInputElement | null>(null);
 const statusDrafts = reactive<Record<number, ContentStatus>>({});
 const pendingStatusChange = ref<{ id: number; status: ContentStatus } | null>(
   null,
@@ -282,6 +286,37 @@ const executeSave = async () => {
     submitting.value = false;
   }
 };
+const requestCreateCategory = () => {
+  const name = categoryName.value.trim();
+  if (name.length < 2 || name.length > 80) {
+    toast.error("El nombre debe tener entre 2 y 80 caracteres.");
+    categoryNameInput.value?.focus();
+    return;
+  }
+  openConfirmation(
+    "¿Crear categoría?",
+    `La categoría “${name}” estará disponible para las noticias.`,
+    executeCreateCategory,
+    "primary",
+    "Crear categoría",
+  );
+};
+const executeCreateCategory = async () => {
+  if (creatingCategory.value) return;
+  creatingCategory.value = true;
+  try {
+    const created = await service.createCategory(categoryName.value.trim());
+    categoryName.value = "";
+    categoryFormOpen.value = false;
+    toast.success(`Se creó la categoría “${created.name}”.`);
+    await loadData();
+  } catch (error) {
+    toast.error(errorMessage(error, "No se pudo crear la categoría."));
+    throw error;
+  } finally {
+    creatingCategory.value = false;
+  }
+};
 const requestArchive = (news: AdminNews) =>
   openConfirmation(
     "¿Archivar noticia?",
@@ -437,7 +472,40 @@ onMounted(async () => {
           >
             ＋ Nueva noticia
           </button>
+          <button
+            class="secondary-button category-create-toggle"
+            type="button"
+            :aria-expanded="categoryFormOpen"
+            @click="categoryFormOpen = !categoryFormOpen"
+          >
+            ＋ Nueva categoría
+          </button>
         </header>
+        <form
+          v-if="categoryFormOpen"
+          class="category-create-form"
+          @submit.prevent="requestCreateCategory"
+        >
+          <div class="field">
+            <label for="news-category-name">Nombre de la categoría</label>
+            <input
+              id="news-category-name"
+              ref="categoryNameInput"
+              v-model="categoryName"
+              type="text"
+              minlength="2"
+              maxlength="80"
+              autocomplete="off"
+              required
+              placeholder="Ej. Convocatorias"
+            />
+            <small>De 2 a 80 caracteres. No se permiten nombres duplicados.</small>
+          </div>
+          <div class="category-create-form__actions">
+            <button class="primary-button" type="submit" :disabled="creatingCategory">Crear categoría</button>
+            <button class="secondary-button" type="button" @click="categoryFormOpen = false; categoryName = ''">Cancelar</button>
+          </div>
+        </form>
         <div class="filters" role="search">
           <div class="field">
             <label for="news-search">Buscar</label
@@ -807,6 +875,21 @@ onMounted(async () => {
   border-radius: var(--radius-md);
   box-shadow: 0 10px 28px rgb(18 31 17 / 5%);
 }
+.category-create-form {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) auto;
+  align-items: end;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  background: var(--admin-surface, #f8faf8);
+}
+.category-create-form .field { display: grid; gap: .4rem; }
+.category-create-form input { min-height: 2.75rem; padding: .6rem .75rem; border: 1px solid var(--admin-border); border-radius: .4rem; font: inherit; }
+.category-create-form input:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+.category-create-form small { color: var(--admin-muted, #5a6659); }
+.category-create-form__actions { display: flex; flex-wrap: wrap; gap: .6rem; }
 .section-heading {
   display: flex;
   align-items: end;
@@ -1248,6 +1331,15 @@ onMounted(async () => {
 @media (max-width: 620px) {
   .new-button {
     width: 100%;
+  }
+  .category-create-toggle {
+    width: 100%;
+  }
+  .category-create-form {
+    grid-template-columns: 1fr;
+  }
+  .category-create-form__actions > button {
+    flex: 1 1 8rem;
   }
   .category-tabs {
     grid-column: auto;
