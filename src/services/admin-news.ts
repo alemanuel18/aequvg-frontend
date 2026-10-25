@@ -20,6 +20,7 @@ export const useAdminNewsService = () => {
       return api<AdminNewsList>(`/admin/news${params.size ? `?${params.toString()}` : ''}`, { credentials: 'include' })
     },
     categories: () => api<NewsCategory[]>('/news/categories'),
+    createCategory: (name: string) => api<NewsCategory>('/admin/news/categories', mutationOptions('POST', { name })),
     create: (body: NewsInput) => api<AdminNews>('/admin/news', mutationOptions('POST', body)),
     update: (id: number, body: NewsInput) => api<AdminNews>(`/admin/news/${id}`, mutationOptions('PUT', body)),
     archive: (id: number) => api<AdminNews>(`/admin/news/${id}/archive`, mutationOptions('PATCH')),
