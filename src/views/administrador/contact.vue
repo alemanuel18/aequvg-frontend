@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   CONTACT_METHOD_TYPES,
+  nationalContactPhone,
   validateContactMethod,
 } from "~/composables/contact-method-validation";
 import { useToast } from "~/composables/use-toast";
@@ -88,7 +89,7 @@ const edit = async (method: ContactMethod) => {
   Object.assign(form, {
     type: method.type,
     label: method.label,
-    value: method.value,
+    value: method.type === "TELEFONO" ? nationalContactPhone(method.value) : method.value,
     url: method.url ?? "",
     active: method.active,
   });
@@ -101,7 +102,7 @@ const payload = (): ContactMethodInput => ({
   type: form.type,
   label: form.label.trim(),
   value: form.value.trim(),
-  url: form.url?.trim() || null,
+  url: form.type === "TELEFONO" ? null : form.url?.trim() || null,
   active: Boolean(form.active),
 });
 
@@ -314,11 +315,12 @@ const executeConfirmation = async () => {
           @submit.prevent="requestSave"
         >
           <div class="field">
-            <label for="method-label">Nombre público</label>
+            <label for="method-label">Nombre público <span class="required-indicator">*</span></label>
             <input
               id="method-label"
               ref="firstInput"
               v-model="form.label"
+              required
               :aria-invalid="!!errors.label"
               :aria-describedby="
                 errors.label ? 'method-label-error' : undefined
@@ -332,8 +334,8 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="method-type">Tipo de medio</label>
-            <select id="method-type" v-model="form.type">
+            <label for="method-type">Tipo de medio <span class="required-indicator">*</span></label>
+            <select id="method-type" v-model="form.type" required>
               <option
                 v-for="option in CONTACT_METHOD_TYPES"
                 :key="option.value"
@@ -345,16 +347,21 @@ const executeConfirmation = async () => {
             <small>{{ selectedType.help }}</small>
           </div>
           <div class="field">
-            <label for="method-value">Valor público</label>
+            <label for="method-value">{{ form.type === 'TELEFONO' ? 'Número' : 'Valor público' }} <span class="required-indicator">*</span></label>
             <input
               id="method-value"
               v-model="form.value"
-              :type="form.type === 'EMAIL' ? 'email' : 'text'"
+              required
+              :type="form.type === 'EMAIL' ? 'email' : form.type === 'TELEFONO' ? 'tel' : 'text'"
+              :inputmode="form.type === 'TELEFONO' ? 'numeric' : undefined"
+              :maxlength="form.type === 'TELEFONO' ? 8 : undefined"
+              :placeholder="form.type === 'TELEFONO' ? '12345678' : undefined"
               :aria-invalid="!!errors.value"
               :aria-describedby="
-                errors.value ? 'method-value-error' : undefined
+                errors.value ? 'method-value-error' : form.type === 'TELEFONO' ? 'method-phone-help' : undefined
               "
             />
+            <small v-if="form.type === 'TELEFONO'" id="method-phone-help">Ingresa solo los 8 dígitos de un número de Guatemala, sin +502. El código +502 y el enlace para llamar se agregan automáticamente.</small>
             <span
               v-if="errors.value"
               id="method-value-error"
@@ -362,16 +369,16 @@ const executeConfirmation = async () => {
               >{{ errors.value }}</span
             >
           </div>
-          <div class="field">
+          <div v-if="form.type !== 'TELEFONO'" class="field">
             <label for="method-url"
               >Enlace
-              {{
-                ["EMAIL", "TELEFONO"].includes(form.type) ? "(opcional)" : ""
-              }}</label
+              <span v-if="form.type === 'EMAIL'">(opcional)</span>
+              <span v-else class="required-indicator">*</span></label
             >
             <input
               id="method-url"
               v-model="form.url"
+              :required="form.type !== 'EMAIL'"
               type="url"
               placeholder="https://"
               :aria-invalid="!!errors.url"

@@ -562,7 +562,7 @@ onMounted(async () => {
         <form class="editor-fields" @submit.prevent="requestSave" novalidate>
           <div class="form-row">
             <div class="field">
-              <label for="resource-category">Categoría *</label
+              <label for="resource-category">Categoría <span class="required-indicator">*</span></label
               ><select
                 id="resource-category"
                 ref="categorySelect"
@@ -586,7 +586,7 @@ onMounted(async () => {
               >
             </div>
             <div class="field">
-              <label for="resource-status">Estado *</label
+              <label for="resource-status">Estado <span class="required-indicator" aria-hidden="true">*</span></label
               ><select id="resource-status" v-model="form.status" required>
                 <option value="BORRADOR">Borrador</option>
                 <option value="PUBLICADO">Publicado</option>
@@ -595,7 +595,7 @@ onMounted(async () => {
             </div>
           </div>
           <div class="field">
-            <label for="resource-title">Título *</label
+            <label for="resource-title">Título <span class="required-indicator">*</span></label
             ><input
               id="resource-title"
               ref="titleInput"
@@ -610,7 +610,7 @@ onMounted(async () => {
             }}</span>
           </div>
           <div class="field">
-            <label for="resource-description">Descripción *</label
+            <label for="resource-description">Descripción <span class="required-indicator">*</span></label
             ><textarea
               id="resource-description"
               v-model="form.description"

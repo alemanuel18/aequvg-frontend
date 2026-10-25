@@ -18,6 +18,8 @@ describe('validación de formulario de Inicio (Hero)', () => {
 
     expect(errors.title).toBeDefined()
     expect(errors.body).toBeDefined()
+    expect(errors.actionLabel).toBeDefined()
+    expect(errors.actionUrl).toBeDefined()
   })
 
   it('valida la estructura de enlaces de acción', () => {
@@ -102,6 +104,16 @@ describe('validación de formulario unificado de anuncios', () => {
     }, 1, false)
 
     expect(errors.imageUrl).toBeDefined()
+  })
+
+  it('exige texto y destino juntos para un enlace de anuncio', () => {
+    const announcement = {
+      type: 'LABORATORIO' as const, title: 'Laboratorios', body: 'Descripción del laboratorio',
+      imageUrl: '', actionLabel: '', actionUrl: '', status: 'PUBLICADO' as const
+    }
+    expect(validateAnnouncementForm({ ...announcement, actionLabel: 'Ver más' }, 0, false).actionUrl).toBeDefined()
+    expect(validateAnnouncementForm({ ...announcement, actionUrl: '/contacto' }, 0, false).actionLabel).toBeDefined()
+    expect(validateAnnouncementForm(announcement, 0, false)).toEqual({})
   })
 })
 

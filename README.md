@@ -302,7 +302,7 @@ Los estados de carga, vacío, error y éxito se muestran en la misma vista. Los 
 
 ### Flujo de anuncios y noticias
 
-En `/administrador/noticias`, una persona autorizada puede buscar por texto, categoría y estado; crear o editar una noticia con resumen, contenido e imagen asociada por `imageId`; previsualizarla; cambiar su estado y confirmar su eliminación. El frontend muestra validaciones visibles, estados de carga/vacío/error/éxito y evita envíos duplicados, pero el backend sigue siendo la autoridad para permisos, categorías, imágenes y publicación.
+En `/administrador/noticias`, una persona autorizada puede buscar por texto, categoría y estado; crear categorías nuevas; crear o editar una noticia con resumen, contenido e imagen asociada por `imageId`; previsualizarla; cambiar su estado y confirmar su eliminación. La creación de categorías también requiere confirmación y el permiso `NEWS_MANAGE`. El frontend muestra validaciones visibles, estados de carga/vacío/error/éxito y evita envíos duplicados, pero el backend sigue siendo la autoridad para permisos, categorías, imágenes y publicación.
 
 En `/administrador/contenido`, el permiso `INSTITUTIONAL_MANAGE` habilita la edición del Hero, anuncios de cuatro categorías y destacados de inicio. El límite de anuncios es global: máximo tres activos publicados, sin importar la categoría. Las imágenes de anuncios usan `imageUrl` HTTP/HTTPS; un borrador no ocupa el cupo público.
 

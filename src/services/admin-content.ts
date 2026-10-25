@@ -1,4 +1,4 @@
-import type { AdminFeaturedResponse, BlockInput, InstitutionalBlock, PublicEvent, PublicNews } from '~/types/api'
+import type { AdminFeaturedResponse, BlockInput, FeaturedCandidateList, FeaturedEventCandidate, FeaturedNewsCandidate, InstitutionalBlock } from '~/types/api'
 import { useApi } from './api'
 
 export const useAdminContentService = () => {
@@ -45,11 +45,11 @@ export const useAdminContentService = () => {
       headers: { 'x-csrf-token': getCsrfToken() }
     }),
 
-    listNews: () => api<{ items: PublicNews[] }>('/admin/news?pageSize=50', {
+    newsCandidates: (q = '') => api<FeaturedCandidateList<FeaturedNewsCandidate>>(`/admin/institutional-content/featured/candidates?kind=news${q ? `&q=${encodeURIComponent(q)}` : ''}`, {
       credentials: 'include'
     }),
 
-    listEvents: () => api<{ items: PublicEvent[] }>('/admin/events?pageSize=50', {
+    eventCandidates: (q = '') => api<FeaturedCandidateList<FeaturedEventCandidate>>(`/admin/institutional-content/featured/candidates?kind=events${q ? `&q=${encodeURIComponent(q)}` : ''}`, {
       credentials: 'include'
     })
   }

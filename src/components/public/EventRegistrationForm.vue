@@ -242,7 +242,7 @@ const submit = async () => {
 
       <div class="form-grid">
         <div class="field">
-          <label for="reg-name">Nombre completo</label>
+          <label for="reg-name">Nombre completo <span class="required-indicator" aria-hidden="true">*</span></label>
           <input
             id="reg-name"
             v-model="form.fullName"
@@ -262,7 +262,7 @@ const submit = async () => {
         </div>
 
         <div class="field">
-          <label for="reg-email">Correo electrónico</label>
+          <label for="reg-email">Correo electrónico <span class="required-indicator" aria-hidden="true">*</span></label>
           <input
             id="reg-email"
             v-model="form.email"
@@ -283,7 +283,7 @@ const submit = async () => {
         </div>
 
         <div class="field field--full">
-          <label for="reg-phone">Teléfono</label>
+          <label for="reg-phone">Teléfono <span class="required-indicator" aria-hidden="true">*</span></label>
           <input
             id="reg-phone"
             v-model="form.phone"
@@ -327,7 +327,7 @@ const submit = async () => {
             />
             <span
               >Autorizo el tratamiento de mis datos para la inscripción a este
-              evento, conforme al aviso de privacidad vigente.</span
+              evento, conforme al aviso de privacidad vigente. <span class="required-indicator" aria-hidden="true">*</span></span
             >
           </label>
           <span
@@ -450,7 +450,7 @@ const submit = async () => {
   cursor: pointer;
 }
 
-.checkbox span {
+.checkbox > span {
   font-size: 0.92rem;
   color: var(--color-ink);
   line-height: 1.45;

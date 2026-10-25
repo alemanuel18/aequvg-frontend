@@ -193,6 +193,8 @@ const validate = () => {
   if (!form.slug.trim()) next.slug = "El identificador URL es obligatorio.";
   if (form.description.trim().length < 10)
     next.description = "La descripción debe tener al menos 10 caracteres.";
+  if (!form.documentFileId && !form.liveUrl.trim())
+    next.destination = "Adjunta un PDF o escribe el enlace del proyecto.";
   for (const key of ["repositoryUrl", "liveUrl"] as const)
     if (form[key] && !/^https?:\/\//i.test(form[key]))
       next[key] = "Usa una dirección que comience con http:// o https://.";
@@ -595,7 +597,7 @@ const formatDate = (value: string) =>
       <form novalidate @submit.prevent="save">
         <div class="grid">
           <label
-            >Título *<input
+            >Título <span class="required-indicator">*</span><input
               ref="titleInput"
               v-model="form.title"
               maxlength="220"
@@ -605,7 +607,7 @@ const formatDate = (value: string) =>
               errors.title
             }}</small></label
           ><label
-            >Identificador URL *<input
+            >Identificador URL <span class="required-indicator">*</span><input
               v-model="form.slug"
               maxlength="220"
               :aria-invalid="Boolean(errors.slug)"
@@ -613,7 +615,7 @@ const formatDate = (value: string) =>
               errors.slug
             }}</small></label
           ><label
-            >Tipo *<select v-model="form.type">
+            >Tipo <span class="required-indicator">*</span><select v-model="form.type">
               <option value="PROYECTO">Proyecto</option>
               <option value="TESIS">Tesis</option>
             </select></label
@@ -631,12 +633,14 @@ const formatDate = (value: string) =>
               v-model="form.liveUrl"
               type="url"
               placeholder="https://…"
-              :aria-invalid="Boolean(errors.liveUrl)"
+              :aria-invalid="Boolean(errors.liveUrl || errors.destination)"
             /><small v-if="errors.liveUrl" class="error" role="alert">{{
               errors.liveUrl
-            }}</small></label
+            }}</small><small v-else-if="errors.destination" class="error" role="alert">{{
+              errors.destination
+            }}</small><small class="field-note">Obligatorio completar este campo o adjuntar un PDF.</small></label
           ><label class="span-two"
-            >Descripción *<textarea
+            >Descripción <span class="required-indicator">*</span><textarea
               v-model="form.description"
               rows="5"
               :aria-invalid="Boolean(errors.description)"
@@ -653,9 +657,8 @@ const formatDate = (value: string) =>
               @change="uploadPdf"
             /><small
               >PDF hasta 25 MB.
-              {{
-                pdfName ? `Archivo: ${pdfName}` : "El PDF es opcional."
-              }}</small
+              {{ pdfName ? `Archivo: ${pdfName}` : "" }}</small
+            ><small class="field-note">Obligatorio completar este campo o proporcionar el enlace del proyecto.</small
             ><small v-if="uploading" aria-live="polite"
               >Cargando PDF…</small
             ></label
@@ -754,6 +757,11 @@ h2 {
   gap: 0.4rem;
   font-size: 0.85rem;
   font-weight: 750;
+}
+.field-note {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 .filters input,
 .filters select,
