@@ -91,6 +91,21 @@ export interface StudentSessionResponse {
   csrfToken?: string
   expiresAt?: string
 }
+export type StudentCommentTargetType = 'NOTICIA' | 'PROYECTO' | 'EVENTO'
+export interface StudentComment {
+  id: number
+  targetType: StudentCommentTargetType
+  targetId: number
+  content: string
+  authorName: string
+  createdAt: string
+}
+export interface StudentCommentList {
+  items: StudentComment[]
+  page: number
+  pageSize: number
+  total: number
+}
 export interface StudentLoginInput { email: string; password: string }
 export interface StudentRegistrationInput extends StudentLoginInput { firstNames: string; lastNames: string; isStudent: true }
 

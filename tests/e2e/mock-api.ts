@@ -269,6 +269,16 @@ Bun.serve({
         ? json({ user: studentUser })
         : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
     }
+    if (request.method === 'GET' && url.pathname === '/api/v1/student-auth/me/comments') {
+      if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) {
+        return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+      }
+      const page = Number(url.searchParams.get('page') ?? 1)
+      const comments = page === 1
+        ? [{ id: 91, targetType: 'EVENTO', targetId: 12, content: '<img src=x onerror="alert(1)"> comentario seguro', authorName: studentUser.name, createdAt: '2026-10-25T12:00:00.000Z' }]
+        : [{ id: 92, targetType: 'NOTICIA', targetId: 4, content: 'Comentario de la segunda página', authorName: studentUser.name, createdAt: '2026-10-24T12:00:00.000Z' }]
+      return json({ items: comments, page, pageSize: 20, total: 21 })
+    }
     if (request.method === 'PATCH' && url.pathname === '/api/v1/student-auth/me') {
       if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
       if (request.headers.get('x-csrf-token') !== 'student-csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
