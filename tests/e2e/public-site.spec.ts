@@ -33,10 +33,10 @@ test('muestra comentarios públicos en noticias y proyectos y protege el formula
   await expect(page.getByText('Comentario de integración')).toBeVisible()
   await expect(page.locator('.comment-card__content').filter({ hasText: 'Comentario de integración' })).toHaveCount(1)
 
-  await page.getByLabel('Escribe un comentario').fill('texto ofensivo de prueba')
+  await page.getByLabel('Escribe un comentario').fill('Eres un idiota')
   await page.getByRole('button', { name: 'Publicar comentario' }).click()
   await expect(page.locator('#publication-comment-error')).toContainText('no se publicó porque el lenguaje')
-  await expect(page.getByLabel('Escribe un comentario')).toHaveValue('texto ofensivo de prueba')
+  await expect(page.getByLabel('Escribe un comentario')).toHaveValue('Eres un idiota')
 
   await page.getByLabel('Escribe un comentario').fill('muestra sancion de prueba')
   await page.getByRole('button', { name: 'Publicar comentario' }).click()

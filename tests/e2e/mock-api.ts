@@ -287,7 +287,7 @@ Bun.serve({
         if (request.headers.get('x-csrf-token') !== 'student-csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token CSRF no es válido.' } }, 403)
         const body = await request.json() as { content?: string }
         const content = body.content?.trim() ?? ''
-        if (content.toLowerCase().includes('ofensivo')) return json({ error: { code: 'COMMENT_REJECTED_BY_MODERATION', message: 'El comentario no cumple las reglas.' } }, 422)
+        if (/\b(puta|puto|mierda|cerote|culero|idiota|imbecil|pendejo|fuck|shit|bitch)\b/i.test(content)) return json({ error: { code: 'COMMENT_REJECTED_BY_MODERATION', message: 'El comentario no cumple las reglas.' } }, 422)
         if (content.toLowerCase().includes('sancion')) return json({ error: { code: 'ACCOUNT_TEMPORARILY_BLOCKED', message: 'Cuenta sancionada.', details: { blockedUntil: '2030-01-15T18:00:00.000Z' } } }, 403)
         if (!content || content.length > 2000) return json({ error: { code: 'VALIDATION_ERROR', message: 'El comentario no es válido.' } }, 422)
         await new Promise(resolve => setTimeout(resolve, 150))
