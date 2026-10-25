@@ -35,7 +35,8 @@ const errors = ref<BoardFormErrors>({});
 const firstInput = ref<HTMLInputElement | null>(null);
 const yearFilter = ref(new Date().getFullYear());
 const blankForm = (): BoardFormState => ({
-  name: "",
+  firstNames: "",
+  lastNames: "",
   position: "",
   description: "",
   institutionalEmail: "",
@@ -95,7 +96,8 @@ const edit = async (member: BoardMember) => {
   }
   editingId.value = member.id;
   Object.assign(form, {
-    name: member.name,
+    firstNames: member.firstNames,
+    lastNames: member.lastNames,
     position: member.position,
     description: member.description ?? "",
     institutionalEmail: member.institutionalEmail,
@@ -134,7 +136,7 @@ const requestSave = () => {
   }
   openConfirmation({
     title: editingId.value ? "¿Actualizar integrante?" : "¿Agregar integrante?",
-    message: `${form.name.trim()} quedará ${form.status === "ACTIVO" ? "publicado" : "inactivo"} desde ${form.termStartsAt} hasta ${form.termEndsAt}.`,
+    message: `${form.firstNames.trim()} ${form.lastNames.trim()} quedará ${form.status === "ACTIVO" ? "publicado" : "inactivo"} desde ${form.termStartsAt} hasta ${form.termEndsAt}.`,
     label: editingId.value ? "Guardar cambios" : "Agregar integrante",
     action: save,
   });
@@ -299,21 +301,26 @@ const executeConfirmation = async () => {
           @submit.prevent="requestSave"
         >
           <div class="field">
-            <label for="board-name">Nombre completo</label
+            <label for="board-first-names">Nombres</label
             ><input
-              id="board-name"
+              id="board-first-names"
               ref="firstInput"
-              v-model="form.name"
-              autocomplete="name"
-              :aria-invalid="!!errors.name"
-              :aria-describedby="errors.name ? 'board-name-error' : undefined"
+              v-model="form.firstNames"
+              autocomplete="given-name"
+              :aria-invalid="!!errors.firstNames"
+              :aria-describedby="errors.firstNames ? 'board-first-names-error' : undefined"
             /><span
-              v-if="errors.name"
-              id="board-name-error"
+              v-if="errors.firstNames"
+              id="board-first-names-error"
               class="field-error"
               role="alert"
-              >{{ errors.name }}</span
+              >{{ errors.firstNames }}</span
             >
+          </div>
+          <div class="field">
+            <label for="board-last-names">Apellidos</label>
+            <input id="board-last-names" v-model="form.lastNames" autocomplete="family-name" :aria-invalid="!!errors.lastNames" :aria-describedby="errors.lastNames ? 'board-last-names-error' : undefined" />
+            <span v-if="errors.lastNames" id="board-last-names-error" class="field-error" role="alert">{{ errors.lastNames }}</span>
           </div>
           <div class="field">
             <label for="board-position">Cargo</label

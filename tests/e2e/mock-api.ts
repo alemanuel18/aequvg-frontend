@@ -106,8 +106,8 @@ const secondProject = { ...project, id: 21, title: 'Tesis de segunda página', s
 
 let nextBoardMemberId = 103
 let boardMembers = [
-  { id: 101, photoId: null, name: 'Ana Pérez', position: 'Presidenta', description: null, institutionalEmail: 'ana@uvg.edu.gt', term: '2026', termStartsAt: '2026-01-01T00:00:00.000Z', termEndsAt: '2026-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null },
-  { id: 102, photoId: null, name: 'Luis Morales', position: 'Presidente', description: null, institutionalEmail: 'luis@uvg.edu.gt', term: '2025', termStartsAt: '2025-01-01T00:00:00.000Z', termEndsAt: '2025-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null }
+  { id: 101, photoId: null, name: 'Ana Pérez', firstNames: 'Ana', lastNames: 'Pérez', position: 'Presidenta', description: null, institutionalEmail: 'ana@uvg.edu.gt', term: '2026', termStartsAt: '2026-01-01T00:00:00.000Z', termEndsAt: '2026-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null },
+  { id: 102, photoId: null, name: 'Luis Morales', firstNames: 'Luis', lastNames: 'Morales', position: 'Presidente', description: null, institutionalEmail: 'luis@uvg.edu.gt', term: '2025', termStartsAt: '2025-01-01T00:00:00.000Z', termEndsAt: '2025-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null }
 ]
 
 const institutionalBlocks = [
@@ -376,14 +376,14 @@ Bun.serve({
       if (request.method === 'POST') {
         const body = await request.json() as Record<string, unknown>
         const startYear = String(body.termStartsAt).slice(0, 4); const endYear = String(body.termEndsAt).slice(0, 4)
-        const created = { id: nextBoardMemberId++, photoId: null, photo: null, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, displayOrder: boardMembers.length, ...body }
+        const created = { id: nextBoardMemberId++, photoId: null, photo: null, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, displayOrder: boardMembers.length, ...body, name: `${body.firstNames} ${body.lastNames}` }
         boardMembers.push(created as typeof boardMembers[number]); return json(created, 201)
       }
       const id = Number(url.pathname.split('/').at(-1)); const index = boardMembers.findIndex(member => member.id === id)
       if (request.method === 'PUT') {
         const body = await request.json() as Record<string, unknown>
         const startYear = String(body.termStartsAt).slice(0, 4); const endYear = String(body.termEndsAt).slice(0, 4)
-        boardMembers[index] = { ...boardMembers[index]!, ...body, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, photo: null }; return json(boardMembers[index])
+        boardMembers[index] = { ...boardMembers[index]!, ...body, name: `${body.firstNames} ${body.lastNames}`, term: startYear === endYear ? startYear : `${startYear}–${endYear}`, photo: null }; return json(boardMembers[index])
       }
       if (request.method === 'DELETE') {
         boardMembers[index] = { ...boardMembers[index]!, status: 'INACTIVO' }; return json(boardMembers[index])

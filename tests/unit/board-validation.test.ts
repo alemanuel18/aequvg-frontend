@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { boardFormPayload, validateBoardForm, type BoardFormState } from '../../src/composables/board-validation'
 
 const validForm = (): BoardFormState => ({
-  name: 'Ana Pérez', position: 'Presidenta', description: '', institutionalEmail: 'ANA@uvg.edu.gt',
+  firstNames: 'Ana', lastNames: 'Pérez', position: 'Presidenta', description: '', institutionalEmail: 'ANA@uvg.edu.gt',
   termStartsAt: '2026-01-01', termEndsAt: '2027-01-01', status: 'ACTIVO'
 })
 
