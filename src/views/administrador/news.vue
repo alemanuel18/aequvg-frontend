@@ -1246,6 +1246,10 @@ onMounted(async () => {
 .new-button {
   white-space: nowrap;
 }
+.category-create-toggle {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 .category-tabs {
   display: flex;
   align-items: center;
