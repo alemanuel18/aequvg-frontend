@@ -26,5 +26,6 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
   { label: 'Junta Directiva', description: 'Integrantes, periodos e historial público.', to: '/administrador/junta-directiva', permission: 'BOARD_MANAGE', icon: 'users' },
   { label: 'Contacto', description: 'Medios oficiales y correo receptor.', to: '/administrador/contacto', permission: 'CONTACT_MANAGE', icon: 'messages' },
   { label: 'Usuarios', description: 'Cuentas y permisos del panel.', to: '/administrador/users', permission: 'USERS_MANAGE', icon: 'users' },
+  { label: 'Historial de comentarios', description: 'Consulta ediciones y eliminaciones registradas.', to: '/administrador/comentarios', permission: 'ADMIN_ACCESS', icon: 'messages' },
   { label: 'Tesis', description: 'Disponible en un próximo sprint.', permission: 'PAPERS_MANAGE', icon: 'file-text', disabled: true },
 ] as const

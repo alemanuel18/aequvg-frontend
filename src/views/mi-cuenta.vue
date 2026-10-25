@@ -48,6 +48,36 @@ const changeCommentsPage = (nextPage: number) => {
   commentsPage.value = nextPage
 }
 
+const commentCsrfToken = () => session.csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || ''
+const updateComment = async (id: number, content: string) => {
+  try {
+    await commentsApi.update(id, content, commentCsrfToken())
+    toast.success('Tu comentario se actualizó y pasó la revisión de moderación.')
+    await loadComments()
+  } catch (error) {
+    const message = error instanceof PublicApiError && error.code === 'COMMENT_REJECTED_BY_MODERATION'
+      ? 'La edición fue rechazada por moderación y no se guardó.'
+      : error instanceof PublicApiError ? error.message : 'No pudimos actualizar el comentario.'
+    toast.error(message)
+    throw error
+  }
+}
+
+const deleteComment = async (id: number) => {
+  try {
+    await commentsApi.delete(id, commentCsrfToken())
+    toast.success('El comentario se eliminó. Su registro queda disponible solo para administración.')
+    if (comments.value.length === 1 && commentsPage.value > 1) {
+      commentsPage.value -= 1
+      return
+    }
+    await loadComments()
+  } catch (error) {
+    toast.error(error instanceof PublicApiError ? error.message : 'No pudimos eliminar el comentario.')
+    throw error
+  }
+}
+
 watch([currentTab, () => session.user.value?.id, commentsPage], ([tab, userId]) => {
   if (tab === 'comments' && userId) void loadComments()
 })
@@ -103,7 +133,7 @@ const logout = async () => {
       <AccountNavigation :current="currentTab" />
       <StatePanel v-if="currentTab === 'events'" title="Mis eventos" message="Aquí encontrarás tus eventos. La integración del listado está a cargo del equipo de eventos." />
       <section v-else-if="currentTab === 'comments'" class="comments-history">
-        <StudentCommentsPanel :comments="comments" :loading="commentsLoading" :error="commentsError" @retry="loadComments" />
+        <StudentCommentsPanel :comments="comments" :loading="commentsLoading" :error="commentsError" :on-update="updateComment" :on-delete="deleteComment" @retry="loadComments" />
         <nav v-if="commentsTotal > 0 && !commentsError" class="comments-pagination" aria-label="Paginación de mis comentarios">
           <button type="button" :disabled="commentsLoading || commentsPage <= 1" @click="changeCommentsPage(commentsPage - 1)">Anterior</button>
           <span aria-live="polite">Página {{ commentsPage }} de {{ commentsTotalPages }} · {{ commentsTotal }} comentarios</span>

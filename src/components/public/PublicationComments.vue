@@ -152,6 +152,7 @@ onMounted(() => {
       <button type="submit" :disabled="sending || postingBlocked || !content.trim()">
         {{ sending ? 'Publicando…' : 'Publicar comentario' }}
       </button>
+      <NuxtLink class="comment-history-link" to="/mi-cuenta?section=comments">Editar o eliminar mis comentarios</NuxtLink>
     </form>
     <StatePanel v-else-if="session.checked.value && session.user.value" title="No puedes comentar ahora" message="Tu cuenta no está activa o tiene una sanción vigente; puedes seguir leyendo los comentarios." />
     <StatePanel v-else-if="session.checked.value" title="Inicia sesión para comentar" message="Los comentarios son públicos; para publicar necesitas una sesión estudiantil activa.">
@@ -178,6 +179,7 @@ onMounted(() => {
 .comment-form__error { margin: 0; color: var(--color-danger); font-weight: 700; }
 .comment-form button, .comments-pagination button { min-height: 2.75rem; padding: .55rem .9rem; color: white; background: var(--color-primary); border: 1px solid var(--color-primary); border-radius: .5rem; font: inherit; font-weight: 750; cursor: pointer; }
 .comment-form button { justify-self: start; }
+.comment-history-link { width: fit-content; color: var(--color-primary); font-weight: 700; text-underline-offset: .2em; }
 .comment-form button:disabled, .comments-pagination button:disabled { opacity: .55; cursor: not-allowed; }
 .comments-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; }
 .comments-pagination span { color: var(--color-muted); font-size: .9rem; }

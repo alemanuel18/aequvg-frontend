@@ -106,6 +106,24 @@ export interface StudentCommentList {
   pageSize: number
   total: number
 }
+export type StudentCommentRevisionAction = 'EDIT' | 'DELETE'
+export interface StudentCommentRevision {
+  id: number
+  commentId: number
+  targetType: StudentCommentTargetType
+  targetId: number
+  action: StudentCommentRevisionAction
+  previousContent: string
+  nextContent: string | null
+  actorName: string
+  changedAt: string
+}
+export interface StudentCommentRevisionList {
+  items: StudentCommentRevision[]
+  page: number
+  pageSize: number
+  total: number
+}
 export interface StudentLoginInput { email: string; password: string }
 export interface StudentRegistrationInput extends StudentLoginInput { firstNames: string; lastNames: string; isStudent: true }
 
