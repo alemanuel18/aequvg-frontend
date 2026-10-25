@@ -51,7 +51,7 @@ La ruta pública `/junta-directiva` muestra por defecto el año más reciente y 
 
 El inicio de sesión está en `/administrador`; el panel muestra los módulos habilitados por los permisos de la sesión. La gestión de proyectos está en `/administrador/proyectos` y requiere `PROJECTS_MANAGE`. La guía API del backend describe permisos, contratos y casos: [`admin-access-flow.md`](../aequvg-backend/docs/admin-access-flow.md) y [`projects-admin-flow.md`](../aequvg-backend/docs/projects-admin-flow.md).
 
-Estado actual de interfaz: el login y cierre de sesión están disponibles. Las pantallas frontend de solicitud de alta, recuperación/restablecimiento de contraseña y acceso Microsoft no están implementadas; `/administrador/usuarios` sigue en construcción aunque el backend ofrece endpoints para gestión. Consultar la evidencia y defectos registrados en [`admin-flows-evidence.md`](../aequvg-backend/docs/admin-flows-evidence.md).
+En `/administrador/usuarios` se mantienen por separado las cuentas administrativas y se administran las cuentas normales de estudiantes/interesados: búsqueda, filtros, paginación, detalle, historial, bloqueo temporal/permanente, desbloqueo y baja confirmada con motivo. La baja conserva las inscripciones de eventos y las anonimiza; los comentarios todavía no tienen un modelo en el backend. Las pantallas frontend de solicitud de alta administrativa, recuperación/restablecimiento y acceso Microsoft no están implementadas. Consultar los contratos y evidencia en [`student-access-flow.md`](../aequvg-backend/docs/student-access-flow.md) y [`admin-flows-evidence.md`](../aequvg-backend/docs/admin-flows-evidence.md).
 
 ## Acceso de estudiantes
 
@@ -276,6 +276,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/mi-cuenta` | Panel protegido para editar el perfil propio y cerrar sesión. |
 | `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
 | `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
+| `/administrador/usuarios` | Solicitudes y cuentas administrativas, además de listado paginado, filtros, historial y acciones para estudiantes e interesados. Requiere `USERS_MANAGE`. |
 | `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
 | `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
 | `/administrador/eventos` | Gestión de eventos: listado, búsqueda, filtros, creación, edición, archivado y eliminación confirmada. Requiere `EVENTS_MANAGE`. |

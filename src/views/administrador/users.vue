@@ -4,7 +4,7 @@ import { PublicApiError } from '~/services/api'
 import { useAdminUsersApi } from '~/services/admin-users'
 
 definePageMeta({ layout: 'admin', middleware: 'admin-auth', alias: ['/administrador/usuarios'] })
-useSeoMeta({ title: 'Cuentas administrativas', robots: 'noindex, nofollow' })
+useSeoMeta({ title: 'Usuarios y cuentas', robots: 'noindex, nofollow' })
 const session = useAdminSession()
 const api = useAdminUsersApi()
 const toast = useToast()
@@ -106,10 +106,11 @@ const execute = async () => {
 
 <template>
   <div class="users-page">
-    <AdminPageHeader eyebrow="Administración" title="Cuentas" description="Crea cuentas autorizadas y gestiona roles y estados. El servidor aplica los permisos de cada rol." />
+    <AdminPageHeader eyebrow="Administración" title="Cuentas y usuarios" description="Administra cuentas normales y, por separado, las cuentas administrativas y sus permisos." />
     <StatePanel v-if="loading" title="Cargando cuentas" message="Consultando cuentas y roles disponibles." />
     <StatePanel v-else-if="loadError" role="alert" title="No se pudieron cargar las cuentas" :message="loadError"><button class="action" type="button" @click="load">Reintentar</button></StatePanel>
     <template v-else>
+      <StudentAccountManagementPanel />
       <section class="card" aria-labelledby="requests-title">
         <div class="section-heading"><div><h2 id="requests-title">Solicitudes de cuenta</h2><p class="hint">Antes de aprobar, verifica la identidad del solicitante por un canal institucional. La cuenta se crea con el rol que asignes.</p></div></div>
         <StatePanel v-if="requestsLoadError" role="alert" title="No se pudieron cargar las solicitudes" :message="requestsLoadError"><button class="secondary" type="button" @click="load">Reintentar</button></StatePanel>
