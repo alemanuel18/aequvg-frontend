@@ -35,8 +35,9 @@ const formatDate = (value: string | null) =>
       eyebrow="Noticias y anuncios"
       title="Publicación"
       description="Información publicada por AsoQuímica UVG."
-    /><AppSection title="Detalle de la publicación"
-      ><StatePanel
+    />
+    <AppSection title="Detalle de la publicación">
+      <StatePanel
         v-if="status === 'pending'"
         title="Cargando publicación"
         message="Consultando la información publicada."
@@ -49,7 +50,8 @@ const formatDate = (value: string | null) =>
           >Volver a noticias</AppButton
         ><button @click="() => refresh()">Reintentar</button></StatePanel
       >
-      <article v-else-if="news" class="news-detail">
+      <template v-else-if="news">
+      <article class="news-detail">
         <div class="news-detail__meta">
           <EyebrowBadge :text="news.category.name" /><time
             :datetime="news.publishedAt || news.createdAt"
@@ -63,8 +65,10 @@ const formatDate = (value: string | null) =>
         <AppButton to="/noticias" variant="secondary"
           >← Ver todas las noticias</AppButton
         >
-      </article></AppSection
-    >
+      </article>
+      <PublicationComments target-type="NOTICIA" :target-id="id" />
+      </template>
+    </AppSection>
   </div>
 </template>
 <style scoped>

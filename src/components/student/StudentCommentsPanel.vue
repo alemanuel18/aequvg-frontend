@@ -15,6 +15,15 @@ const targetLabels: Record<StudentComment['targetType'], string> = {
   EVENTO: 'Evento'
 }
 
+const publicationPath = (comment: StudentComment) => {
+  const path: Record<StudentComment['targetType'], string> = {
+    NOTICIA: '/noticias',
+    PROYECTO: '/investigacion',
+    EVENTO: '/eventos'
+  }
+  return `${path[comment.targetType]}/${comment.targetId}`
+}
+
 const formatDate = (value: string) => new Intl.DateTimeFormat('es-GT', {
   dateStyle: 'medium',
   timeStyle: 'short'
@@ -34,7 +43,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('es-GT', {
         <article>
           <header class="comment-card__header">
             <div>
-              <h3>{{ targetLabels[comment.targetType] }} #{{ comment.targetId }}</h3>
+              <h3><NuxtLink :to="publicationPath(comment)">{{ targetLabels[comment.targetType] }} #{{ comment.targetId }}</NuxtLink></h3>
               <p class="comment-card__author">{{ comment.authorName }}</p>
             </div>
             <time :datetime="comment.createdAt">{{ formatDate(comment.createdAt) }}</time>
@@ -53,6 +62,8 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('es-GT', {
 .comment-card { min-width: 0; padding: 1.25rem; background: white; border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow); }
 .comment-card__header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
 .comment-card__header h3 { margin: 0; font-size: 1.05rem; }
+.comment-card__header h3 a { color: var(--color-primary); text-underline-offset: .2em; }
+.comment-card__header h3 a:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
 .comment-card__header time, .comment-card__author { color: var(--color-muted); font-size: .9rem; }
 .comment-card__author { margin: .35rem 0 0; }
 .comment-card__content { margin: 1rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }

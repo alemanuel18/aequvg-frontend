@@ -8,6 +8,42 @@ const loginAsStudent = async (page: import('@playwright/test').Page) => {
   await expect(page).toHaveURL(/\/mi-cuenta$/)
 }
 
+test('muestra comentarios públicos en noticias y proyectos y protege el formulario', async ({ page }) => {
+  await page.goto('/noticias/7')
+  await expect(page.getByRole('heading', { name: 'Comentarios', exact: true })).toBeVisible()
+  await expect(page.getByText('Comentario visible para visitantes.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Iniciar sesión o registrarme' })).toBeVisible()
+  await expect(page.getByLabel('Escribe un comentario')).toHaveCount(0)
+
+  await page.goto('/investigacion/20')
+  await expect(page.getByRole('heading', { name: 'Comentarios', exact: true })).toBeVisible()
+  await expect(page.getByText('Comentario visible para visitantes.')).toBeVisible()
+
+  await page.goto('/eventos/10')
+  await expect(page.getByRole('heading', { name: 'Comentarios', exact: true })).toBeVisible()
+  await expect(page.getByText('Comentario visible para visitantes.')).toBeVisible()
+
+  await page.goto('/noticias/7')
+  await loginAsStudent(page)
+  await page.goto('/noticias/7')
+  await page.getByLabel('Escribe un comentario').fill('Comentario de integración')
+  const publish = page.getByRole('button', { name: 'Publicar comentario' })
+  await publish.click()
+  await expect(page.getByRole('button', { name: 'Publicando…' })).toBeDisabled()
+  await expect(page.getByText('Comentario de integración')).toBeVisible()
+  await expect(page.locator('.comment-card__content').filter({ hasText: 'Comentario de integración' })).toHaveCount(1)
+
+  await page.getByLabel('Escribe un comentario').fill('texto ofensivo de prueba')
+  await page.getByRole('button', { name: 'Publicar comentario' }).click()
+  await expect(page.locator('#publication-comment-error')).toContainText('no se publicó porque el lenguaje')
+  await expect(page.getByLabel('Escribe un comentario')).toHaveValue('texto ofensivo de prueba')
+
+  await page.getByLabel('Escribe un comentario').fill('muestra sancion de prueba')
+  await page.getByRole('button', { name: 'Publicar comentario' }).click()
+  await expect(page.locator('#publication-comment-error')).toContainText('sancionada temporalmente hasta')
+  await expect(page.getByRole('button', { name: 'Publicar comentario' })).toBeDisabled()
+})
+
 test('la navegación principal funciona con teclado', async ({ page }) => {
   await page.goto('/')
   await page.keyboard.press('Tab')
@@ -79,6 +115,7 @@ test('registra, conserva y cierra una sesión estudiantil desde el portal', asyn
   await expect(page.getByRole('heading', { name: 'Mis comentarios' })).toBeVisible()
   await expect(page.locator('.comment-card__content').first()).toHaveText('<img src=x onerror="alert(1)"> comentario seguro')
   await expect(page.locator('.comment-card__content img')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Evento #12' })).toHaveAttribute('href', '/eventos/12')
   await expect(page.getByText('Página 1 de 2 · 21 comentarios')).toBeVisible()
   await page.getByRole('button', { name: 'Siguiente' }).click()
   await expect(page.getByText('Comentario de la segunda página')).toBeVisible()

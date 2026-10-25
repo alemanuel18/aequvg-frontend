@@ -20,10 +20,14 @@ describe('StudentCommentsPanel', () => {
         loading: false,
         error: ''
       },
-      global: { components: { StatePanel } }
+      global: {
+        components: { StatePanel },
+        stubs: { NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } }
+      }
     })
 
     expect(wrapper.find('img').exists()).toBe(false)
     expect(wrapper.find('.comment-card__content').element.textContent).toBe(content)
+    expect(wrapper.get('h3 a').attributes('href')).toBe('/eventos/12')
   })
 })

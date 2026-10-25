@@ -56,7 +56,8 @@ const formatDate = (value: string) =>
           >Volver a investigaciones</AppButton
         ><button @click="() => refresh()">Reintentar</button></StatePanel
       >
-      <article v-else-if="project" class="project-detail">
+      <template v-else-if="project">
+      <article class="project-detail">
         <div class="project-detail__meta">
           <EyebrowBadge :text="typeLabel(project.type)" /><time
             :datetime="project.createdAt"
@@ -94,6 +95,8 @@ const formatDate = (value: string) =>
           >← Ver todas las investigaciones</AppButton
         >
       </article>
+      <PublicationComments target-type="PROYECTO" :target-id="id" />
+      </template>
     </AppSection>
   </div>
 </template>
