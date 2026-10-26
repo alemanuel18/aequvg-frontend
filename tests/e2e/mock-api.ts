@@ -657,6 +657,7 @@ Bun.serve({
       return json({ items: page === 2 ? [secondProject] : [project], pagination: { page, pageSize: Number(url.searchParams.get('pageSize') || 9), total: 10, totalPages: 2 } })
     }
     if (url.pathname === '/api/v1/projects/20') return json(project)
+    if (url.pathname === '/api/v1/projects/21') return json(secondProject)
     if (url.pathname.startsWith('/api/v1/projects/')) return json({ error: { code: 'PROJECT_NOT_FOUND', message: 'El proyecto solicitado no existe.' } }, 404)
     return json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } }, 404)
   }

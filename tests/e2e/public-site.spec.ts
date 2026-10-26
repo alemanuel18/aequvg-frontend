@@ -19,6 +19,10 @@ test('muestra comentarios públicos en noticias y proyectos y protege el formula
   await expect(page.getByRole('heading', { name: 'Comentarios', exact: true })).toBeVisible()
   await expect(page.getByText('Comentario visible para visitantes.')).toBeVisible()
 
+  await page.goto('/investigacion/21')
+  await expect(page.getByRole('heading', { name: 'Tesis de segunda página' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Comentarios', exact: true })).toHaveCount(0)
+
   await page.goto('/eventos/10')
   await expect(page.getByRole('heading', { name: 'Comentarios', exact: true })).toBeVisible()
   await expect(page.getByText('Comentario visible para visitantes.')).toBeVisible()

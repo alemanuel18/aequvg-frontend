@@ -95,7 +95,11 @@ const formatDate = (value: string) =>
           >← Ver todas las investigaciones</AppButton
         >
       </article>
-      <PublicationComments target-type="PROYECTO" :target-id="id" />
+      <PublicationComments
+        v-if="project.type === 'PROYECTO'"
+        target-type="PROYECTO"
+        :target-id="id"
+      />
       </template>
     </AppSection>
   </div>
