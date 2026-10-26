@@ -131,6 +131,7 @@ const formatEventDate = (value: string | null | undefined) => {
             <span class="event-detail__location">📍 {{ event.location }}</span>
           </div>
           <h1>{{ event.name }}</h1>
+          <p v-if="event.category" class="event-detail__category">▣ {{ event.category.name }}</p>
           <div class="event-detail__capacity">
             <div class="capacity-item">
               <span class="capacity-label">Capacidad máxima:</span>

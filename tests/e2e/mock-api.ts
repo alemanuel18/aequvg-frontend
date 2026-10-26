@@ -36,6 +36,7 @@ const secondResource = { ...resource, id: 10, file: null, title: 'Manual de segu
 
 const event = {
   id: 10,
+  categoryId: 2,
   name: 'Taller de Espectrometría UV-Vis',
   description: 'Aprende los fundamentos y la calibración práctica de espectrofotómetros en química analítica.',
   startsAt: '2030-04-20T16:00:00.000Z',
@@ -44,6 +45,7 @@ const event = {
   availableCapacity: 12,
   additionalInformation: 'Se requiere bata de laboratorio y lentes de seguridad.',
   status: 'PUBLICADO',
+  category: { id: 2, name: 'Taller' },
   image: null
 }
 
@@ -53,7 +55,9 @@ const secondEvent = {
   name: 'Simposio de Química Verde',
   description: 'Conferencias sobre sostenibilidad y procesos químicos industriales.',
   maximumCapacity: 50,
-  availableCapacity: 1
+  availableCapacity: 1,
+  category: null,
+  categoryId: null
 }
 const featuredEventCandidates = [
   ...Array.from({ length: 4 }, (_, index) => ({ id: 50 + index, name: `Evento reciente ${index + 1}`, location: 'Campus', status: 'PUBLICADO' })),
@@ -658,6 +662,10 @@ Bun.serve({
     if (url.pathname === '/api/v1/news/7') return json(news)
     if (url.pathname.startsWith('/api/v1/news/')) return json({ error: { code: 'NEWS_NOT_FOUND', message: 'La noticia solicitada no existe.' } }, 404)
     if (url.pathname === '/api/v1/resources/categories') return json([{ id: 3, name: 'Laboratorio' }])
+    if (url.pathname === '/api/v1/events/categories') return json([
+      { id: 1, name: 'Académico' }, { id: 2, name: 'Taller' }, { id: 3, name: 'Conferencia' },
+      { id: 4, name: 'Visita técnica' }, { id: 5, name: 'Social' }, { id: 6, name: 'Otro' }
+    ])
     if (url.pathname === '/api/v1/resources') {
       const query = url.searchParams.get('q')?.toLowerCase() || ''
       if (query === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0 } })

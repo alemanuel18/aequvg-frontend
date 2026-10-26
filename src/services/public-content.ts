@@ -1,4 +1,4 @@
-import type { BoardMember, ContactMethod, ContactRequestInput, EventRegistrationInput, EventRegistrationResponse, FeaturedContentResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
+import type { BoardMember, ContactMethod, ContactRequestInput, EventCategory, EventRegistrationInput, EventRegistrationResponse, FeaturedContentResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
 import { useApi } from './api'
 
 export const usePublicContentService = () => {
@@ -12,6 +12,7 @@ export const usePublicContentService = () => {
     newsCategories: () => api<NewsCategory[]>('/news/categories'),
     newsById: (id: number) => api<PublicNews>(`/news/${id}`),
     events: (query: PublicEventQuery = {}) => api<PublicEventList>('/events', { query }),
+    eventCategories: () => api<EventCategory[]>('/events/categories'),
     eventById: (id: number) => api<PublicEvent>(`/events/${id}`),
     registerForEvent: (eventId: number, body: EventRegistrationInput, csrfToken: string) =>
       api<EventRegistrationResponse>(`/events/${eventId}/registrations`, {

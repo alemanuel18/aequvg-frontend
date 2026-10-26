@@ -20,7 +20,7 @@ const formatEventDate = (value: string) => {
   <article class="event-card">
     <div class="event-card__media" aria-hidden="true">
       <div class="event-card__badge-deco"></div>
-      <span class="event-card__tag">▣ Actividad</span>
+      <span class="event-card__tag">▣ {{ event.category?.name ?? 'Actividad' }}</span>
     </div>
     <div class="event-card__body">
       <time :datetime="event.startsAt">{{

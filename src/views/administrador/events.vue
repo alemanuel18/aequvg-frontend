@@ -30,6 +30,7 @@ const loading = ref(true);
 const refreshing = ref(false);
 const loadError = ref("");
 const items = ref<AdminEvent[]>([]);
+const categories = ref<{ id: number; name: string }[]>([]);
 const page = ref(1);
 const total = ref(0);
 const search = ref("");
@@ -42,6 +43,7 @@ const errors = ref<EventFormErrors>({});
 const titleInput = ref<HTMLInputElement | null>(null);
 const form = reactive<EventFormState>({
   imageId: "",
+  categoryId: "",
   name: "",
   description: "",
   startsAt: "",
@@ -112,10 +114,14 @@ const loadData = async (initial = false) => {
     refreshing.value = false;
   }
 };
+const loadCategories = async () => {
+  try { categories.value = await service.categories(); } catch { categories.value = []; }
+};
 const resetForm = () => {
   editingId.value = null;
   Object.assign(form, {
     imageId: "",
+    categoryId: "",
     name: "",
     description: "",
     startsAt: "",
@@ -134,6 +140,7 @@ const editEvent = (event: AdminEvent) => {
   editingId.value = event.id;
   Object.assign(form, {
     imageId: event.imageId ? String(event.imageId) : "",
+    categoryId: event.categoryId ? String(event.categoryId) : "",
     name: event.name,
     description: event.description,
     startsAt: isoUtcToDatetimeLocal(event.startsAt),
@@ -337,6 +344,7 @@ watch([search, selectedStatus], () => {
 });
 onMounted(() => {
   void loadData(true);
+  void loadCategories();
 });
 </script>
 
@@ -764,6 +772,13 @@ onMounted(() => {
                 >
                   {{ status.label }}
                 </option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="event-category-form">Categoría</label>
+              <select id="event-category-form" v-model="form.categoryId">
+                <option value="">Sin categoría</option>
+                <option v-for="category in categories" :key="category.id" :value="String(category.id)">{{ category.name }}</option>
               </select>
             </div>
             <p class="hint">
