@@ -8,6 +8,14 @@ export const useStudentSession = () => {
   const loading = useState('student-session-loading', () => false)
   const authApi = useStudentAuthApi()
 
+  const clearLocal = () => {
+    user.value = null
+    csrfToken.value = ''
+    useCookie<string | null>('aequvg_student_csrf').value = null
+    checked.value = true
+    loading.value = false
+  }
+
   const load = async (force = false) => {
     if (checked.value && !force) return user.value
     if (loading.value) return user.value
@@ -43,10 +51,8 @@ export const useStudentSession = () => {
   const logout = async () => {
     const browserCsrf = useCookie<string | null>('aequvg_student_csrf').value ?? ''
     await authApi.logout(csrfToken.value || browserCsrf)
-    user.value = null
-    csrfToken.value = ''
-    checked.value = true
+    clearLocal()
   }
 
-  return { user, csrfToken, checked, loading, load, login, logout, updateProfile }
+  return { user, csrfToken, checked, loading, load, login, logout, clearLocal, updateProfile }
 }
