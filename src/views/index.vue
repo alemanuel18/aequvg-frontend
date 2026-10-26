@@ -159,14 +159,17 @@ const featuredNews = computed(() => featured.value?.news?.slice(0, 3) ?? []);
       <div class="cards-grid acs-grid">
         <ContentCard
           eyebrow="Divulgación y servicio"
+          title="Talleres para la comunidad"
           body="Organizamos talleres, demostraciones y actividades para acercar la química a más personas."
         />
         <ContentCard
           eyebrow="Formación profesional"
+          title="Liderazgo y comunicación"
           body="Impulsamos habilidades de liderazgo y comunicación, y el encuentro con científicos y profesionales."
         />
         <ContentCard
           eyebrow="Química verde"
+          title="Práctica química responsable"
           body="Promovemos una práctica de la química atenta a sus impactos ambientales."
         />
       </div>

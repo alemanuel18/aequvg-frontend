@@ -2,6 +2,7 @@
 import { PublicApiError } from '~/services/api'
 import { useStudentCommentsApi } from '~/services/student-comments'
 import type { StudentComment } from '~/types/api'
+import { getModerationFeedback, safeModerationFeedbackFields } from '~/utils/moderation-feedback'
 import { getIdempotencyKey, type PendingIdempotentAttempt } from '~/utils/idempotency'
 
 useSeoMeta({ title: 'Mi perfil', description: 'Consulta y actualiza tu perfil estudiantil.', robots: 'noindex, nofollow' })
@@ -14,6 +15,10 @@ const checking = ref(true)
 const saving = ref(false)
 const closing = ref(false)
 const requestError = ref('')
+const moderationCode = ref('')
+const moderationFields = ref<Record<string, string>>({})
+const commentsModerationCode = ref('')
+const commentsModerationFields = ref<Record<string, string>>({})
 const firstNames = ref('')
 const lastNames = ref('')
 const comments = ref<StudentComment[]>([])
@@ -56,14 +61,19 @@ const updateComment = async (id: number, content: string) => {
   const attempt = getIdempotencyKey(pendingCommentEdits.get(id) ?? null, JSON.stringify([id, content.trim()]))
   pendingCommentEdits.set(id, attempt)
   try {
+    commentsModerationCode.value = ''
+    commentsModerationFields.value = {}
     await commentsApi.update(id, content, commentCsrfToken(), attempt.key)
     pendingCommentEdits.delete(id)
     toast.success('Tu comentario se actualizó y pasó la revisión de moderación.')
     await loadComments()
   } catch (error) {
-    const message = error instanceof PublicApiError && error.code === 'COMMENT_REJECTED_BY_MODERATION'
-      ? 'La edición fue rechazada por moderación y no se guardó.'
-      : error instanceof PublicApiError ? error.message : 'No pudimos actualizar el comentario.'
+    const feedback = error instanceof PublicApiError ? getModerationFeedback(error.code, error.fields) : null
+    const message = feedback?.message ?? (error instanceof PublicApiError ? error.message : 'No pudimos actualizar el comentario.')
+    if (feedback && error instanceof PublicApiError) {
+      commentsModerationCode.value = error.code
+      commentsModerationFields.value = safeModerationFeedbackFields(error.fields)
+    }
     toast.error(message)
     throw error
   }
@@ -103,6 +113,8 @@ const saveProfile = async () => {
   if (saving.value || !session.user.value) return
   saving.value = true
   requestError.value = ''
+  moderationCode.value = ''
+  moderationFields.value = {}
   const input = { firstNames: firstNames.value, lastNames: lastNames.value }
   const attempt = getIdempotencyKey(pendingProfileAttempt, JSON.stringify([input.firstNames.trim(), input.lastNames.trim()]))
   pendingProfileAttempt = attempt
@@ -113,8 +125,15 @@ const saveProfile = async () => {
     lastNames.value = user.lastNames
     toast.success('Tu perfil se actualizó correctamente.')
   } catch (error) {
-    requestError.value = error instanceof PublicApiError ? error.message : 'No pudimos guardar los cambios. Intenta nuevamente.'
-    toast.error(requestError.value)
+    const feedback = error instanceof PublicApiError ? getModerationFeedback(error.code, error.fields) : null
+    if (feedback && error instanceof PublicApiError) {
+      moderationCode.value = error.code
+      moderationFields.value = safeModerationFeedbackFields(error.fields)
+      toast.error(feedback.message)
+    } else {
+      requestError.value = error instanceof PublicApiError ? error.message : 'No pudimos guardar los cambios. Intenta nuevamente.'
+      toast.error(requestError.value)
+    }
   } finally {
     saving.value = false
   }
@@ -143,6 +162,7 @@ const logout = async () => {
       <AccountNavigation :current="currentTab" />
       <StatePanel v-if="currentTab === 'events'" title="Mis eventos" message="Aquí encontrarás tus eventos. La integración del listado está a cargo del equipo de eventos." />
       <section v-else-if="currentTab === 'comments'" class="comments-history">
+        <ModerationNotice v-if="commentsModerationCode" :code="commentsModerationCode" :fields="commentsModerationFields" />
         <StudentCommentsPanel :comments="comments" :loading="commentsLoading" :error="commentsError" :on-update="updateComment" :on-delete="deleteComment" @retry="loadComments" />
         <nav v-if="commentsTotal > 0 && !commentsError" class="comments-pagination" aria-label="Paginación de mis comentarios">
           <button type="button" :disabled="commentsLoading || commentsPage <= 1" @click="changeCommentsPage(commentsPage - 1)">Anterior</button>
@@ -168,6 +188,7 @@ const logout = async () => {
             <small id="email-help">El correo no forma parte de los datos editables del perfil.</small>
           </div>
           <p class="student-type">Tipo de cuenta: Estudiante UVG</p>
+          <ModerationNotice v-if="moderationCode" :code="moderationCode" :fields="moderationFields" />
           <p v-if="requestError" class="form-error" role="alert">{{ requestError }}</p>
           <div class="actions">
             <AppButton type="submit" :disabled="saving">{{ saving ? 'Guardando…' : 'Guardar cambios' }}</AppButton>
