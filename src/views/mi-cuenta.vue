@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { PublicApiError } from '~/services/api'
+import { useStudentCommentsApi } from '~/services/student-comments'
+import type { StudentComment } from '~/types/api'
 
 useSeoMeta({ title: 'Mi perfil', description: 'Consulta y actualiza tu perfil estudiantil.', robots: 'noindex, nofollow' })
 const session = useStudentSession()
+const commentsApi = useStudentCommentsApi()
 const toast = useToast()
 const route = useRoute()
 const currentTab = computed(() => route.query.section === 'events' ? 'events' : route.query.section === 'comments' ? 'comments' : 'profile')
@@ -12,6 +15,72 @@ const closing = ref(false)
 const requestError = ref('')
 const firstNames = ref('')
 const lastNames = ref('')
+const comments = ref<StudentComment[]>([])
+const commentsPage = ref(1)
+const commentsPageSize = 20
+const commentsTotal = ref(0)
+const commentsLoading = ref(false)
+const commentsError = ref('')
+const commentsTotalPages = computed(() => Math.max(1, Math.ceil(commentsTotal.value / commentsPageSize)))
+let commentsRequestId = 0
+
+const loadComments = async () => {
+  if (!session.user.value) return
+  const requestId = ++commentsRequestId
+  commentsLoading.value = true
+  commentsError.value = ''
+  try {
+    const result = await commentsApi.history(commentsPage.value, commentsPageSize)
+    if (requestId !== commentsRequestId) return
+    comments.value = result.items
+    commentsTotal.value = result.total
+  } catch (error) {
+    if (requestId !== commentsRequestId) return
+    commentsError.value = error instanceof PublicApiError ? error.message : 'No pudimos cargar tus comentarios. Intenta nuevamente.'
+    toast.error(commentsError.value)
+  } finally {
+    if (requestId === commentsRequestId) commentsLoading.value = false
+  }
+}
+
+const changeCommentsPage = (nextPage: number) => {
+  if (nextPage < 1 || nextPage > commentsTotalPages.value || nextPage === commentsPage.value) return
+  commentsPage.value = nextPage
+}
+
+const commentCsrfToken = () => session.csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || ''
+const updateComment = async (id: number, content: string) => {
+  try {
+    await commentsApi.update(id, content, commentCsrfToken())
+    toast.success('Tu comentario se actualizó y pasó la revisión de moderación.')
+    await loadComments()
+  } catch (error) {
+    const message = error instanceof PublicApiError && error.code === 'COMMENT_REJECTED_BY_MODERATION'
+      ? 'La edición fue rechazada por moderación y no se guardó.'
+      : error instanceof PublicApiError ? error.message : 'No pudimos actualizar el comentario.'
+    toast.error(message)
+    throw error
+  }
+}
+
+const deleteComment = async (id: number) => {
+  try {
+    await commentsApi.delete(id, commentCsrfToken())
+    toast.success('El comentario se eliminó. Su registro queda disponible solo para administración.')
+    if (comments.value.length === 1 && commentsPage.value > 1) {
+      commentsPage.value -= 1
+      return
+    }
+    await loadComments()
+  } catch (error) {
+    toast.error(error instanceof PublicApiError ? error.message : 'No pudimos eliminar el comentario.')
+    throw error
+  }
+}
+
+watch([currentTab, () => session.user.value?.id, commentsPage], ([tab, userId]) => {
+  if (tab === 'comments' && userId) void loadComments()
+})
 
 onMounted(async () => {
   const user = await session.load(true)
@@ -63,7 +132,14 @@ const logout = async () => {
     <div v-else-if="session.user.value" class="panel">
       <AccountNavigation :current="currentTab" />
       <StatePanel v-if="currentTab === 'events'" title="Mis eventos" message="Aquí encontrarás tus eventos. La integración del listado está a cargo del equipo de eventos." />
-      <StatePanel v-else-if="currentTab === 'comments'" title="Mis comentarios" message="Aquí encontrarás tus comentarios. La integración del listado está a cargo del equipo de comentarios." />
+      <section v-else-if="currentTab === 'comments'" class="comments-history">
+        <StudentCommentsPanel :comments="comments" :loading="commentsLoading" :error="commentsError" :on-update="updateComment" :on-delete="deleteComment" @retry="loadComments" />
+        <nav v-if="commentsTotal > 0 && !commentsError" class="comments-pagination" aria-label="Paginación de mis comentarios">
+          <button type="button" :disabled="commentsLoading || commentsPage <= 1" @click="changeCommentsPage(commentsPage - 1)">Anterior</button>
+          <span aria-live="polite">Página {{ commentsPage }} de {{ commentsTotalPages }} · {{ commentsTotal }} comentarios</span>
+          <button type="button" :disabled="commentsLoading || commentsPage >= commentsTotalPages" @click="changeCommentsPage(commentsPage + 1)">Siguiente</button>
+        </nav>
+      </section>
       <section v-else class="account" aria-labelledby="account-title">
         <div class="profile-placeholder" aria-label="Foto de perfil genérica"><AppIcon name="users" :size="42" /></div>
         <div class="account__heading">
@@ -95,6 +171,12 @@ const logout = async () => {
 
 <style scoped>
 .panel { max-width: 54rem; margin-inline: auto; }
+.comments-history { display: grid; gap: 1rem; }
+.comments-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; }
+.comments-pagination span { color: var(--color-muted); font-size: .9rem; }
+.comments-pagination button { min-height: 2.75rem; padding: .55rem .9rem; color: var(--color-primary); background: white; border: 1px solid var(--color-primary); border-radius: .5rem; font: inherit; font-weight: 700; cursor: pointer; }
+.comments-pagination button:disabled { color: var(--color-muted); border-color: var(--color-border); cursor: not-allowed; }
+.comments-pagination button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
 .profile-form input:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
 .account { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 1.5rem; padding: clamp(1.25rem, 5vw, 2.5rem); background: white; border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
 .profile-placeholder { width: 5rem; height: 5rem; display: grid; place-items: center; color: white; background: var(--color-primary); border: .3rem solid var(--color-soft); border-radius: 50%; }

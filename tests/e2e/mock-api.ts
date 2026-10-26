@@ -200,6 +200,7 @@ let adminSessionActive = false
 let activeUser = adminUser
 let studentUser = { id: 51, name: 'Estudiante de prueba', firstNames: 'Estudiante', lastNames: 'de prueba', email: 'estudiante@uvg.edu.gt', isStudent: true, status: 'ACTIVO', role: 'STUDENT' }
 let studentSessionActive = false
+const publicationComments: Record<string, Array<{ id: number; targetType: string; targetId: number; content: string; authorName: string; createdAt: string }>> = {}
 let contactMethods = [
   { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
   { id: 2, type: 'UBICACION', label: 'Campus Central UVG', value: 'Campus Central UVG, zona 15, Ciudad de Guatemala', url: 'https://www.google.com/maps/search/?api=1&query=Universidad+del+Valle+de+Guatemala', displayOrder: 2, active: true },
@@ -268,6 +269,43 @@ Bun.serve({
       return studentSessionActive && request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')
         ? json({ user: studentUser })
         : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+    }
+    const publicationCommentsMatch = url.pathname.match(/^\/api\/v1\/publications\/(NOTICIA|PROYECTO|EVENTO)\/(\d+)\/comments$/)
+    if (publicationCommentsMatch) {
+      const [, targetType, targetIdText] = publicationCommentsMatch
+      const targetId = Number(targetIdText)
+      const key = `${targetType}:${targetId}`
+      if (!['NOTICIA:7', 'PROYECTO:20', 'EVENTO:10', 'EVENTO:12'].includes(key)) return json({ error: { code: 'PUBLICATION_NOT_FOUND', message: 'La publicación no existe o ya no está disponible.' } }, 404)
+      const comments = publicationComments[key] ??= [{ id: 501, targetType, targetId, content: 'Comentario visible para visitantes.', authorName: 'Estudiante de prueba', createdAt: '2026-10-25T12:00:00.000Z' }]
+      if (request.method === 'GET') {
+        const page = Number(url.searchParams.get('page') || 1)
+        const pageSize = Number(url.searchParams.get('pageSize') || 20)
+        return json({ items: comments.slice((page - 1) * pageSize, page * pageSize), page, pageSize, total: comments.length })
+      }
+      if (request.method === 'POST') {
+        if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+        if (request.headers.get('x-csrf-token') !== 'student-csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token CSRF no es válido.' } }, 403)
+        const body = await request.json() as { content?: string }
+        const content = body.content?.trim() ?? ''
+        if (/\b(puta|puto|mierda|cerote|culero|idiota|imbecil|pendejo|fuck|shit|bitch)\b/i.test(content)) return json({ error: { code: 'COMMENT_REJECTED_BY_MODERATION', message: 'El comentario no cumple las reglas.' } }, 422)
+        if (content.toLowerCase().includes('sancion')) return json({ error: { code: 'ACCOUNT_TEMPORARILY_BLOCKED', message: 'Cuenta sancionada.', details: { blockedUntil: '2030-01-15T18:00:00.000Z' } } }, 403)
+        if (!content || content.length > 2000) return json({ error: { code: 'VALIDATION_ERROR', message: 'El comentario no es válido.' } }, 422)
+        await new Promise(resolve => setTimeout(resolve, 150))
+        if (comments.some(comment => comment.content === content && comment.authorName === studentUser.name)) return json({ error: { code: 'DUPLICATE_COMMENT', message: 'Ya publicaste ese comentario.' } }, 409)
+        const created = { id: Date.now(), targetType, targetId, content, authorName: studentUser.name, createdAt: new Date().toISOString() }
+        comments.unshift(created)
+        return json(created, 201)
+      }
+    }
+    if (request.method === 'GET' && url.pathname === '/api/v1/student-auth/me/comments') {
+      if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) {
+        return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+      }
+      const page = Number(url.searchParams.get('page') ?? 1)
+      const comments = page === 1
+        ? [{ id: 91, targetType: 'EVENTO', targetId: 12, content: '<img src=x onerror="alert(1)"> comentario seguro', authorName: studentUser.name, createdAt: '2026-10-25T12:00:00.000Z' }]
+        : [{ id: 92, targetType: 'NOTICIA', targetId: 4, content: 'Comentario de la segunda página', authorName: studentUser.name, createdAt: '2026-10-24T12:00:00.000Z' }]
+      return json({ items: comments, page, pageSize: 20, total: 21 })
     }
     if (request.method === 'PATCH' && url.pathname === '/api/v1/student-auth/me') {
       if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)

@@ -219,6 +219,7 @@ const formatEventDate = (value: string | null | undefined) => {
             message="Espera un momento mientras verificamos tu acceso estudiantil."
           />
         </section>
+        <PublicationComments target-type="EVENTO" :target-id="event.id" />
       </div>
     </AppSection>
   </div>
