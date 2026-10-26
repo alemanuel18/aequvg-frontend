@@ -118,10 +118,12 @@ const submit = async () => {
         case "SESSION_REVOKED":
           await navigateTo(`/acceso?returnTo=${encodeURIComponent(`/eventos/${props.eventId}#formulario-inscripcion`)}`);
           break;
+        case "CSRF_TOKEN_INVALID":
+          await navigateTo(`/acceso?returnTo=${encodeURIComponent(`/eventos/${props.eventId}#formulario-inscripcion`)}`);
+          break;
         case "ALREADY_REGISTERED":
           errorMessage.value =
-            "Ya existe una inscripción registrada con este correo electrónico para este evento.";
-          fieldErrors.value.email = "Este correo ya se encuentra registrado.";
+            "Ya tienes una inscripción registrada para este evento.";
           break;
         case "EVENT_FULL":
           eventClosed.value = true;
