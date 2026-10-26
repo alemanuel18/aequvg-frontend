@@ -142,6 +142,54 @@ test('registra, conserva y cierra una sesión estudiantil desde el portal', asyn
   await expect(page.getByRole('link', { name: 'Ingresar / Registrarse' })).toBeVisible()
 })
 
+test('consulta, filtra y pagina el historial propio de eventos', async ({ page }) => {
+  await loginAsStudent(page)
+  await page.goto('/mi-cuenta?section=events')
+  await expect(page.getByRole('heading', { name: 'Mis eventos' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis' })).toBeVisible()
+  await expect(page.getByText('Confirmada')).toBeVisible()
+  await expect(page.getByText(/^Página 1 de 2 · 3 inscripciones$/)).toBeVisible()
+  const historyDom = page.locator('.events-history')
+  await expect(historyDom).toContainText('Auditorio UVG')
+  await expect(historyDom).toContainText('Inscrito el')
+  for (const marker of ['studentId', 'historial@example.com', '+502 5555 0000', '2026-10-20T11:00:00.000Z', 'privacy-test-v1']) {
+    await expect(historyDom).not.toContainText(marker)
+  }
+  await page.getByRole('button', { name: 'Siguiente' }).click()
+  await expect(page.getByRole('heading', { name: 'Jornada de Laboratorio' })).toBeVisible()
+  await expect(page.getByText(/^Página 2 de 2 · 3 inscripciones$/)).toBeVisible()
+
+  await page.getByLabel('Filtrar por estado').selectOption('CANCELADA')
+  await expect(page.getByRole('heading', { name: 'Seminario de Química Analítica' })).toBeVisible()
+  await expect(page.getByText('Cancelada')).toBeVisible()
+  await expect(page.getByText(/^Página 1 de 1 · 1 inscripciones$/)).toBeVisible()
+})
+
+test('muestra estados vacío, error recuperable y sesión expirada en mis eventos', async ({ page }) => {
+  await loginAsStudent(page)
+  await page.route('**/api/v1/student/events/registrations*', async route => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Servicio no disponible.' } }) })
+  })
+  await page.goto('/mi-cuenta?section=events')
+  await expect(page.getByRole('heading', { name: 'No pudimos cargar tus eventos' })).toBeVisible()
+  await page.unroute('**/api/v1/student/events/registrations*')
+  await page.getByRole('button', { name: 'Reintentar' }).click()
+  await expect(page.getByRole('heading', { name: 'Taller de Espectrometría UV-Vis' })).toBeVisible()
+
+  await page.route('**/api/v1/student/events/registrations*', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [], pagination: { page: 1, pageSize: 2, total: 0 } }) })
+  })
+  await page.getByLabel('Filtrar por estado').selectOption('CONFIRMADA')
+  await expect(page.getByRole('heading', { name: 'No hay eventos para mostrar' })).toBeVisible()
+  await page.unroute('**/api/v1/student/events/registrations*')
+
+  await page.route('**/api/v1/student/events/registrations*', async route => {
+    await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: { code: 'INVALID_SESSION', message: 'Sesión inválida.' } }) })
+  })
+  await page.getByLabel('Filtrar por estado').selectOption('CANCELADA')
+  await expect(page).toHaveURL(/\/acceso\?returnTo=%2Fmi-cuenta%3Fsection%3Devents$/)
+})
+
 test('muestra fecha y canal de revisión según el bloqueo estudiantil', async ({ page }) => {
   await page.goto('/acceso')
   await page.getByLabel('Correo institucional').fill('bloqueado.temporal@uvg.edu.gt')
@@ -1022,8 +1070,26 @@ test('maneja error cuando el usuario ya está registrado en el evento', async ({
   await page.getByRole('button', { name: 'Inscribirme al evento' }).click()
 
   await expect(page.getByRole('alert')).toBeVisible()
-  await expect(page.getByText('Ya existe una inscripción registrada con este correo electrónico para este evento.')).toBeVisible()
+  await expect(page.getByText('Ya tienes una inscripción registrada para este evento.')).toBeVisible()
   await expect(page.getByLabel('Correo electrónico')).toBeEnabled()
+})
+
+test('redirige al acceso si la sesión expira durante una inscripción', async ({ page }) => {
+  await loginAsStudent(page)
+  await page.goto('/eventos/10')
+  await expect(page.getByRole('heading', { name: 'Inscripción al evento' })).toBeVisible()
+  await page.route('**/api/v1/events/10/registrations', async route => {
+    await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: { code: 'INVALID_SESSION', message: 'Sesión inválida.' } }) })
+  })
+  await page.getByLabel('Nombres').fill('Estudiante')
+  await page.getByLabel('Apellidos').fill('Sesión expirada')
+  await page.getByLabel('Correo electrónico').fill('session-expired@uvg.edu.gt')
+  await page.getByLabel('Teléfono').fill('+502 5555-5555')
+  await page.getByLabel(/Autorizo el tratamiento de mis datos/i).check()
+  await page.getByRole('button', { name: 'Inscribirme al evento' }).click()
+
+  await expect(page).toHaveURL(/\/acceso\?returnTo=%2Feventos%2F10%23formulario-inscripcion$/)
+  expect(new URL(page.url()).searchParams.get('returnTo')).toBe('/eventos/10#formulario-inscripcion')
 })
 
 test('maneja error cuando el evento ha alcanzado el cupo máximo', async ({ page }) => {
