@@ -200,7 +200,9 @@ let adminSessionActive = false
 let activeUser = adminUser
 let studentUser = { id: 51, name: 'Estudiante de prueba', firstNames: 'Estudiante', lastNames: 'de prueba', email: 'estudiante@uvg.edu.gt', isStudent: true, status: 'ACTIVO', role: 'STUDENT' }
 let studentSessionActive = false
-const publicationComments: Record<string, Array<{ id: number; targetType: string; targetId: number; content: string; authorName: string; createdAt: string }>> = {}
+type MockComment = { id: number; targetType: string; targetId: number; content: string; authorName: string; createdAt: string }
+const publicationComments: Record<string, MockComment[]> = {}
+const studentCommentHistory: MockComment[] = []
 let contactMethods = [
   { id: 1, type: 'EMAIL', label: 'Correo oficial', value: 'asoquimica@uvg.edu.gt', url: 'mailto:asoquimica@uvg.edu.gt', displayOrder: 1, active: true },
   { id: 2, type: 'UBICACION', label: 'Campus Central UVG', value: 'Campus Central UVG, zona 15, Ciudad de Guatemala', url: 'https://www.google.com/maps/search/?api=1&query=Universidad+del+Valle+de+Guatemala', displayOrder: 2, active: true },
@@ -294,6 +296,7 @@ Bun.serve({
         if (comments.some(comment => comment.content === content && comment.authorName === studentUser.name)) return json({ error: { code: 'DUPLICATE_COMMENT', message: 'Ya publicaste ese comentario.' } }, 409)
         const created = { id: Date.now(), targetType, targetId, content, authorName: studentUser.name, createdAt: new Date().toISOString() }
         comments.unshift(created)
+        studentCommentHistory.unshift(created)
         return json(created, 201)
       }
     }
@@ -302,10 +305,16 @@ Bun.serve({
         return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
       }
       const page = Number(url.searchParams.get('page') ?? 1)
-      const comments = page === 1
-        ? [{ id: 91, targetType: 'EVENTO', targetId: 12, content: '<img src=x onerror="alert(1)"> comentario seguro', authorName: studentUser.name, createdAt: '2026-10-25T12:00:00.000Z' }]
-        : [{ id: 92, targetType: 'NOTICIA', targetId: 4, content: 'Comentario de la segunda página', authorName: studentUser.name, createdAt: '2026-10-24T12:00:00.000Z' }]
-      return json({ items: comments, page, pageSize: 20, total: 21 })
+      const pageSize = Number(url.searchParams.get('pageSize') ?? 20)
+      const baselineFirstPage: MockComment[] = [
+        { id: 91, targetType: 'EVENTO', targetId: 12, content: '<img src=x onerror="alert(1)"> comentario seguro', authorName: studentUser.name, createdAt: '2026-10-25T12:00:00.000Z' },
+        ...Array.from({ length: 19 }, (_, index) => ({ id: 100 + index, targetType: 'NOTICIA', targetId: 4, content: `Comentario histórico ${index + 1}`, authorName: studentUser.name, createdAt: '2026-10-24T12:00:00.000Z' }))
+      ]
+      const baselineSecondPage: MockComment[] = [
+        { id: 92, targetType: 'NOTICIA', targetId: 4, content: 'Comentario de la segunda página', authorName: studentUser.name, createdAt: '2026-10-23T12:00:00.000Z' }
+      ]
+      const comments = [...studentCommentHistory, ...baselineFirstPage, ...baselineSecondPage]
+      return json({ items: comments.slice((page - 1) * pageSize, page * pageSize), page, pageSize, total: comments.length })
     }
     if (request.method === 'PATCH' && url.pathname === '/api/v1/student-auth/me') {
       if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
