@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { StudentComment } from '../../types/api'
 
 const props = defineProps<{
