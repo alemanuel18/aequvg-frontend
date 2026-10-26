@@ -2,6 +2,7 @@
 import type { StudentRegistrationErrors } from '~/composables/student-auth-validation'
 import { PublicApiError } from '~/services/api'
 import { useStudentAuthApi } from '~/services/student-auth'
+import { getModerationFeedback } from '~/utils/moderation-feedback'
 
 useSeoMeta({ title: 'Registro estudiantil', description: 'Creación de cuenta para estudiantes actuales de UVG.' })
 const session = useStudentSession()
@@ -9,6 +10,7 @@ const authApi = useStudentAuthApi()
 const fields = reactive({ firstNames: '', lastNames: '', email: '', password: '', passwordConfirmation: '', isStudent: false })
 const errors = ref<StudentRegistrationErrors>({})
 const requestError = ref('')
+const moderationCode = ref('')
 const submitting = ref(false)
 const ready = ref(false)
 
@@ -24,6 +26,7 @@ const submit = async () => {
   if (!ready.value || submitting.value) return
   errors.value = validateStudentRegistration(fields)
   requestError.value = ''
+  moderationCode.value = ''
   if (Object.keys(errors.value).length) return
   submitting.value = true
   try {
@@ -32,7 +35,9 @@ const submit = async () => {
     await session.login(credentials)
     await navigateTo('/mi-cuenta', { replace: true })
   } catch (error) {
-    requestError.value = error instanceof PublicApiError ? error.message : 'No pudimos crear tu cuenta. Intenta nuevamente.'
+    const feedback = error instanceof PublicApiError ? getModerationFeedback(error.code, error.fields) : null
+    if (feedback && error instanceof PublicApiError) moderationCode.value = error.code
+    else requestError.value = error instanceof PublicApiError ? error.message : 'No pudimos crear tu cuenta. Intenta nuevamente.'
   } finally {
     submitting.value = false
   }
@@ -74,6 +79,7 @@ const submit = async () => {
         <label for="registration-student">Confirmo que actualmente soy estudiante de la Universidad del Valle de Guatemala.</label>
       </div>
       <p v-if="errors.isStudent" id="registration-student-error" class="field-error">{{ errors.isStudent }}</p>
+      <ModerationNotice v-if="moderationCode" :code="moderationCode" />
       <p v-if="requestError" class="form-message" role="alert">{{ requestError }}</p>
       <p class="sr-only" aria-live="polite">{{ submitting ? 'Creando la cuenta e iniciando sesión.' : '' }}</p>
       <AppButton type="submit" :disabled="!ready || submitting">{{ submitting ? 'Creando cuenta…' : 'Crear cuenta' }}</AppButton>

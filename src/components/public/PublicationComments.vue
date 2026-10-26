@@ -2,6 +2,7 @@
 import { PublicApiError } from '~/services/api'
 import { useStudentCommentsApi } from '~/services/student-comments'
 import type { StudentComment, StudentCommentTargetType } from '~/types/api'
+import { getModerationFeedback, safeModerationFeedbackFields } from '~/utils/moderation-feedback'
 
 const props = defineProps<{
   targetType: StudentCommentTargetType
@@ -21,6 +22,8 @@ const loadError = ref('')
 const content = ref('')
 const sending = ref(false)
 const submissionError = ref('')
+const moderationCode = ref('')
+const moderationFields = ref<Record<string, string>>({})
 const postingBlocked = ref(false)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const loginUrl = computed(() => `/acceso?returnTo=${encodeURIComponent(route.fullPath)}`)
@@ -62,8 +65,7 @@ const explainSubmissionError = (error: unknown) => {
   }
   if (error.code === 'ACCOUNT_PERMANENTLY_BLOCKED') {
     postingBlocked.value = true
-    const channel = error.fields?.reviewChannel
-    return channel ? `Tu cuenta está sancionada y no puede comentar. Puedes solicitar revisión por ${channel}.` : 'Tu cuenta está sancionada y no puede comentar.'
+    return 'Tu cuenta requiere revisión administrativa antes de volver a comentar.'
   }
   if (error.code === 'ACCOUNT_DELETED') {
     postingBlocked.value = true
@@ -79,6 +81,8 @@ const submitComment = async () => {
 
   sending.value = true
   submissionError.value = ''
+  moderationCode.value = ''
+  moderationFields.value = {}
   try {
     await commentsApi.create(props.targetType, props.targetId, normalizedContent, session.csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || '')
     content.value = ''
@@ -86,8 +90,16 @@ const submitComment = async () => {
     await loadComments()
     toast.success('Tu comentario se publicó correctamente.')
   } catch (error) {
-    submissionError.value = explainSubmissionError(error)
-    toast.error(submissionError.value)
+    const feedback = error instanceof PublicApiError ? getModerationFeedback(error.code, error.fields) : null
+    if (feedback && error instanceof PublicApiError) {
+      moderationCode.value = error.code
+      moderationFields.value = safeModerationFeedbackFields(error.fields)
+      if (['ACCOUNT_TEMPORARILY_BLOCKED', 'ACCOUNT_PERMANENTLY_BLOCKED'].includes(error.code)) postingBlocked.value = true
+      toast.error(feedback.message)
+    } else {
+      submissionError.value = explainSubmissionError(error)
+      toast.error(submissionError.value)
+    }
     if (error instanceof PublicApiError && error.status === 401) await session.load(true)
   } finally {
     sending.value = false
@@ -143,11 +155,12 @@ onMounted(() => {
         maxlength="2000"
         required
         :disabled="sending || postingBlocked"
-        :aria-describedby="submissionError ? 'publication-comment-error comment-length' : 'comment-length'"
+        :aria-describedby="submissionError ? 'publication-comment-error comment-length' : moderationCode ? 'publication-moderation-notice comment-length' : 'comment-length'"
       />
       <div class="comment-form__meta">
         <span id="comment-length" aria-live="polite">{{ content.trim().length }} / 2000</span>
       </div>
+      <ModerationNotice v-if="moderationCode" id="publication-moderation-notice" :code="moderationCode" :fields="moderationFields" />
       <p v-if="submissionError" id="publication-comment-error" class="comment-form__error" role="alert">{{ submissionError }}</p>
       <button type="submit" :disabled="sending || postingBlocked || !content.trim()">
         {{ sending ? 'Publicando…' : 'Publicar comentario' }}
