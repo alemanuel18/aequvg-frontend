@@ -272,6 +272,15 @@ Bun.serve({
         ? json({ user: studentUser })
         : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
     }
+    if (request.method === 'DELETE' && url.pathname === '/api/v1/student-auth/account') {
+      if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'INVALID_SESSION', message: 'La sesión no es válida o ya expiró.' } }, 401)
+      if (request.headers.get('x-csrf-token') !== 'student-csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      const body = await request.json() as { email?: string; password?: string; confirm?: boolean }
+      if (body.email === 'deleted@uvg.edu.gt') return json({ error: { code: 'ACCOUNT_DELETED', message: 'La cuenta ya fue eliminada.' } }, 403)
+      if (body.email !== studentUser.email || body.password !== 'Estudiante123!' || body.confirm !== true) return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
+      studentSessionActive = false
+      return new Response(null, { status: 204, headers: { 'access-control-allow-origin': allowedOrigin, 'access-control-allow-credentials': 'true', 'set-cookie': 'aequvg_student_session=; Max-Age=0; Path=/' } })
+    }
     const publicationCommentsMatch = url.pathname.match(/^\/api\/v1\/publications\/(NOTICIA|PROYECTO|EVENTO)\/(\d+)\/comments$/)
     if (publicationCommentsMatch) {
       const [, targetType, targetIdText] = publicationCommentsMatch

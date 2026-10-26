@@ -190,6 +190,100 @@ test('muestra estados vacío, error recuperable y sesión expirada en mis evento
   await expect(page).toHaveURL(/\/acceso\?returnTo=%2Fmi-cuenta%3Fsection%3Devents$/)
 })
 
+test('muestra la baja propia con consecuencias y revalidación explícita', async ({ page }) => {
+  await loginAsStudent(page)
+  await expect(page.getByRole('heading', { name: 'Eliminar mi cuenta' })).toBeVisible()
+  await expect(page.getByText(/datos personales serán anonimizados/)).toBeVisible()
+  await expect(page.getByText(/actividad histórica necesaria podrá conservarse/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Eliminar mi cuenta' })).toBeDisabled()
+  await page.getByLabel('Confirma tu correo institucional').fill('otra@uvg.edu.gt')
+  await page.getByLabel('Confirma tu contraseña').fill('incorrecta')
+  await page.getByLabel(/Entiendo que mi cuenta será eliminada/).check()
+  await page.getByRole('button', { name: 'Eliminar mi cuenta' }).click()
+  await expect(page.getByRole('alert')).toContainText('correo o la contraseña no son válidos')
+  await expect(page.getByRole('heading', { name: /Hola,/ })).toBeVisible()
+})
+
+test('envía la revalidación con CSRF y limpia la sesión después de 204', async ({ page }) => {
+  await loginAsStudent(page)
+  const requests: Array<{ body: Record<string, unknown>; csrf: string | undefined }> = []
+  page.on('request', request => {
+    if (request.method() === 'DELETE' && request.url().includes('/api/v1/student-auth/account')) {
+      requests.push({ body: request.postDataJSON() as Record<string, unknown>, csrf: request.headers()['x-csrf-token'] })
+    }
+  })
+  await page.getByLabel('Confirma tu correo institucional').fill('estudiante@uvg.edu.gt')
+  await page.getByLabel('Confirma tu contraseña').fill('Estudiante123!')
+  await page.getByLabel(/Entiendo que mi cuenta será eliminada/).check()
+  await page.getByRole('button', { name: 'Eliminar mi cuenta' }).click()
+  await expect(page).toHaveURL(/\/$/)
+  expect(requests).toHaveLength(1)
+  expect(requests[0]?.body).toEqual({ email: 'estudiante@uvg.edu.gt', password: 'Estudiante123!', confirm: true })
+  expect(requests[0]?.body).not.toHaveProperty('userId')
+  expect(requests[0]?.body).not.toHaveProperty('studentId')
+  expect(requests[0]?.csrf).toBe('student-csrf-e2e')
+  await page.goto('/mi-cuenta')
+  await expect(page).toHaveURL(/\/acceso\?returnTo=%2Fmi-cuenta$/)
+})
+
+test('maneja sesión inválida, CSRF inválido y doble submit durante la baja', async ({ page }) => {
+  await loginAsStudent(page)
+  await page.route('**/api/v1/student-auth/account', async route => {
+    await route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }) })
+  })
+  await page.getByLabel('Confirma tu correo institucional').fill('estudiante@uvg.edu.gt')
+  await page.getByLabel('Confirma tu contraseña').fill('Estudiante123!')
+  await page.getByLabel(/Entiendo que mi cuenta será eliminada/).check()
+  await page.getByRole('button', { name: 'Eliminar mi cuenta' }).click()
+  await expect(page.getByRole('alert')).toContainText('token de protección CSRF')
+  await expect(page.getByRole('heading', { name: /Hola,/ })).toBeVisible()
+  await page.unroute('**/api/v1/student-auth/account')
+
+  let release!: () => void
+  const pending = new Promise<void>(resolve => { release = resolve })
+  let requestCount = 0
+  await page.route('**/api/v1/student-auth/account', async route => {
+    requestCount += 1
+    await pending
+    await route.fulfill({ status: 204 })
+  })
+  await page.getByRole('button', { name: 'Eliminar mi cuenta' }).click()
+  await page.getByRole('button', { name: 'Eliminando…' }).click()
+  expect(requestCount).toBe(1)
+  release()
+  await expect(page).toHaveURL(/\/$/)
+  await page.unroute('**/api/v1/student-auth/account')
+
+  await page.goto('/mi-cuenta')
+  await expect(page).toHaveURL(/\/mi-cuenta$/)
+  await page.route('**/api/v1/student-auth/account', async route => {
+    await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: { code: 'INVALID_SESSION', message: 'Sesión inválida.' } }) })
+  })
+  await page.getByRole('button', { name: 'Eliminar mi cuenta' }).click()
+  await expect(page).toHaveURL(/\/acceso\?returnTo=%2Fmi-cuenta$/)
+})
+
+test('conserva el formulario ante error del servicio y limpia la UI para una cuenta eliminada', async ({ page }) => {
+  await loginAsStudent(page)
+  await page.route('**/api/v1/student-auth/account', async route => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Servicio no disponible.' } }) })
+  })
+  await page.getByLabel('Confirma tu correo institucional').fill('estudiante@uvg.edu.gt')
+  await page.getByLabel('Confirma tu contraseña').fill('Estudiante123!')
+  await page.getByLabel(/Entiendo que mi cuenta será eliminada/).check()
+  await page.getByRole('button', { name: 'Eliminar mi cuenta' }).click()
+  await expect(page.getByRole('alert')).toContainText('Servicio no disponible')
+  await expect(page.getByLabel('Confirma tu correo institucional')).toHaveValue('estudiante@uvg.edu.gt')
+  await expect(page.getByLabel('Confirma tu contraseña')).toHaveValue('Estudiante123!')
+  await page.unroute('**/api/v1/student-auth/account')
+
+  await page.route('**/api/v1/student-auth/account', async route => {
+    await route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: { code: 'ACCOUNT_DELETED', message: 'La cuenta ya fue eliminada.' } }) })
+  })
+  await page.getByRole('button', { name: 'Eliminar mi cuenta' }).click()
+  await expect(page).toHaveURL(/\/acceso$/)
+})
+
 test('muestra fecha y canal de revisión según el bloqueo estudiantil', async ({ page }) => {
   await page.goto('/acceso')
   await page.getByLabel('Correo institucional').fill('bloqueado.temporal@uvg.edu.gt')
