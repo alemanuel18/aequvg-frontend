@@ -1,4 +1,4 @@
-import type { AdminEvent, AdminEventList, AdminEventRegistrationList, EventInput, EventRegistrationStatus, EventStatus } from '~/types/api'
+import type { AdminEvent, AdminEventList, AdminEventRegistrationList, EventCategory, EventInput, EventRegistrationStatus, EventStatus } from '~/types/api'
 import { useApi } from './api'
 
 export const useAdminEventsService = () => {
@@ -13,6 +13,7 @@ export const useAdminEventsService = () => {
   }
   return {
     list: (params: { q?: string; status?: EventStatus; page?: number; pageSize?: number } = {}) => api<AdminEventList>(`/admin/events${query(params)}`, { credentials: 'include' }),
+    categories: () => api<EventCategory[]>('/events/categories'),
     get: (id: number) => api<AdminEvent>(`/admin/events/${id}`, { credentials: 'include' }),
     registrations: (id: number, params: { q?: string; status?: EventRegistrationStatus; page?: number; pageSize?: number } = {}) => api<AdminEventRegistrationList>(`/admin/events/${id}/registrations${query(params)}`, { credentials: 'include' }),
     create: (body: EventInput) => api<AdminEvent>('/admin/events', mutation('POST', body)),

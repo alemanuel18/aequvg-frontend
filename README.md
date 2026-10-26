@@ -51,7 +51,7 @@ La ruta pública `/junta-directiva` muestra por defecto el año más reciente y 
 
 El inicio de sesión está en `/administrador`; el panel muestra los módulos habilitados por los permisos de la sesión. La gestión de proyectos está en `/administrador/proyectos` y requiere `PROJECTS_MANAGE`. La guía API del backend describe permisos, contratos y casos: [`admin-access-flow.md`](../aequvg-backend/docs/admin-access-flow.md) y [`projects-admin-flow.md`](../aequvg-backend/docs/projects-admin-flow.md).
 
-En `/administrador/usuarios` se mantienen por separado las cuentas administrativas y se administran las cuentas normales de estudiantes/interesados: búsqueda, filtros, paginación, detalle, historial, bloqueo temporal/permanente, desbloqueo y baja confirmada con motivo. La baja conserva las inscripciones de eventos y las anonimiza; los comentarios todavía no tienen un modelo en el backend. Las pantallas frontend de solicitud de alta administrativa, recuperación/restablecimiento y acceso Microsoft no están implementadas. Consultar los contratos y evidencia en [`student-access-flow.md`](../aequvg-backend/docs/student-access-flow.md) y [`admin-flows-evidence.md`](../aequvg-backend/docs/admin-flows-evidence.md).
+En `/administrador/usuarios` se mantienen por separado las cuentas administrativas y se administran las cuentas normales de estudiantes/interesados: búsqueda, filtros, paginación, detalle, historial, bloqueo temporal/permanente, desbloqueo y baja confirmada con motivo. La baja conserva las inscripciones de eventos y las anonimiza; los comentarios conservan contenido y quedan desvinculados públicamente de la identidad. Las pantallas frontend de solicitud de alta administrativa, recuperación/restablecimiento y acceso Microsoft no están implementadas. Consultar los contratos y evidencia en [`student-access-flow.md`](../aequvg-backend/docs/student-access-flow.md) y [`admin-flows-evidence.md`](../aequvg-backend/docs/admin-flows-evidence.md).
 
 ## Acceso de estudiantes
 
@@ -59,8 +59,13 @@ El acceso estudiantil vive dentro del portal público y está separado del admin
 
 - `/acceso` inicia sesión con una cuenta de estudiante.
 - `/registro` crea cuentas únicamente para estudiantes actuales de UVG; solicita nombres y apellidos por separado, exige correo `@uvg.edu.gt`, contraseña robusta y confirmación de la condición estudiantil. No contempla aspirantes.
-- `/mi-cuenta` es el panel personal: permite editar nombres y apellidos, consulta el correo institucional como solo lectura y permite cerrar la sesión. La cuenta permanece identificada como Estudiante UVG; el usuario no puede editar ID, tipo, rol ni estado.
-- La navegación del panel incluye las pestañas `Mi perfil`, `Mis eventos` y `Mis comentarios`. El historial de comentarios consulta el endpoint estudiantil paginado, enlaza al destino original y permite editar o retirar comentarios propios. Cada edición vuelve a pasar por moderación; el historial de versiones y retiros queda disponible solo en el módulo administrativo. Los comentarios públicos se muestran en noticias, investigaciones y eventos, con formulario disponible solo para sesiones estudiantiles activas.
+- `/mi-cuenta` es el panel personal: permite editar nombres y apellidos, consultar el correo institucional como solo lectura, cerrar sesión y eliminar la cuenta mediante revalidación.
+- `Mis eventos` consulta únicamente el historial propio. Permite filtrar `Todos`, `CONFIRMADA` y `CANCELADA`, recorrer páginas y presenta estados de carga, vacío, error y reintento. Muestra evento, fecha, ubicación, estado y fecha de inscripción, sin PII de la inscripción; una sesión expirada requiere volver a iniciar sesión.
+- `Mis comentarios` consulta el endpoint estudiantil paginado, enlaza al destino original y permite editar o retirar comentarios propios. Cada edición vuelve a pasar por moderación; el historial de versiones y retiros queda disponible solo en el módulo administrativo. Los comentarios públicos se muestran en noticias, investigaciones y eventos, con formulario disponible solo para sesiones estudiantiles activas.
+
+### Eliminar mi cuenta
+
+La acción requiere confirmación explícita y revalidación de email y contraseña con sesión y CSRF. La cuenta queda eliminada lógicamente: los datos personales se anonimizan, las credenciales y sesiones dejan de funcionar, y la actividad histórica necesaria puede conservarse desvinculada públicamente de la identidad. No implica borrar físicamente todas las inscripciones o comentarios. Después de una respuesta exitosa, el frontend limpia la sesión y redirige a `/`; una sesión inválida requiere volver a `/acceso`.
 
 Sin sesión, la esquina derecha del navbar muestra `Ingresar / Registrarse`; con sesión muestra una foto de perfil genérica enlazada al panel personal. Registro e inicio correctos redirigen a `/mi-cuenta`. Un bloqueo temporal presenta su fecha de finalización y uno permanente presenta el canal de revisión enviado por la API.
 
@@ -273,7 +278,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
 | `/acceso` | Inicio de sesión para estudiantes de UVG. |
 | `/registro` | Alta de estudiantes actuales con correo institucional. |
-| `/mi-cuenta` | Panel protegido para editar el perfil propio y cerrar sesión. |
+| `/mi-cuenta` | Panel protegido para editar el perfil, consultar Mis eventos, gestionar comentarios y eliminar la cuenta. |
 | `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
 | `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
 | `/administrador/usuarios` | Solicitudes y cuentas administrativas, además de listado paginado, filtros, historial y acciones para estudiantes e interesados. Requiere `USERS_MANAGE`. |

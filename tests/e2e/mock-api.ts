@@ -36,6 +36,7 @@ const secondResource = { ...resource, id: 10, file: null, title: 'Manual de segu
 
 const event = {
   id: 10,
+  categoryId: 2,
   name: 'Taller de Espectrometría UV-Vis',
   description: 'Aprende los fundamentos y la calibración práctica de espectrofotómetros en química analítica.',
   startsAt: '2030-04-20T16:00:00.000Z',
@@ -44,6 +45,7 @@ const event = {
   availableCapacity: 12,
   additionalInformation: 'Se requiere bata de laboratorio y lentes de seguridad.',
   status: 'PUBLICADO',
+  category: { id: 2, name: 'Taller' },
   image: null
 }
 
@@ -53,7 +55,9 @@ const secondEvent = {
   name: 'Simposio de Química Verde',
   description: 'Conferencias sobre sostenibilidad y procesos químicos industriales.',
   maximumCapacity: 50,
-  availableCapacity: 1
+  availableCapacity: 1,
+  category: null,
+  categoryId: null
 }
 const featuredEventCandidates = [
   ...Array.from({ length: 4 }, (_, index) => ({ id: 50 + index, name: `Evento reciente ${index + 1}`, location: 'Campus', status: 'PUBLICADO' })),
@@ -272,6 +276,15 @@ Bun.serve({
         ? json({ user: studentUser })
         : json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
     }
+    if (request.method === 'DELETE' && url.pathname === '/api/v1/student-auth/account') {
+      if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'INVALID_SESSION', message: 'La sesión no es válida o ya expiró.' } }, 401)
+      if (request.headers.get('x-csrf-token') !== 'student-csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      const body = await request.json() as { email?: string; password?: string; confirm?: boolean }
+      if (body.email === 'deleted@uvg.edu.gt') return json({ error: { code: 'ACCOUNT_DELETED', message: 'La cuenta ya fue eliminada.' } }, 403)
+      if (body.email !== studentUser.email || body.password !== 'Estudiante123!' || body.confirm !== true) return json({ error: { code: 'INVALID_CREDENTIALS', message: 'El correo o la contraseña no son válidos.' } }, 401)
+      studentSessionActive = false
+      return new Response(null, { status: 204, headers: { 'access-control-allow-origin': allowedOrigin, 'access-control-allow-credentials': 'true', 'set-cookie': 'aequvg_student_session=; Max-Age=0; Path=/' } })
+    }
     const publicationCommentsMatch = url.pathname.match(/^\/api\/v1\/publications\/(NOTICIA|PROYECTO|EVENTO)\/(\d+)\/comments$/)
     if (publicationCommentsMatch) {
       const [, targetType, targetIdText] = publicationCommentsMatch
@@ -315,6 +328,23 @@ Bun.serve({
       ]
       const comments = [...studentCommentHistory, ...baselineFirstPage, ...baselineSecondPage]
       return json({ items: comments.slice((page - 1) * pageSize, page * pageSize), page, pageSize, total: comments.length })
+    }
+    if (request.method === 'GET' && url.pathname === '/api/v1/student/events/registrations') {
+      if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) {
+        return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+      }
+      if (url.searchParams.get('scenario') === 'error') return json({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Servicio no disponible.' } }, 503)
+      const page = Number(url.searchParams.get('page') ?? 1)
+      const pageSize = Number(url.searchParams.get('pageSize') ?? 10)
+      const status = url.searchParams.get('status')
+      const registrations = [
+        { id: 701, status: 'CONFIRMADA', registeredAt: '2026-10-20T12:00:00.000Z', event: { id: 10, name: 'Taller de Espectrometría UV-Vis', startsAt: '2026-11-20T16:00:00.000Z', location: 'Auditorio UVG', status: 'PUBLICADO' } },
+        { id: 702, status: 'CANCELADA', registeredAt: '2026-10-18T12:00:00.000Z', event: { id: 12, name: 'Seminario de Química Analítica', startsAt: '2026-12-01T18:00:00.000Z', location: 'Salón B-101', status: 'PUBLICADO' } },
+        { id: 703, status: 'CONFIRMADA', registeredAt: '2026-10-15T12:00:00.000Z', event: { id: 14, name: 'Jornada de Laboratorio', startsAt: '2027-01-10T14:00:00.000Z', location: 'Laboratorio de Química', status: 'PUBLICADO' } }
+      ]
+      const filtered = status === 'CONFIRMADA' || status === 'CANCELADA' ? registrations.filter(item => item.status === status) : registrations
+      const start = (page - 1) * pageSize
+      return json({ items: filtered.slice(start, start + pageSize), pagination: { page, pageSize, total: filtered.length } })
     }
     if (request.method === 'PATCH' && url.pathname === '/api/v1/student-auth/me') {
       if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
@@ -632,6 +662,10 @@ Bun.serve({
     if (url.pathname === '/api/v1/news/7') return json(news)
     if (url.pathname.startsWith('/api/v1/news/')) return json({ error: { code: 'NEWS_NOT_FOUND', message: 'La noticia solicitada no existe.' } }, 404)
     if (url.pathname === '/api/v1/resources/categories') return json([{ id: 3, name: 'Laboratorio' }])
+    if (url.pathname === '/api/v1/events/categories') return json([
+      { id: 1, name: 'Académico' }, { id: 2, name: 'Taller' }, { id: 3, name: 'Conferencia' },
+      { id: 4, name: 'Visita técnica' }, { id: 5, name: 'Social' }, { id: 6, name: 'Otro' }
+    ])
     if (url.pathname === '/api/v1/resources') {
       const query = url.searchParams.get('q')?.toLowerCase() || ''
       if (query === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0 } })

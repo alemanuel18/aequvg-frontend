@@ -31,7 +31,7 @@ export const datetimeLocalToIsoUtc = (value: string, timeZone = browserTimeZone(
   return new Date(instant).toISOString()
 }
 
-export type EventFormState = { imageId: string; name: string; description: string; startsAt: string; location: string; maximumCapacity: string; additionalInformation: string; status: EventStatus }
+export type EventFormState = { imageId: string; categoryId: string; name: string; description: string; startsAt: string; location: string; maximumCapacity: string; additionalInformation: string; status: EventStatus }
 export type EventFormErrors = Partial<Record<keyof EventFormState, string>>
 const textLength = (value: string) => value.trim().replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().length
 
@@ -48,7 +48,7 @@ export const validateEventForm = (form: EventFormState): EventFormErrors => {
 }
 
 export const eventFormPayload = (form: EventFormState): EventInput => ({
-  imageId: form.imageId.trim() ? Number(form.imageId) : null,
+  imageId: form.imageId.trim() ? Number(form.imageId) : null, categoryId: form.categoryId.trim() ? Number(form.categoryId) : null,
   name: form.name.trim(), description: form.description.trim(), startsAt: datetimeLocalToIsoUtc(form.startsAt) ?? '', location: form.location.trim(),
   maximumCapacity: Number(form.maximumCapacity), additionalInformation: form.additionalInformation.trim() || null, status: form.status
 })

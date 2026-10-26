@@ -227,6 +227,7 @@ export interface PublicEvent {
   availableCapacity: number
   additionalInformation: string | null
   status: 'PUBLICADO'
+  category: EventCategory | null
   image: { id: number; originalName: string; mimeType: string } | null
 }
 
@@ -236,15 +237,33 @@ export interface PublicEventList {
 }
 
 export type EventStatus = 'BORRADOR' | 'PUBLICADO' | 'FINALIZADO' | 'CANCELADO' | 'ARCHIVADO'
+export interface EventCategory { id: number; name: string }
 export interface AdminEvent extends Omit<PublicEvent, 'status' | 'availableCapacity'> {
   createdById: number
   imageId: number | null
+  categoryId: number | null
   status: EventStatus
   createdAt: string
   createdBy: { id: number; name: string }
 }
 export interface AdminEventList { items: AdminEvent[]; pagination: Pagination }
 export type EventRegistrationStatus = 'CONFIRMADA' | 'CANCELADA'
+export interface StudentEventRegistration {
+  id: number
+  status: EventRegistrationStatus
+  registeredAt: string
+  event: {
+    id: number
+    name: string
+    startsAt: string
+    location: string
+    status: EventStatus
+  }
+}
+export interface StudentEventRegistrationList {
+  items: StudentEventRegistration[]
+  pagination: Pagination
+}
 export interface AdminEventRegistration {
   id: number
   fullName: string
@@ -256,6 +275,7 @@ export interface AdminEventRegistration {
 export interface AdminEventRegistrationList { items: AdminEventRegistration[]; pagination: Pagination }
 export interface EventInput {
   imageId?: number | null
+  categoryId?: number | null
   name: string
   description: string
   startsAt: string
