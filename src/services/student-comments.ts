@@ -1,5 +1,6 @@
 import type { StudentComment, StudentCommentList, StudentCommentRevisionList, StudentCommentTargetType } from '~/types/api'
 import { useApi } from './api'
+import { createIdempotencyKey } from '../utils/idempotency'
 
 export const useStudentCommentsApi = () => {
   const api = useApi()
@@ -9,12 +10,12 @@ export const useStudentCommentsApi = () => {
       `/publications/${targetType}/${targetId}/comments`,
       { query: { page, pageSize } }
     ),
-    create: (targetType: StudentCommentTargetType, targetId: number, content: string, csrfToken: string) => api<StudentComment>(
+    create: (targetType: StudentCommentTargetType, targetId: number, content: string, csrfToken: string, idempotencyKey = createIdempotencyKey()) => api<StudentComment>(
       `/publications/${targetType}/${targetId}/comments`,
       {
         method: 'POST',
         credentials: 'include',
-        headers: { 'x-csrf-token': csrfToken },
+        headers: { 'x-csrf-token': csrfToken, 'idempotency-key': idempotencyKey },
         body: { content }
       }
     ),
@@ -22,9 +23,9 @@ export const useStudentCommentsApi = () => {
       `/student-auth/me/comments?page=${page}&pageSize=${pageSize}`,
       { credentials: 'include' }
     ),
-    update: (id: number, content: string, csrfToken: string) => api<StudentComment>(
+    update: (id: number, content: string, csrfToken: string, idempotencyKey = createIdempotencyKey()) => api<StudentComment>(
       `/student-auth/me/comments/${id}`,
-      { method: 'PUT', credentials: 'include', headers: { 'x-csrf-token': csrfToken }, body: { content } }
+      { method: 'PUT', credentials: 'include', headers: { 'x-csrf-token': csrfToken, 'idempotency-key': idempotencyKey }, body: { content } }
     ),
     delete: (id: number, csrfToken: string) => api<{ deleted: boolean }>(
       `/student-auth/me/comments/${id}`,
