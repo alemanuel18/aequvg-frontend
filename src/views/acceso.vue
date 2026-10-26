@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { StudentLoginErrors } from '~/composables/student-auth-validation'
 import { PublicApiError } from '~/services/api'
+import { getModerationFeedback, safeModerationFeedbackFields } from '~/utils/moderation-feedback'
 
 useSeoMeta({ title: 'Acceso estudiantil', description: 'Inicio de sesión para estudiantes de UVG.' })
 const route = useRoute()
@@ -8,6 +9,8 @@ const session = useStudentSession()
 const fields = reactive({ email: '', password: '' })
 const errors = ref<StudentLoginErrors>({})
 const requestError = ref('')
+const moderationCode = ref('')
+const moderationFields = ref<Record<string, string>>({})
 const submitting = ref(false)
 const ready = ref(false)
 
@@ -24,30 +27,23 @@ onMounted(async () => {
   ready.value = true
 })
 
-const errorMessage = (error: unknown) => {
-  if (!(error instanceof PublicApiError)) return 'No pudimos iniciar sesión. Intenta nuevamente.'
-  if (error.code === 'ACCOUNT_TEMPORARILY_BLOCKED') {
-    const value = error.fields?.blockedUntil
-    const date = value ? new Date(value) : null
-    return date && !Number.isNaN(date.getTime())
-      ? `Tu cuenta está bloqueada temporalmente hasta el ${new Intl.DateTimeFormat('es-GT', { dateStyle: 'long', timeStyle: 'short' }).format(date)}.`
-      : error.message
-  }
-  if (error.code === 'ACCOUNT_PERMANENTLY_BLOCKED') return `${error.message} Canal de revisión: ${error.fields?.reviewChannel ?? 'contacta a AsoQuímica UVG.'}`
-  return error.message
-}
-
 const submit = async () => {
   if (!ready.value || submitting.value) return
   errors.value = validateStudentLogin(fields)
   requestError.value = ''
+  moderationCode.value = ''
+  moderationFields.value = {}
   if (Object.keys(errors.value).length) return
   submitting.value = true
   try {
     await session.login({ email: fields.email.trim().toLowerCase(), password: fields.password })
     await navigateTo(safeReturnTo.value, { replace: true })
   } catch (error) {
-    requestError.value = errorMessage(error)
+    const feedback = error instanceof PublicApiError ? getModerationFeedback(error.code, error.fields) : null
+    if (feedback && error instanceof PublicApiError) {
+      moderationCode.value = error.code
+      moderationFields.value = safeModerationFeedbackFields(error.fields)
+    } else requestError.value = error instanceof PublicApiError ? error.message : 'No pudimos iniciar sesión. Intenta nuevamente.'
   } finally {
     submitting.value = false
   }
@@ -67,6 +63,7 @@ const submit = async () => {
         <input id="student-password" v-model="fields.password" name="password" type="password" autocomplete="current-password" maxlength="256" :disabled="!ready || submitting" :aria-invalid="Boolean(errors.password)" :aria-describedby="errors.password ? 'student-password-error' : undefined">
         <p v-if="errors.password" id="student-password-error" class="field-error">{{ errors.password }}</p>
       </div>
+      <ModerationNotice v-if="moderationCode" :code="moderationCode" :fields="moderationFields" />
       <p v-if="requestError" class="form-message" role="alert">{{ requestError }}</p>
       <p class="sr-only" aria-live="polite">{{ submitting ? 'Verificando credenciales.' : '' }}</p>
       <AppButton type="submit" :disabled="!ready || submitting">{{ submitting ? 'Ingresando…' : 'Iniciar sesión' }}</AppButton>

@@ -42,8 +42,8 @@ export const useStudentSession = () => {
     return session.user
   }
 
-  const updateProfile = async (input: { firstNames: string; lastNames: string }) => {
-    const response = await authApi.updateProfile(input, csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || '')
+  const updateProfile = async (input: { firstNames: string; lastNames: string }, idempotencyKey?: string) => {
+    const response = await authApi.updateProfile(input, csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || '', idempotencyKey)
     user.value = response.user
     return response.user
   }
