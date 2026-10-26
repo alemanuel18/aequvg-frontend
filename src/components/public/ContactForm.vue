@@ -13,7 +13,8 @@ const fieldErrors = ref<Record<string, string>>({});
 const formElement = ref<HTMLFormElement | null>(null);
 const successMessage = ref<HTMLParagraphElement | null>(null);
 const form = reactive({
-  name: "",
+  firstNames: "",
+  lastNames: "",
   email: "",
   phone: "",
   type: "CONSULTA" as "CONSULTA" | "REUNION",
@@ -44,7 +45,8 @@ const submit = async () => {
   submitting.value = true;
   try {
     const body: ContactRequestInput = {
-      name: form.name,
+      firstNames: form.firstNames,
+      lastNames: form.lastNames,
       email: form.email,
       phone: form.phone,
       type: form.type,
@@ -60,7 +62,8 @@ const submit = async () => {
     await service.sendContactRequest(body);
     success.value = true;
     Object.assign(form, {
-      name: "",
+      firstNames: "",
+      lastNames: "",
       email: "",
       phone: "",
       type: "CONSULTA",
@@ -94,20 +97,25 @@ const submit = async () => {
   >
     <div class="form-grid">
       <div class="field">
-        <label for="contact-name">Nombre completo <span class="required-indicator" aria-hidden="true">*</span></label
+        <label for="contact-first-names">Nombres</label
         ><input
-          id="contact-name"
-          v-model="form.name"
-          autocomplete="name"
-          :aria-invalid="!!fieldErrors.name"
-          :aria-describedby="fieldErrors.name ? 'name-error' : undefined"
+          id="contact-first-names"
+          v-model="form.firstNames"
+          autocomplete="given-name"
+          :aria-invalid="!!fieldErrors.firstNames"
+          :aria-describedby="fieldErrors.firstNames ? 'first-names-error' : undefined"
           required
-        /><span v-if="fieldErrors.name" id="name-error" class="field-error">{{
-          fieldErrors.name
+        /><span v-if="fieldErrors.firstNames" id="first-names-error" class="field-error">{{
+          fieldErrors.firstNames
         }}</span>
       </div>
       <div class="field">
-        <label for="contact-email">Correo electrónico <span class="required-indicator" aria-hidden="true">*</span></label
+        <label for="contact-last-names">Apellidos</label>
+        <input id="contact-last-names" v-model="form.lastNames" autocomplete="family-name" :aria-invalid="!!fieldErrors.lastNames" :aria-describedby="fieldErrors.lastNames ? 'last-names-error' : undefined" required />
+        <span v-if="fieldErrors.lastNames" id="last-names-error" class="field-error">{{ fieldErrors.lastNames }}</span>
+      </div>
+      <div class="field">
+        <label for="contact-email">Correo electrónico</label
         ><input
           id="contact-email"
           v-model="form.email"

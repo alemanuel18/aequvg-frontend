@@ -32,7 +32,8 @@ onMounted(() => {
 });
 
 const form = reactive({
-  fullName: "",
+  firstNames: "",
+  lastNames: "",
   email: "",
   phone: "",
   consent: false,
@@ -41,12 +42,14 @@ const form = reactive({
 
 watchEffect(() => {
   if (!studentSession.user.value) return;
-  if (!form.fullName) form.fullName = studentSession.user.value.name;
+  if (!form.firstNames) form.firstNames = studentSession.user.value.firstNames;
+  if (!form.lastNames) form.lastNames = studentSession.user.value.lastNames;
   if (!form.email) form.email = studentSession.user.value.email;
 });
 
 const clearForm = () => {
-  form.fullName = "";
+  form.firstNames = "";
+  form.lastNames = "";
   form.email = "";
   form.phone = "";
   form.consent = false;
@@ -72,7 +75,7 @@ const validate = () => {
   if (Object.keys(errors).length > 0) {
     const firstKey = Object.keys(errors)[0];
     if (firstKey) {
-      const fieldId = firstKey === "fullName" ? "reg-name" : `reg-${firstKey}`;
+      const fieldId = `reg-${firstKey}`;
       if (import.meta.client) {
         nextTick(() => {
           document.getElementById(fieldId)?.focus();
@@ -94,7 +97,8 @@ const submit = async () => {
   submitting.value = true;
   try {
     const body: EventRegistrationInput = {
-      fullName: form.fullName,
+      firstNames: form.firstNames,
+      lastNames: form.lastNames,
       email: form.email,
       phone: form.phone,
       consent: true,
@@ -242,27 +246,31 @@ const submit = async () => {
 
       <div class="form-grid">
         <div class="field">
-          <label for="reg-name">Nombre completo <span class="required-indicator" aria-hidden="true">*</span></label>
+          <label for="reg-firstNames">Nombres</label>
           <input
-            id="reg-name"
-            v-model="form.fullName"
-            autocomplete="name"
-            :aria-invalid="!!fieldErrors.fullName"
-            :aria-describedby="
-              fieldErrors.fullName ? 'reg-name-error' : undefined
-            "
+            id="reg-firstNames"
+            v-model="form.firstNames"
+            autocomplete="given-name"
+            :aria-invalid="!!fieldErrors.firstNames"
+            :aria-describedby="fieldErrors.firstNames ? 'reg-firstNames-error' : undefined"
             required
           />
           <span
-            v-if="fieldErrors.fullName"
-            id="reg-name-error"
+            v-if="fieldErrors.firstNames"
+            id="reg-firstNames-error"
             class="field-error"
-            >{{ fieldErrors.fullName }}</span
+            >{{ fieldErrors.firstNames }}</span
           >
         </div>
 
         <div class="field">
-          <label for="reg-email">Correo electrónico <span class="required-indicator" aria-hidden="true">*</span></label>
+          <label for="reg-lastNames">Apellidos</label>
+          <input id="reg-lastNames" v-model="form.lastNames" autocomplete="family-name" :aria-invalid="!!fieldErrors.lastNames" :aria-describedby="fieldErrors.lastNames ? 'reg-lastNames-error' : undefined" required />
+          <span v-if="fieldErrors.lastNames" id="reg-lastNames-error" class="field-error">{{ fieldErrors.lastNames }}</span>
+        </div>
+
+        <div class="field">
+          <label for="reg-email">Correo electrónico</label>
           <input
             id="reg-email"
             v-model="form.email"

@@ -1,8 +1,9 @@
-export interface ContactFormState { name: string; email: string; phone: string; type: 'CONSULTA' | 'REUNION'; subject: string; message: string; preferredAt: string; consent: boolean }
+export interface ContactFormState { firstNames: string; lastNames: string; email: string; phone: string; type: 'CONSULTA' | 'REUNION'; subject: string; message: string; preferredAt: string; consent: boolean }
 
 export const validateContactForm = (form: ContactFormState) => {
   const errors: Record<string, string> = {}
-  if (form.name.trim().length < 2) errors.name = 'Escribe tu nombre completo.'
+  if (form.firstNames.trim().length < 2) errors.firstNames = 'Escribe tus nombres.'
+  if (form.lastNames.trim().length < 2) errors.lastNames = 'Escribe tus apellidos.'
   if (!/^\S+@\S+\.\S+$/.test(form.email)) errors.email = 'Escribe un correo válido.'
   if (form.phone.trim().length < 7) errors.phone = 'Escribe un número de teléfono válido.'
   if (form.subject.trim().length < 3) errors.subject = 'Describe brevemente el asunto.'

@@ -1,7 +1,8 @@
 import type { BoardMemberInput } from '~/types/api'
 
 export type BoardFormState = {
-  name: string
+  firstNames: string
+  lastNames: string
   position: string
   description: string
   institutionalEmail: string
@@ -14,7 +15,8 @@ export type BoardFormErrors = Partial<Record<keyof BoardFormState, string>>
 
 export const validateBoardForm = (form: BoardFormState): BoardFormErrors => {
   const errors: BoardFormErrors = {}
-  if (form.name.trim().length < 2) errors.name = 'Ingresa un nombre de al menos 2 caracteres.'
+  if (form.firstNames.trim().length < 2) errors.firstNames = 'Ingresa los nombres.'
+  if (form.lastNames.trim().length < 2) errors.lastNames = 'Ingresa los apellidos.'
   if (!BOARD_POSITIONS.includes(form.position as typeof BOARD_POSITIONS[number])) errors.position = 'Selecciona un cargo válido.'
   if (!/^[^\s@]+@uvg\.edu\.gt$/i.test(form.institutionalEmail.trim())) errors.institutionalEmail = 'Usa un correo institucional que termine exactamente en @uvg.edu.gt.'
   if (!['ACTIVO', 'INACTIVO'].includes(form.status)) errors.status = 'Selecciona un estado válido.'
@@ -28,7 +30,8 @@ export const validateBoardForm = (form: BoardFormState): BoardFormErrors => {
 }
 
 export const boardFormPayload = (form: BoardFormState): BoardMemberInput => ({
-  name: form.name.trim(),
+  firstNames: form.firstNames.trim(),
+  lastNames: form.lastNames.trim(),
   position: form.position.trim(),
   description: form.description.trim() || null,
   institutionalEmail: form.institutionalEmail.trim().toLowerCase(),
