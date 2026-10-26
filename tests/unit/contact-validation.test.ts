@@ -12,8 +12,8 @@ describe('formulario de contacto', () => {
   })
 
   it('rechaza nombre, teléfono y asunto vacíos', () => {
-    expect(validateContactForm({ ...valid, name: ' ', phone: ' ', subject: ' ' })).toMatchObject({
-      name: expect.any(String), phone: expect.any(String), subject: expect.any(String)
+    expect(validateContactForm({ ...valid, firstNames: ' ', lastNames: ' ', phone: ' ', subject: ' ' })).toMatchObject({
+      firstNames: expect.any(String), lastNames: expect.any(String), phone: expect.any(String), subject: expect.any(String)
     })
   })
 })

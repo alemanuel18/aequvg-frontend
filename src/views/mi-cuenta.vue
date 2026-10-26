@@ -3,6 +3,7 @@ import { PublicApiError } from '~/services/api'
 import { useStudentCommentsApi } from '~/services/student-comments'
 import { useStudentEventsService } from '~/services/student-events'
 import type { EventRegistrationStatus, StudentComment, StudentEventRegistration } from '~/types/api'
+import { getIdempotencyKey, type PendingIdempotentAttempt } from '~/utils/idempotency'
 
 useSeoMeta({ title: 'Mi perfil', description: 'Consulta y actualiza tu perfil estudiantil.', robots: 'noindex, nofollow' })
 const session = useStudentSession()
@@ -42,6 +43,8 @@ const invalidateEventsHistory = () => {
   eventsError.value = ''
   eventsLoading.value = false
 }
+let pendingProfileAttempt: PendingIdempotentAttempt | null = null
+const pendingCommentEdits = new Map<number, PendingIdempotentAttempt>()
 
 const loadComments = async () => {
   if (!session.user.value) return
@@ -103,8 +106,11 @@ const changeEventsPage = (nextPage: number) => {
 
 const commentCsrfToken = () => session.csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || ''
 const updateComment = async (id: number, content: string) => {
+  const attempt = getIdempotencyKey(pendingCommentEdits.get(id) ?? null, JSON.stringify([id, content.trim()]))
+  pendingCommentEdits.set(id, attempt)
   try {
-    await commentsApi.update(id, content, commentCsrfToken())
+    await commentsApi.update(id, content, commentCsrfToken(), attempt.key)
+    pendingCommentEdits.delete(id)
     toast.success('Tu comentario se actualizó y pasó la revisión de moderación.')
     await loadComments()
   } catch (error) {
@@ -155,8 +161,12 @@ const saveProfile = async () => {
   if (saving.value || !session.user.value) return
   saving.value = true
   requestError.value = ''
+  const input = { firstNames: firstNames.value, lastNames: lastNames.value }
+  const attempt = getIdempotencyKey(pendingProfileAttempt, JSON.stringify([input.firstNames.trim(), input.lastNames.trim()]))
+  pendingProfileAttempt = attempt
   try {
-    const user = await session.updateProfile({ firstNames: firstNames.value, lastNames: lastNames.value })
+    const user = await session.updateProfile(input, attempt.key)
+    pendingProfileAttempt = null
     firstNames.value = user.firstNames
     lastNames.value = user.lastNames
     toast.success('Tu perfil se actualizó correctamente.')
