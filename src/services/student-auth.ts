@@ -12,6 +12,9 @@ export const useStudentAuthApi = () => {
     }),
     logout: (csrfToken: string) => api<void>('/student-auth/logout', {
       method: 'POST', credentials: 'include', headers: { 'x-csrf-token': csrfToken }
+    }),
+    deleteAccount: (input: { email: string; password: string; confirm: true }, csrfToken: string) => api<void>('/student-auth/account', {
+      method: 'DELETE', credentials: 'include', headers: { 'x-csrf-token': csrfToken }, body: input
     })
   }
 }
