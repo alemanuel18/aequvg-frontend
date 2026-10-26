@@ -316,6 +316,23 @@ Bun.serve({
       const comments = [...studentCommentHistory, ...baselineFirstPage, ...baselineSecondPage]
       return json({ items: comments.slice((page - 1) * pageSize, page * pageSize), page, pageSize, total: comments.length })
     }
+    if (request.method === 'GET' && url.pathname === '/api/v1/student/events/registrations') {
+      if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) {
+        return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
+      }
+      if (url.searchParams.get('scenario') === 'error') return json({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Servicio no disponible.' } }, 503)
+      const page = Number(url.searchParams.get('page') ?? 1)
+      const pageSize = Number(url.searchParams.get('pageSize') ?? 10)
+      const status = url.searchParams.get('status')
+      const registrations = [
+        { id: 701, status: 'CONFIRMADA', registeredAt: '2026-10-20T12:00:00.000Z', event: { id: 10, name: 'Taller de Espectrometría UV-Vis', startsAt: '2026-11-20T16:00:00.000Z', location: 'Auditorio UVG', status: 'PUBLICADO' } },
+        { id: 702, status: 'CANCELADA', registeredAt: '2026-10-18T12:00:00.000Z', event: { id: 12, name: 'Seminario de Química Analítica', startsAt: '2026-12-01T18:00:00.000Z', location: 'Salón B-101', status: 'PUBLICADO' } },
+        { id: 703, status: 'CONFIRMADA', registeredAt: '2026-10-15T12:00:00.000Z', event: { id: 14, name: 'Jornada de Laboratorio', startsAt: '2027-01-10T14:00:00.000Z', location: 'Laboratorio de Química', status: 'PUBLICADO' } }
+      ]
+      const filtered = status === 'CONFIRMADA' || status === 'CANCELADA' ? registrations.filter(item => item.status === status) : registrations
+      const start = (page - 1) * pageSize
+      return json({ items: filtered.slice(start, start + pageSize), pagination: { page, pageSize, total: filtered.length } })
+    }
     if (request.method === 'PATCH' && url.pathname === '/api/v1/student-auth/me') {
       if (!studentSessionActive || !request.headers.get('cookie')?.includes('aequvg_student_session=student-session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión de estudiante.' } }, 401)
       if (request.headers.get('x-csrf-token') !== 'student-csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
