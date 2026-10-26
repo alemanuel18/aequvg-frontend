@@ -30,4 +30,32 @@ describe('StudentCommentsPanel', () => {
     expect(wrapper.find('.comment-card__content').element.textContent).toBe(content)
     expect(wrapper.get('h3 a').attributes('href')).toBe('/eventos/12')
   })
+
+  it('muestra al autor anonimizado sin nombre anterior, avatar ni enlace a su perfil', () => {
+    const wrapper = mount(StudentCommentsPanel, {
+      props: {
+        comments: [{
+          id: 2,
+          targetType: 'NOTICIA',
+          targetId: 7,
+          content: 'Comentario conservado',
+          authorName: 'Anónimo',
+          createdAt: '2026-10-25T12:00:00.000Z'
+        }],
+        loading: false,
+        error: ''
+      },
+      global: {
+        components: { StatePanel },
+        stubs: { NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } }
+      }
+    })
+
+    expect(wrapper.get('.comment-card__author').text()).toBe('Anónimo')
+    expect(wrapper.find('.comment-card__author a').exists()).toBe(false)
+    expect(wrapper.find('.comment-card__author img').exists()).toBe(false)
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Ana Pérez')
+    expect(wrapper.get('h3 a').attributes('href')).toBe('/noticias/7')
+  })
 })
