@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PublicApiError } from '~/services/api'
+import { useStudentAuthApi } from '~/services/student-auth'
 import { useStudentCommentsApi } from '~/services/student-comments'
 import { useStudentEventsService } from '~/services/student-events'
 import type { EventRegistrationStatus, StudentComment, StudentEventRegistration } from '~/types/api'
