@@ -149,6 +149,40 @@ const featuredNews = computed(() => featured.value?.news?.slice(0, 3) ?? []);
       />
     </AppSection>
 
+    <!-- Chapter estudiantil ACS UVG -->
+    <AppSection
+      title="Chapter estudiantil ACS UVG"
+      lead="Una comunidad estudiantil para acercar la química a Guatemala y conectar con la comunidad científica internacional."
+      tone="dark"
+      labelled-by="acs-chapter"
+    >
+      <div class="cards-grid acs-grid">
+        <ContentCard
+          eyebrow="Divulgación y servicio"
+          body="Organizamos talleres, demostraciones y actividades para acercar la química a más personas."
+        />
+        <ContentCard
+          eyebrow="Formación profesional"
+          body="Impulsamos habilidades de liderazgo y comunicación, y el encuentro con científicos y profesionales."
+        />
+        <ContentCard
+          eyebrow="Química verde"
+          body="Promovemos una práctica de la química atenta a sus impactos ambientales."
+        />
+      </div>
+      <div class="acs-invitation">
+        <div>
+          <p class="acs-network">ACS · American Chemical Society</p>
+          <h3>¡Sé parte del Chapter!</h3>
+          <p>Conoce nuevas experiencias, desarrolla tus habilidades y conecta con capítulos estudiantiles en todo el mundo.</p>
+          <p class="acs-presence">ACS tiene presencia de miembros en 143 países y capítulos estudiantiles en 28 países.</p>
+        </div>
+        <a class="acs-contact" href="mailto:químicapura@uvg.edu.gt">
+          Escríbenos a químicapura@uvg.edu.gt <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </AppSection>
+
     <!-- Eventos destacados (máximo 3) -->
     <AppSection
       v-if="featuredEvents.length > 0"
@@ -262,6 +296,60 @@ const featuredNews = computed(() => featured.value?.news?.slice(0, 3) ?? []);
   margin-top: 1.75rem;
 }
 
+.acs-grid {
+  margin-bottom: 2rem;
+}
+
+.acs-grid :deep(.card) {
+  gap: 0.55rem;
+}
+
+.acs-invitation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: var(--radius-md);
+  background: rgb(255 255 255 / 8%);
+}
+
+.acs-invitation h3,
+.acs-invitation p {
+  margin: 0;
+}
+
+.acs-invitation h3 {
+  margin-block: 0.35rem;
+  font-size: 1.35rem;
+}
+
+.acs-network {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.acs-presence {
+  margin-top: 0.7rem !important;
+  color: var(--color-soft);
+  font-size: 0.9rem;
+}
+
+.acs-contact {
+  flex: 0 0 auto;
+  color: white;
+  font-weight: 800;
+  text-underline-offset: 0.2em;
+}
+
+.acs-contact:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 4px;
+}
+
 @media (max-width: 900px) {
   .hero__grid {
     grid-template-columns: 1fr;
@@ -277,6 +365,11 @@ const featuredNews = computed(() => featured.value?.news?.slice(0, 3) ?? []);
   }
   .cards-grid {
     grid-template-columns: 1fr;
+  }
+  .acs-invitation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
   }
 }
 </style>
