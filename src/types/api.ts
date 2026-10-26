@@ -87,6 +87,28 @@ export interface StudentUser {
   status: StudentAccountStatus
   role: 'STUDENT'
 }
+export type StudentAdminStatusHistory = {
+  id: number
+  fromStatus: StudentAccountStatus
+  toStatus: StudentAccountStatus
+  reason: string
+  blockedUntil: string | null
+  reviewChannel: string | null
+  createdAt: string
+  actor: { id: number; name: string } | null
+}
+export interface ManagedStudentAccount {
+  id: number; name: string; firstNames: string; lastNames: string; email: string
+  isStudent: boolean; status: StudentAccountStatus; blockedUntil: string | null; reviewChannel: string | null
+  deletedAt: string | null; createdAt: string; updatedAt: string
+}
+export interface ManagedStudentAccountDetail extends ManagedStudentAccount {
+  statusHistory: StudentAdminStatusHistory[]
+}
+export interface ManagedStudentAccountList {
+  items: ManagedStudentAccount[]
+  pagination: Pagination
+}
 export interface StudentSessionResponse {
   user: StudentUser
   csrfToken?: string
