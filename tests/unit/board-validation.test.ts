@@ -29,9 +29,9 @@ describe('validación de administración de Junta Directiva', () => {
   })
 
   it('exige nombre, correo, fechas, cargo y estado válidos', () => {
-    const invalid = { ...validForm(), name: ' ', position: '', institutionalEmail: '', termStartsAt: '', termEndsAt: '', status: '' as BoardFormState['status'] }
+    const invalid = { ...validForm(), firstNames: ' ', lastNames: ' ', position: '', institutionalEmail: '', termStartsAt: '', termEndsAt: '', status: '' as BoardFormState['status'] }
     expect(validateBoardForm(invalid)).toMatchObject({
-      name: expect.any(String), position: expect.any(String), institutionalEmail: expect.any(String),
+      firstNames: expect.any(String), lastNames: expect.any(String), position: expect.any(String), institutionalEmail: expect.any(String),
       termStartsAt: expect.any(String), termEndsAt: expect.any(String), status: expect.any(String)
     })
   })
