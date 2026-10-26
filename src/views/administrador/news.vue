@@ -684,6 +684,8 @@ onMounted(async () => {
                 id="news-title"
                 ref="titleInput"
                 v-model="form.title"
+                required
+                minlength="3"
                 maxlength="220"
                 type="text"
                 :aria-invalid="Boolean(errors.title)"
@@ -702,6 +704,8 @@ onMounted(async () => {
               ><textarea
                 id="news-summary"
                 v-model="form.summary"
+                required
+                minlength="10"
                 rows="3"
                 maxlength="2000"
                 :aria-invalid="Boolean(errors.summary)"
@@ -722,6 +726,8 @@ onMounted(async () => {
               ><textarea
                 id="news-content"
                 v-model="form.content"
+                required
+                minlength="20"
                 rows="8"
                 maxlength="20000"
                 :aria-invalid="Boolean(errors.content)"
@@ -746,6 +752,7 @@ onMounted(async () => {
                   id="news-category"
                   ref="categorySelect"
                   v-model="form.categoryId"
+                  required
                   :aria-invalid="Boolean(errors.categoryId)"
                   aria-describedby="news-category-error"
                 >
@@ -768,7 +775,7 @@ onMounted(async () => {
               <div class="field">
                 <label for="news-status"
                   >Estado <span class="required-indicator" aria-hidden="true">*</span></label
-                ><select id="news-status" v-model="form.status">
+                ><select id="news-status" v-model="form.status" required>
                   <option value="BORRADOR">Borrador</option>
                   <option value="PUBLICADO">Publicado</option>
                   <option value="ARCHIVADO">Archivado</option></select
@@ -778,7 +785,7 @@ onMounted(async () => {
               </div>
             </div>
             <div class="field">
-              <label for="news-image">ID de imagen</label
+              <label for="news-image">ID de imagen (opcional)</label
               ><input
                 id="news-image"
                 v-model="form.imageId"
