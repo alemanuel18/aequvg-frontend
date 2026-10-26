@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { PublicApiError } from '~/services/api'
 import { useStudentCommentsApi } from '~/services/student-comments'
-import type { StudentComment } from '~/types/api'
+import { useStudentEventsService } from '~/services/student-events'
+import type { EventRegistrationStatus, StudentComment, StudentEventRegistration } from '~/types/api'
 
 useSeoMeta({ title: 'Mi perfil', description: 'Consulta y actualiza tu perfil estudiantil.', robots: 'noindex, nofollow' })
 const session = useStudentSession()
 const commentsApi = useStudentCommentsApi()
+const eventsApi = useStudentEventsService()
 const toast = useToast()
 const route = useRoute()
 const currentTab = computed(() => route.query.section === 'events' ? 'events' : route.query.section === 'comments' ? 'comments' : 'profile')
@@ -23,6 +25,23 @@ const commentsLoading = ref(false)
 const commentsError = ref('')
 const commentsTotalPages = computed(() => Math.max(1, Math.ceil(commentsTotal.value / commentsPageSize)))
 let commentsRequestId = 0
+const eventRegistrations = ref<StudentEventRegistration[]>([])
+const eventsPage = ref(1)
+const eventsPageSize = 2
+const eventsTotal = ref(0)
+const eventsStatus = ref<EventRegistrationStatus | undefined>()
+const eventsLoading = ref(false)
+const eventsError = ref('')
+let eventsRequestId = 0
+const eventsTotalPages = computed(() => Math.max(1, Math.ceil(eventsTotal.value / eventsPageSize)))
+const formatDate = (value: string) => new Intl.DateTimeFormat('es-GT', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+const invalidateEventsHistory = () => {
+  eventsRequestId += 1
+  eventRegistrations.value = []
+  eventsTotal.value = 0
+  eventsError.value = ''
+  eventsLoading.value = false
+}
 
 const loadComments = async () => {
   if (!session.user.value) return
@@ -46,6 +65,40 @@ const loadComments = async () => {
 const changeCommentsPage = (nextPage: number) => {
   if (nextPage < 1 || nextPage > commentsTotalPages.value || nextPage === commentsPage.value) return
   commentsPage.value = nextPage
+}
+
+const loadEvents = async () => {
+  if (!session.user.value) return
+  const requestId = ++eventsRequestId
+  eventsLoading.value = true
+  eventsError.value = ''
+  try {
+    const result = await eventsApi.history({ page: eventsPage.value, pageSize: eventsPageSize, status: eventsStatus.value })
+    if (requestId !== eventsRequestId) return
+    eventRegistrations.value = result.items
+    eventsTotal.value = result.pagination.total
+  } catch (error) {
+    if (requestId !== eventsRequestId) return
+    if (error instanceof PublicApiError && ['UNAUTHORIZED', 'INVALID_SESSION', 'SESSION_REVOKED'].includes(error.code)) {
+      invalidateEventsHistory()
+      await navigateTo('/acceso?returnTo=%2Fmi-cuenta%3Fsection%3Devents', { replace: true })
+      return
+    }
+    eventsError.value = error instanceof PublicApiError ? error.message : 'No pudimos cargar tus eventos. Intenta nuevamente.'
+    toast.error(eventsError.value)
+  } finally {
+    if (requestId === eventsRequestId) eventsLoading.value = false
+  }
+}
+
+const changeEventsStatus = (status: string) => {
+  eventsStatus.value = status === 'CONFIRMADA' || status === 'CANCELADA' ? status : undefined
+  eventsPage.value = 1
+}
+
+const changeEventsPage = (nextPage: number) => {
+  if (nextPage < 1 || nextPage > eventsTotalPages.value || nextPage === eventsPage.value) return
+  eventsPage.value = nextPage
 }
 
 const commentCsrfToken = () => session.csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || ''
@@ -80,6 +133,11 @@ const deleteComment = async (id: number) => {
 
 watch([currentTab, () => session.user.value?.id, commentsPage], ([tab, userId]) => {
   if (tab === 'comments' && userId) void loadComments()
+})
+
+watch([currentTab, () => session.user.value?.id, eventsPage, eventsStatus], ([tab, userId]) => {
+  if (tab === 'events' && userId) void loadEvents()
+  else if (tab !== 'events' || !userId) invalidateEventsHistory()
 })
 
 onMounted(async () => {
@@ -131,7 +189,41 @@ const logout = async () => {
     <StatePanel v-if="checking" title="Comprobando tu sesión" message="Estamos preparando tu espacio personal." />
     <div v-else-if="session.user.value" class="panel">
       <AccountNavigation :current="currentTab" />
-      <StatePanel v-if="currentTab === 'events'" title="Mis eventos" message="Aquí encontrarás tus eventos. La integración del listado está a cargo del equipo de eventos." />
+      <section v-if="currentTab === 'events'" class="events-history" aria-labelledby="events-title">
+        <div class="history-heading">
+          <div>
+            <EyebrowBadge>Actividad estudiantil</EyebrowBadge>
+            <h2 id="events-title">Mis eventos</h2>
+          </div>
+          <label for="event-status">Filtrar por estado
+            <select id="event-status" :value="eventsStatus ?? ''" :disabled="eventsLoading" @change="changeEventsStatus(($event.target as HTMLSelectElement).value)">
+              <option value="">Todos</option>
+              <option value="CONFIRMADA">Confirmadas</option>
+              <option value="CANCELADA">Canceladas</option>
+            </select>
+          </label>
+        </div>
+        <StatePanel v-if="eventsLoading" title="Cargando tus eventos" message="Estamos consultando tu historial de inscripciones." />
+        <StatePanel v-else-if="eventsError" title="No pudimos cargar tus eventos" :message="eventsError" role="alert">
+          <AppButton variant="secondary" @click="loadEvents">Reintentar</AppButton>
+        </StatePanel>
+        <StatePanel v-else-if="!eventRegistrations.length" title="No hay eventos para mostrar" :message="eventsStatus ? 'No tienes inscripciones con este estado.' : 'Aún no tienes inscripciones en eventos.'" />
+        <div v-else class="events-list">
+          <article v-for="registration in eventRegistrations" :key="registration.id" class="event-history-card">
+            <div>
+              <h3>{{ registration.event.name }}</h3>
+              <p>{{ formatDate(registration.event.startsAt) }} · {{ registration.event.location }}</p>
+              <p>Inscrito el {{ formatDate(registration.registeredAt) }}</p>
+            </div>
+            <span class="registration-status" :class="`registration-status--${registration.status.toLowerCase()}`">{{ registration.status === 'CONFIRMADA' ? 'Confirmada' : 'Cancelada' }}</span>
+          </article>
+        </div>
+        <nav v-if="eventsTotal > 0 && !eventsError" class="events-pagination" aria-label="Paginación de mis eventos">
+          <button type="button" :disabled="eventsLoading || eventsPage <= 1" @click="changeEventsPage(eventsPage - 1)">Anterior</button>
+          <span aria-live="polite">Página {{ eventsPage }} de {{ eventsTotalPages }} · {{ eventsTotal }} inscripciones</span>
+          <button type="button" :disabled="eventsLoading || eventsPage >= eventsTotalPages" @click="changeEventsPage(eventsPage + 1)">Siguiente</button>
+        </nav>
+      </section>
       <section v-else-if="currentTab === 'comments'" class="comments-history">
         <StudentCommentsPanel :comments="comments" :loading="commentsLoading" :error="commentsError" :on-update="updateComment" :on-delete="deleteComment" @retry="loadComments" />
         <nav v-if="commentsTotal > 0 && !commentsError" class="comments-pagination" aria-label="Paginación de mis comentarios">
@@ -172,6 +264,22 @@ const logout = async () => {
 <style scoped>
 .panel { max-width: 54rem; margin-inline: auto; }
 .comments-history { display: grid; gap: 1rem; }
+.events-history { display: grid; gap: 1rem; }
+.history-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; }
+.history-heading h2 { margin: .6rem 0 0; font-size: clamp(1.8rem, 6vw, 2.8rem); }
+.history-heading label { display: grid; gap: .35rem; color: var(--color-muted); font-weight: 700; }
+.history-heading select { min-height: 2.75rem; padding: .55rem .75rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: .5rem; font: inherit; }
+.events-list { display: grid; gap: .8rem; }
+.event-history-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.1rem; background: white; border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow); }
+.event-history-card h3 { margin: 0 0 .45rem; }
+.event-history-card p { margin: .25rem 0 0; color: var(--color-muted); }
+.registration-status { flex: 0 0 auto; padding: .4rem .65rem; border-radius: 999px; font-weight: 800; }
+.registration-status--confirmada { color: #14532d; background: #dcfce7; }
+.registration-status--cancelada { color: #7f1d1d; background: #fee2e2; }
+.events-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; }
+.events-pagination span { color: var(--color-muted); font-size: .9rem; }
+.events-pagination button { min-height: 2.75rem; padding: .55rem .9rem; color: var(--color-primary); background: white; border: 1px solid var(--color-primary); border-radius: .5rem; font: inherit; font-weight: 700; cursor: pointer; }
+.events-pagination button:disabled { color: var(--color-muted); border-color: var(--color-border); cursor: not-allowed; }
 .comments-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; }
 .comments-pagination span { color: var(--color-muted); font-size: .9rem; }
 .comments-pagination button { min-height: 2.75rem; padding: .55rem .9rem; color: var(--color-primary); background: white; border: 1px solid var(--color-primary); border-radius: .5rem; font: inherit; font-weight: 700; cursor: pointer; }
@@ -191,5 +299,5 @@ const logout = async () => {
 .student-type { display: flex; align-items: center; gap: .5rem; margin-block: .75rem; color: var(--color-primary); font-weight: 750; }
 .form-error { color: var(--color-danger); font-weight: 700; }
 .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .5rem; }
-@media (max-width: 480px) { .account { grid-template-columns: 1fr; } .profile-form { grid-column: 1; } }
+@media (max-width: 480px) { .account { grid-template-columns: 1fr; } .profile-form { grid-column: 1; } .event-history-card { flex-direction: column; } }
 </style>

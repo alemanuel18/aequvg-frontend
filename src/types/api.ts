@@ -245,6 +245,22 @@ export interface AdminEvent extends Omit<PublicEvent, 'status' | 'availableCapac
 }
 export interface AdminEventList { items: AdminEvent[]; pagination: Pagination }
 export type EventRegistrationStatus = 'CONFIRMADA' | 'CANCELADA'
+export interface StudentEventRegistration {
+  id: number
+  status: EventRegistrationStatus
+  registeredAt: string
+  event: {
+    id: number
+    name: string
+    startsAt: string
+    location: string
+    status: EventStatus
+  }
+}
+export interface StudentEventRegistrationList {
+  items: StudentEventRegistration[]
+  pagination: Pagination
+}
 export interface AdminEventRegistration {
   id: number
   fullName: string
