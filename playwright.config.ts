@@ -4,7 +4,9 @@ const frontendPort = Number(process.env.PLAYWRIGHT_FRONTEND_PORT || 3001)
 const apiPort = Number(process.env.PLAYWRIGHT_API_PORT || 3002)
 const frontendUrl = `http://127.0.0.1:${frontendPort}`
 const apiUrl = `http://127.0.0.1:${apiPort}`
-const reuseExistingServer = !process.env.CI
+// Evita reutilizar servidores frontend/API desactualizados de otra ejecución.
+// El reuso queda disponible solo si se habilita explícitamente.
+const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_SERVER === 'true'
 
 import { existsSync } from 'node:fs'
 
