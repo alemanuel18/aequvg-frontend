@@ -29,13 +29,14 @@ export interface AdminFeaturedResponse {
 }
 
 export interface BoardMember {
-  id: number; photoId: number | null; name: string; position: string; description: string | null; institutionalEmail: string; term: string
+  id: number; photoId: number | null; name: string; firstNames: string; lastNames: string; position: string; description: string | null; institutionalEmail: string; term: string
   termStartsAt: string | null; termEndsAt: string | null; displayOrder: number; status: 'ACTIVO' | 'INACTIVO'
   photo: { id: number; originalName: string; mimeType: string } | null
 }
 
 export interface BoardMemberInput {
-  name: string
+  firstNames: string
+  lastNames: string
   position: string
   description?: string | null
   institutionalEmail: string
@@ -49,7 +50,7 @@ export type ContactMethodType = 'EMAIL' | 'TELEFONO' | 'UBICACION' | 'INSTAGRAM'
 export interface ContactMethod { id: number; type: ContactMethodType; label: string; value: string; url: string | null; displayOrder: number; active: boolean }
 export interface ContactMethodInput { type: ContactMethodType; label: string; value: string; url?: string | null; displayOrder?: number; active?: boolean }
 
-export interface ContactRequestInput { name: string; email: string; phone: string; type: 'CONSULTA' | 'REUNION'; subject: string; message: string; preferredAt?: string | null; consent: true; privacyVersion: string; website?: string }
+export interface ContactRequestInput { firstNames: string; lastNames: string; email: string; phone: string; type: 'CONSULTA' | 'REUNION'; subject: string; message: string; preferredAt?: string | null; consent: true; privacyVersion: string; website?: string }
 
 export interface ApiError { error?: { code?: string; message?: string; details?: Record<string, string> } }
 
@@ -85,6 +86,28 @@ export interface StudentUser {
   isStudent: true
   status: StudentAccountStatus
   role: 'STUDENT'
+}
+export type StudentAdminStatusHistory = {
+  id: number
+  fromStatus: StudentAccountStatus
+  toStatus: StudentAccountStatus
+  reason: string
+  blockedUntil: string | null
+  reviewChannel: string | null
+  createdAt: string
+  actor: { id: number; name: string } | null
+}
+export interface ManagedStudentAccount {
+  id: number; name: string; firstNames: string; lastNames: string; email: string
+  isStudent: boolean; status: StudentAccountStatus; blockedUntil: string | null; reviewChannel: string | null
+  deletedAt: string | null; createdAt: string; updatedAt: string
+}
+export interface ManagedStudentAccountDetail extends ManagedStudentAccount {
+  statusHistory: StudentAdminStatusHistory[]
+}
+export interface ManagedStudentAccountList {
+  items: ManagedStudentAccount[]
+  pagination: Pagination
 }
 export interface StudentSessionResponse {
   user: StudentUser
@@ -249,7 +272,8 @@ export interface PublicEventQuery {
 }
 
 export interface EventRegistrationInput {
-  fullName: string
+  firstNames: string
+  lastNames: string
   email: string
   phone: string
   consent: true

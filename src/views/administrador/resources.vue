@@ -567,6 +567,7 @@ onMounted(async () => {
                 id="resource-category"
                 ref="categorySelect"
                 v-model="form.categoryId"
+                required
                 :aria-invalid="Boolean(errors.categoryId)"
               >
                 <option :value="null">Selecciona una categoría</option>
@@ -585,8 +586,8 @@ onMounted(async () => {
               >
             </div>
             <div class="field">
-              <label for="resource-status">Estado <span class="required-indicator">*</span></label
-              ><select id="resource-status" v-model="form.status">
+              <label for="resource-status">Estado <span class="required-indicator" aria-hidden="true">*</span></label
+              ><select id="resource-status" v-model="form.status" required>
                 <option value="BORRADOR">Borrador</option>
                 <option value="PUBLICADO">Publicado</option>
                 <option value="ARCHIVADO">Archivado</option>
@@ -599,6 +600,8 @@ onMounted(async () => {
               id="resource-title"
               ref="titleInput"
               v-model="form.title"
+              required
+              minlength="3"
               maxlength="220"
               type="text"
               :aria-invalid="Boolean(errors.title)"
@@ -611,6 +614,8 @@ onMounted(async () => {
             ><textarea
               id="resource-description"
               v-model="form.description"
+              required
+              minlength="10"
               maxlength="20000"
               rows="5"
               :aria-invalid="Boolean(errors.description)"
@@ -620,7 +625,7 @@ onMounted(async () => {
             }}</span>
           </div>
           <div class="field">
-            <label for="resource-file-upload">Archivo académico</label
+            <label for="resource-file-upload">Archivo académico (opcional)</label
             ><input
               id="resource-file-upload"
               ref="fileInput"
@@ -629,7 +634,7 @@ onMounted(async () => {
               :disabled="fileUploading"
               @change="handleFileSelect"
             /><span class="hint"
-              >PDF, DOC, DOCX o ZIP, máximo 25 MB.
+              >PDF, DOC, DOCX o ZIP, máximo 25 MB. Para publicar, necesitas un archivo o al menos un enlace; en borrador ambos son opcionales.
               {{
                 selectedFileName
                   ? `Actual: ${selectedFileName} (ID ${form.fileId})`
@@ -640,7 +645,7 @@ onMounted(async () => {
             >
           </div>
           <div class="field">
-            <label for="resource-file">ID del archivo</label
+            <label for="resource-file">ID del archivo (opcional)</label
             ><input
               id="resource-file"
               v-model="form.fileId"
@@ -652,7 +657,7 @@ onMounted(async () => {
             }}</span>
           </div>
           <fieldset class="links-field">
-            <legend>Enlaces HTTP/HTTPS</legend>
+            <legend>Enlaces HTTP/HTTPS (opcionales)</legend>
             <div
               v-for="(link, index) in form.links"
               :key="index"
