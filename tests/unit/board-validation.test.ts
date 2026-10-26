@@ -27,4 +27,12 @@ describe('validación de administración de Junta Directiva', () => {
     const invalidPosition = validForm(); invalidPosition.position = 'Cargo inventado'
     expect(validateBoardForm(invalidPosition).position).toBeDefined()
   })
+
+  it('exige nombre, correo, fechas, cargo y estado válidos', () => {
+    const invalid = { ...validForm(), name: ' ', position: '', institutionalEmail: '', termStartsAt: '', termEndsAt: '', status: '' as BoardFormState['status'] }
+    expect(validateBoardForm(invalid)).toMatchObject({
+      name: expect.any(String), position: expect.any(String), institutionalEmail: expect.any(String),
+      termStartsAt: expect.any(String), termEndsAt: expect.any(String), status: expect.any(String)
+    })
+  })
 })

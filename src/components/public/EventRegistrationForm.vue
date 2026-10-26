@@ -291,7 +291,7 @@ const submit = async () => {
         </div>
 
         <div class="field field--full">
-          <label for="reg-phone">Teléfono</label>
+          <label for="reg-phone">Teléfono <span class="required-indicator" aria-hidden="true">*</span></label>
           <input
             id="reg-phone"
             v-model="form.phone"
@@ -335,7 +335,7 @@ const submit = async () => {
             />
             <span
               >Autorizo el tratamiento de mis datos para la inscripción a este
-              evento, conforme al aviso de privacidad vigente.</span
+              evento, conforme al aviso de privacidad vigente. <span class="required-indicator" aria-hidden="true">*</span></span
             >
           </label>
           <span
@@ -458,7 +458,7 @@ const submit = async () => {
   cursor: pointer;
 }
 
-.checkbox span {
+.checkbox > span {
   font-size: 0.92rem;
   color: var(--color-ink);
   line-height: 1.45;

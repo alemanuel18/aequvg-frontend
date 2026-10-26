@@ -19,6 +19,7 @@ export const validateBoardForm = (form: BoardFormState): BoardFormErrors => {
   if (form.lastNames.trim().length < 2) errors.lastNames = 'Ingresa los apellidos.'
   if (!BOARD_POSITIONS.includes(form.position as typeof BOARD_POSITIONS[number])) errors.position = 'Selecciona un cargo válido.'
   if (!/^[^\s@]+@uvg\.edu\.gt$/i.test(form.institutionalEmail.trim())) errors.institutionalEmail = 'Usa un correo institucional que termine exactamente en @uvg.edu.gt.'
+  if (!['ACTIVO', 'INACTIVO'].includes(form.status)) errors.status = 'Selecciona un estado válido.'
   if (!form.termStartsAt || !form.termEndsAt) {
     errors.termStartsAt = 'Indica la fecha de inicio del periodo.'
     errors.termEndsAt = 'Indica la fecha final del periodo.'

@@ -327,6 +327,7 @@ const executeConfirmation = async () => {
             ><select
               id="board-position"
               v-model="form.position"
+              required
               :aria-invalid="!!errors.position"
               :aria-describedby="
                 errors.position ? 'board-position-error' : undefined
@@ -349,10 +350,11 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="board-email">Correo institucional</label
+            <label for="board-email">Correo institucional <span class="required-indicator">*</span></label
             ><input
               id="board-email"
               v-model="form.institutionalEmail"
+              required
               type="email"
               autocomplete="email"
               placeholder="nombre@uvg.edu.gt"
@@ -369,10 +371,11 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="board-start">Inicio del periodo</label
+            <label for="board-start">Inicio del periodo <span class="required-indicator">*</span></label
             ><input
               id="board-start"
               v-model="form.termStartsAt"
+              required
               type="date"
               :aria-invalid="!!errors.termStartsAt"
               :aria-describedby="
@@ -387,10 +390,11 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="board-end">Fin del periodo</label
+            <label for="board-end">Fin del periodo <span class="required-indicator">*</span></label
             ><input
               id="board-end"
               v-model="form.termEndsAt"
+              required
               type="date"
               :aria-invalid="!!errors.termEndsAt"
               :aria-describedby="
@@ -414,11 +418,11 @@ const executeConfirmation = async () => {
             />
           </div>
           <div class="field">
-            <label for="board-status">Estado</label
-            ><select id="board-status" v-model="form.status">
+            <label for="board-status">Estado <span class="required-indicator">*</span></label
+            ><select id="board-status" v-model="form.status" required :aria-invalid="!!errors.status" :aria-describedby="errors.status ? 'board-status-error' : undefined">
               <option value="ACTIVO">Publicado</option>
               <option value="INACTIVO">Inactivo</option>
-            </select>
+            </select><span v-if="errors.status" id="board-status-error" class="field-error" role="alert">{{ errors.status }}</span>
           </div>
           <div class="form-actions">
             <AppButton type="submit" :disabled="saving || confirm.loading">{{

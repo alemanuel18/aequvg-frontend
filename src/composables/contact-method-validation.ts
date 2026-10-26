@@ -2,7 +2,7 @@ import type { ContactMethodInput, ContactMethodType } from '~/types/api'
 
 export const CONTACT_METHOD_TYPES: Array<{ value: ContactMethodType; label: string; help: string }> = [
   { value: 'EMAIL', label: 'Correo electrónico', help: 'El primero activo recibirá los mensajes del formulario.' },
-  { value: 'TELEFONO', label: 'Teléfono o WhatsApp', help: 'Puede enlazar a una llamada o conversación.' },
+  { value: 'TELEFONO', label: 'Teléfono o WhatsApp', help: 'Ingresa los 8 dígitos de Guatemala; el enlace para llamar se genera automáticamente.' },
   { value: 'UBICACION', label: 'Ubicación', help: 'Requiere un enlace HTTPS de Google Maps.' },
   { value: 'INSTAGRAM', label: 'Instagram', help: 'Perfil oficial de Instagram.' },
   { value: 'FACEBOOK', label: 'Facebook', help: 'Página oficial de Facebook.' },
@@ -16,7 +16,7 @@ export const validateContactMethod = (input: ContactMethodInput) => {
   if (input.label.trim().length < 2) errors.label = 'Escribe una etiqueta de al menos 2 caracteres.'
   if (value.length < 2) errors.value = 'Escribe el dato que se mostrará públicamente.'
   if (input.type === 'EMAIL' && !/^\S+@\S+\.\S+$/.test(value)) errors.value = 'Escribe un correo válido.'
-  if (input.type === 'TELEFONO' && !/^[+\d][\d\s().-]{6,39}$/.test(value)) errors.value = 'Escribe un teléfono válido.'
+  if (input.type === 'TELEFONO' && !/^\d{8}$/.test(value)) errors.value = 'Ingresa los 8 dígitos del número, sin +502.'
   if (!['EMAIL', 'TELEFONO'].includes(input.type)) {
     try {
       const parsed = new URL(url)
@@ -29,4 +29,10 @@ export const validateContactMethod = (input: ContactMethodInput) => {
     errors.url = 'Escribe un enlace válido o deja el campo vacío.'
   }
   return errors
+}
+
+export const nationalContactPhone = (value: string) => {
+  const compact = value.replace(/[\s().-]/g, '')
+  const national = compact.startsWith('+502') ? compact.slice(4) : compact
+  return /^\d{8}$/.test(national) ? national : value
 }

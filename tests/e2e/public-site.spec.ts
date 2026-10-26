@@ -588,6 +588,31 @@ test('administra noticias con filtros, previsualización y confirmación', async
   await expect(page.locator('.news-item').filter({ hasText: 'Noticia actualizada de prueba' })).toHaveCount(0)
 })
 
+test('crea una categoría de noticias con confirmación y la habilita en los filtros y el editor', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/noticias')
+  await page.getByRole('button', { name: 'Nueva categoría' }).click()
+  await page.getByLabel('Nombre de la categoría').fill('Comunidad')
+  await page.getByRole('button', { name: 'Crear categoría' }).click()
+  await expect(page.getByRole('heading', { name: '¿Crear categoría?' })).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'Crear categoría' }).click()
+  await expect(page.getByText('Se creó la categoría “Comunidad”.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Comunidad (0)' })).toBeVisible()
+  await page.getByRole('button', { name: 'Nueva categoría' }).click()
+  await page.getByLabel('Nombre de la categoría').fill('comunidad')
+  await page.getByRole('button', { name: 'Crear categoría' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Crear categoría' }).click()
+  await expect(page.getByText('Ya existe una categoría de noticias con ese nombre.')).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancelar' }).click()
+  await expect(page.getByRole('dialog')).not.toBeVisible()
+  await page.getByRole('button', { name: 'Cancelar' }).click()
+  await page.getByRole('button', { name: 'Nueva noticia' }).click()
+  await expect(page.locator('#news-category')).toContainText('Comunidad')
+})
+
 test('cerrar sesión invalida acciones posteriores y protege el acceso directo', async ({ page }) => {
   await page.goto('/administrador')
   await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
@@ -647,9 +672,52 @@ test('envía el formulario una vez y anuncia el éxito', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Mensaje', exact: true }).fill('Quisiera conocer más sobre la carrera.')
   await page.getByRole('checkbox').check()
   const button = page.getByRole('button', { name: 'Enviar solicitud' })
-  await button.evaluate((element: HTMLButtonElement) => { element.click(); element.click() })
+  await expect.poll(() => page.locator('.form-card').evaluate((element: HTMLElement & { __vueParentComponent?: { setupState?: { form?: { email?: string; phone?: string } } } }) => element.__vueParentComponent?.setupState?.form)).toMatchObject({ email: 'persona@example.com', phone: '+502 5555-5555' })
+  await button.click()
   await expect(page.getByRole('status')).toContainText('Tu mensaje fue enviado al correo oficial')
   expect(submissions).toBe(1)
+})
+
+test('muestra en rojo los asteriscos de campos obligatorios como elementos', async ({ page }) => {
+  const assertRedMarkers = async () => {
+    const markers = page.locator('.required-indicator')
+    await expect(markers.first()).toBeVisible()
+    const colors = await markers.evaluateAll(elements => elements.map(element => getComputedStyle(element).color))
+    expect(colors.every(color => color === 'rgb(163, 45, 45)')).toBe(true)
+    const looseMarkers = await page.locator('label').evaluateAll(labels => labels.flatMap(label => {
+      const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT)
+      const loose: string[] = []
+      while (walker.nextNode()) {
+        const node = walker.currentNode
+        if (node.textContent?.includes('*') && !(node.parentElement?.closest('.required-indicator'))) {
+          loose.push(label.textContent?.trim() ?? '')
+        }
+      }
+      return loose
+    }))
+    expect(looseMarkers).toEqual([])
+  }
+
+  await page.goto('/contacto')
+  await assertRedMarkers()
+
+  await loginAsStudent(page)
+  await page.goto('/eventos/10')
+  await expect(page.getByRole('heading', { name: 'Inscripción al evento' })).toBeVisible()
+  await assertRedMarkers()
+
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+
+  for (const route of ['/administrador/junta-directiva', '/administrador/contacto', '/administrador/contenido', '/administrador/noticias', '/administrador/eventos', '/administrador/recursos', '/administrador/investigacion']) {
+    await page.goto(route)
+    if (route === '/administrador/contacto') await page.getByLabel('Tipo de medio').selectOption('INSTAGRAM')
+    if (route === '/administrador/contenido') await page.locator('#announcement-action-label').fill('Ver más')
+    await assertRedMarkers()
+  }
 })
 
 test('administra medios oficiales con validación y confirmación', async ({ page }) => {
@@ -681,9 +749,37 @@ test('administra medios oficiales con validación y confirmación', async ({ pag
   await page.getByRole('button', { name: 'Guardar orden' }).click()
   await expect(page.getByText('El orden de los medios se guardó correctamente.')).toBeVisible()
   const labels = await page.locator('.method-item .method-copy strong').allTextContents()
-  expect(labels).toEqual(['Correo oficial', 'YouTube', 'TikTok', 'Campus Central UVG'])
+  expect(labels).toEqual(['Correo oficial', 'TikTok', 'YouTube', 'Instagram', 'Campus Central UVG'])
   await expect(page.getByText(/Orden \d/)).toHaveCount(0)
   await expect(page.getByText('Ubicación fija al final')).toBeVisible()
+})
+
+test('registra teléfonos guatemaltecos y genera el enlace sin solicitarlo', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/contacto')
+
+  await page.getByLabel('Tipo de medio').selectOption('TELEFONO')
+  await expect(page.getByLabel('Número')).toHaveAttribute('type', 'tel')
+  await expect(page.getByText(/sin \+502.*se agregan automáticamente/)).toBeVisible()
+  await expect(page.locator('#method-url')).toHaveCount(0)
+  await page.getByLabel('Nombre público').fill('Teléfono oficial')
+  await page.getByLabel('Número').fill('2368800')
+  await page.getByRole('button', { name: 'Agregar medio' }).click()
+  await expect(page.getByText('Ingresa los 8 dígitos del número, sin +502.')).toBeVisible()
+
+  await page.getByLabel('Número').fill('23688000')
+  await page.getByRole('button', { name: 'Agregar medio' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Agregar medio' }).click()
+  const phoneMethod = page.locator('.method-item').filter({ hasText: 'Teléfono oficial' })
+  await expect(phoneMethod).toContainText('+502 2368 8000')
+  await phoneMethod.getByRole('button', { name: 'Editar' }).click()
+  await expect(page.getByLabel('Número')).toHaveValue('23688000')
+
+  await page.goto('/contacto')
+  await expect(page.getByRole('link', { name: /Llamar ahora/ })).toHaveAttribute('href', 'tel:+50223688000')
 })
 
 test('lista, busca, pagina y muestra estados de noticias', async ({ page }) => {
@@ -923,6 +1019,35 @@ test('la página de inicio muestra el Hero dinámico, la sección Conocer la Lic
   // Valida que los enlaces hacia otras secciones se mantienen íntegros
   await expect(page.getByRole('link', { name: 'Ver todos los eventos →' })).toHaveAttribute('href', '/eventos')
   await expect(page.getByRole('link', { name: 'Ver todas las noticias →' })).toHaveAttribute('href', '/noticias')
+})
+
+test('muestra cuatro recientes por tipo y permite buscar destacados anteriores', async ({ page }) => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill('admin@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await page.goto('/administrador/contenido')
+
+  const events = page.locator('.featured-block').nth(0)
+  const news = page.locator('.featured-block').nth(1)
+  await expect(events.locator('.selectable-card')).toHaveCount(5)
+  await expect(news.locator('.selectable-card')).toHaveCount(5)
+  await expect(events.getByText('Evento reciente 4')).toBeVisible()
+  await expect(news.getByText('Noticia reciente 4')).toBeVisible()
+
+  await page.getByLabel('Buscar evento para destacar').fill('Encuentro histórico')
+  await expect(events.getByText('Encuentro histórico')).toBeVisible()
+  await expect(events.getByText('Taller de Espectrometría UV-Vis')).toBeVisible()
+  await expect(events.getByText('Evento reciente 4')).toHaveCount(0)
+  await expect(news.getByText('Noticia reciente 4')).toBeVisible()
+
+  await page.getByLabel('Buscar noticia para destacar').fill('Investigación histórica')
+  await expect(news.getByText('Investigación histórica')).toBeVisible()
+  await expect(news.getByText('Convocatoria de laboratorio')).toBeVisible()
+  await news.getByText('Investigación histórica').click()
+  await expect(news.locator('.counter-badge')).toContainText('2 / 3')
+  await page.getByLabel('Buscar noticia para destacar').fill('')
+  await expect(news.getByText('Investigación histórica')).toBeVisible()
 })
 
 test('el módulo administrativo de contenido institucional interactúa con modal de confirmación y toasts', async ({ page }) => {

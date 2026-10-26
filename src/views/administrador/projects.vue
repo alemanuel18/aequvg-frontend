@@ -597,7 +597,7 @@ const formatDate = (value: string) =>
       <form novalidate @submit.prevent="save">
         <div class="grid">
           <label
-            >Título *<input
+            >Título <span class="required-indicator">*</span><input
               ref="titleInput"
               v-model="form.title"
               maxlength="220"
@@ -607,7 +607,7 @@ const formatDate = (value: string) =>
               errors.title
             }}</small></label
           ><label
-            >Identificador URL *<input
+            >Identificador URL <span class="required-indicator">*</span><input
               v-model="form.slug"
               maxlength="220"
               :aria-invalid="Boolean(errors.slug)"
@@ -615,7 +615,7 @@ const formatDate = (value: string) =>
               errors.slug
             }}</small></label
           ><label
-            >Tipo *<select v-model="form.type">
+            >Tipo <span class="required-indicator">*</span><select v-model="form.type">
               <option value="PROYECTO">Proyecto</option>
               <option value="TESIS">Tesis</option>
             </select></label
@@ -640,7 +640,7 @@ const formatDate = (value: string) =>
               errors.destination
             }}</small><small class="field-note">Obligatorio completar este campo o adjuntar un PDF.</small></label
           ><label class="span-two"
-            >Descripción *<textarea
+            >Descripción <span class="required-indicator">*</span><textarea
               v-model="form.description"
               rows="5"
               :aria-invalid="Boolean(errors.description)"

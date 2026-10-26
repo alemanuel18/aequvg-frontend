@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateContactMethod } from '../../src/composables/contact-method-validation'
+import { nationalContactPhone, validateContactMethod } from '../../src/composables/contact-method-validation'
 import { contactMethodIcon, sortContactMethods } from '../../src/utils/contact-methods'
 
 describe('validación de medios de contacto', () => {
@@ -22,5 +22,20 @@ describe('validación de medios de contacto', () => {
       { id: 1, type: 'EMAIL' as const, displayOrder: 1 }
     ]
     expect(sortContactMethods(methods).map(method => method.id)).toEqual([1, 2, 3])
+  })
+
+  it('rechaza nombre y valor público vacíos', () => {
+    expect(validateContactMethod({ type: 'EMAIL', label: ' ', value: ' ' })).toMatchObject({
+      label: expect.any(String), value: expect.any(String)
+    })
+  })
+
+  it('exige ocho dígitos nacionales y permite editar números con +502', () => {
+    expect(validateContactMethod({ type: 'TELEFONO', label: 'Teléfono', value: '23688000' })).toEqual({})
+    for (const value of ['2368800', '+50223688000', '2368 8000', '123456789']) {
+      expect(validateContactMethod({ type: 'TELEFONO', label: 'Teléfono', value })).toMatchObject({ value: expect.any(String) })
+    }
+    expect(nationalContactPhone('+502 2368-8000')).toBe('23688000')
+    expect(nationalContactPhone('2368 8000')).toBe('23688000')
   })
 })

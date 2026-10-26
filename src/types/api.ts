@@ -43,7 +43,7 @@ export interface BoardMemberInput {
   termStartsAt: string
   termEndsAt: string
   displayOrder?: number
-  status?: 'ACTIVO' | 'INACTIVO'
+  status: 'ACTIVO' | 'INACTIVO'
 }
 
 export type ContactMethodType = 'EMAIL' | 'TELEFONO' | 'UBICACION' | 'INSTAGRAM' | 'FACEBOOK' | 'OTRO'
@@ -120,6 +120,10 @@ export interface AdminNewsList {
   items: AdminNews[]
   pagination: Pagination
 }
+
+export interface FeaturedNewsCandidate { id: number; title: string; status: ContentStatus; category: { name: string } }
+export interface FeaturedEventCandidate { id: number; name: string; location: string; status: EventStatus }
+export interface FeaturedCandidateList<T> { items: T[]; selected: T[] }
 
 export interface NewsInput {
   categoryId: number
