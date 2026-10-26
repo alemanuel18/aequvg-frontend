@@ -2,6 +2,7 @@
 import { PublicApiError } from '~/services/api'
 import { useStudentCommentsApi } from '~/services/student-comments'
 import type { StudentComment, StudentCommentTargetType } from '~/types/api'
+import { getIdempotencyKey, type PendingIdempotentAttempt } from '~/utils/idempotency'
 
 const props = defineProps<{
   targetType: StudentCommentTargetType
@@ -25,6 +26,7 @@ const postingBlocked = ref(false)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const loginUrl = computed(() => `/acceso?returnTo=${encodeURIComponent(route.fullPath)}`)
 let requestId = 0
+let pendingSubmission: PendingIdempotentAttempt | null = null
 
 const formatDate = (value: string) => new Intl.DateTimeFormat('es-GT', {
   dateStyle: 'medium',
@@ -79,8 +81,11 @@ const submitComment = async () => {
 
   sending.value = true
   submissionError.value = ''
+  const attempt = getIdempotencyKey(pendingSubmission, JSON.stringify([props.targetType, props.targetId, normalizedContent]))
+  pendingSubmission = attempt
   try {
-    await commentsApi.create(props.targetType, props.targetId, normalizedContent, session.csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || '')
+    await commentsApi.create(props.targetType, props.targetId, normalizedContent, session.csrfToken.value || useCookie<string | null>('aequvg_student_csrf').value || '', attempt.key)
+    pendingSubmission = null
     content.value = ''
     page.value = 1
     await loadComments()
