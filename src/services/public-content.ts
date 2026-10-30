@@ -1,23 +1,27 @@
-import type { BoardMember, ContactMethod, ContactRequestInput, EventRegistrationInput, EventRegistrationResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
+import type { BoardMember, ContactMethod, ContactRequestInput, EventCategory, EventRegistrationInput, EventRegistrationResponse, FeaturedContentResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
 import { useApi } from './api'
 
 export const usePublicContentService = () => {
   const api = useApi()
   return {
     institutionalContent: () => api<InstitutionalBlock[]>('/institutional-content'),
+    featuredContent: () => api<FeaturedContentResponse>('/institutional-content/featured'),
     boardMembers: () => api<BoardMember[]>('/board-members'),
     contactMethods: () => api<ContactMethod[]>('/contact-methods'),
     news: (query: PublicNewsQuery = {}) => api<PublicNewsList>('/news', { query }),
     newsCategories: () => api<NewsCategory[]>('/news/categories'),
     newsById: (id: number) => api<PublicNews>(`/news/${id}`),
     events: (query: PublicEventQuery = {}) => api<PublicEventList>('/events', { query }),
+    eventCategories: () => api<EventCategory[]>('/events/categories'),
     eventById: (id: number) => api<PublicEvent>(`/events/${id}`),
-    registerForEvent: (eventId: number, body: EventRegistrationInput) =>
-      api<EventRegistrationResponse>(`/events/${eventId}/registrations`, { method: 'POST', body }),
+    registerForEvent: (eventId: number, body: EventRegistrationInput, csrfToken: string) =>
+      api<EventRegistrationResponse>(`/events/${eventId}/registrations`, {
+        method: 'POST', body, credentials: 'include', headers: { 'x-csrf-token': csrfToken }
+      }),
     projects: (query: PublicProjectQuery = {}) => api<PublicProjectList>('/projects', { query }),
     projectById: (id: number) => api<PublicProject>(`/projects/${id}`),
     resources: (query: PublicResourceQuery = {}) => api<PublicResourceList>('/resources', { query }),
     resourceCategories: () => api<ResourceCategory[]>('/resources/categories'),
-    sendContactRequest: (body: ContactRequestInput) => api<{ id: number; status: string; sentAt: string }>('/contact-requests', { method: 'POST', body })
+    sendContactRequest: (body: ContactRequestInput) => api<{ accepted: true }>('/contact-requests', { method: 'POST', body })
   }
 }

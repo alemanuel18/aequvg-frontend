@@ -6,16 +6,157 @@ export interface InstitutionalBlock {
   actionLabel: string | null; actionUrl: string | null; displayOrder: number; status: ContentStatus
 }
 
-export interface BoardMember {
-  id: number; name: string; position: string; description: string | null; institutionalEmail: string; term: string
-  termStartsAt: string | null; termEndsAt: string | null; displayOrder: number; status: 'ACTIVO' | 'INACTIVO'
+export interface BlockInput {
+  type: BlockType
+  title: string
+  subtitle?: string | null
+  body: string
+  imageUrl?: string | null
+  actionLabel?: string | null
+  actionUrl?: string | null
+  displayOrder?: number
+  status?: ContentStatus
 }
 
-export interface ContactMethod { id: number; type: 'EMAIL' | 'TELEFONO' | 'UBICACION' | 'INSTAGRAM' | 'FACEBOOK' | 'OTRO'; label: string; value: string; url: string | null; displayOrder: number }
+export interface FeaturedContentResponse {
+  news: PublicNews[]
+  events: PublicEvent[]
+}
 
-export interface ContactRequestInput { name: string; email: string; phone: string; type: 'CONSULTA' | 'REUNION'; subject: string; message: string; preferredAt?: string | null; consent: true; privacyVersion: string; website?: string }
+export interface AdminFeaturedResponse {
+  newsIds: number[]
+  eventIds: number[]
+}
+
+export interface BoardMember {
+  id: number; photoId: number | null; name: string; firstNames: string; lastNames: string; position: string; description: string | null; institutionalEmail: string; term: string
+  termStartsAt: string | null; termEndsAt: string | null; displayOrder: number; status: 'ACTIVO' | 'INACTIVO'
+  photo: { id: number; originalName: string; mimeType: string } | null
+}
+
+export interface BoardMemberInput {
+  firstNames: string
+  lastNames: string
+  position: string
+  description?: string | null
+  institutionalEmail: string
+  termStartsAt: string
+  termEndsAt: string
+  displayOrder?: number
+  status: 'ACTIVO' | 'INACTIVO'
+}
+
+export type ContactMethodType = 'EMAIL' | 'TELEFONO' | 'UBICACION' | 'INSTAGRAM' | 'FACEBOOK' | 'OTRO'
+export interface ContactMethod { id: number; type: ContactMethodType; label: string; value: string; url: string | null; displayOrder: number; active: boolean }
+export interface ContactMethodInput { type: ContactMethodType; label: string; value: string; url?: string | null; displayOrder?: number; active?: boolean }
+
+export interface ContactRequestInput { firstNames: string; lastNames: string; email: string; phone: string; type: 'CONSULTA' | 'REUNION'; subject: string; message: string; preferredAt?: string | null; consent: true; privacyVersion: string; website?: string }
 
 export interface ApiError { error?: { code?: string; message?: string; details?: Record<string, string> } }
+
+export interface AdminUser {
+  id: number
+  name: string
+  firstNames: string
+  lastNames: string
+  email: string
+  status: string
+  role: string
+  permissions: string[]
+}
+
+export interface AdminSessionResponse {
+  user: AdminUser
+  csrfToken?: string
+  expiresAt?: string
+}
+
+export interface AdminLoginInput {
+  email: string
+  password: string
+}
+
+export type StudentAccountStatus = 'ACTIVO' | 'BLOQUEADO_TEMPORAL' | 'BLOQUEADO_PERMANENTE' | 'ELIMINADO'
+export interface StudentUser {
+  id: number
+  name: string
+  firstNames: string
+  lastNames: string
+  email: string
+  isStudent: true
+  status: StudentAccountStatus
+  role: 'STUDENT'
+}
+export type StudentAdminStatusHistory = {
+  id: number
+  fromStatus: StudentAccountStatus
+  toStatus: StudentAccountStatus
+  reason: string
+  blockedUntil: string | null
+  reviewChannel: string | null
+  createdAt: string
+  actor: { id: number; name: string } | null
+}
+export interface ManagedStudentAccount {
+  id: number; name: string; firstNames: string; lastNames: string; email: string
+  isStudent: boolean; status: StudentAccountStatus; blockedUntil: string | null; reviewChannel: string | null
+  deletedAt: string | null; createdAt: string; updatedAt: string
+}
+export interface ManagedStudentAccountDetail extends ManagedStudentAccount {
+  statusHistory: StudentAdminStatusHistory[]
+}
+export interface ManagedStudentAccountList {
+  items: ManagedStudentAccount[]
+  pagination: Pagination
+}
+export interface StudentSessionResponse {
+  user: StudentUser
+  csrfToken?: string
+  expiresAt?: string
+}
+export type StudentCommentTargetType = 'NOTICIA' | 'PROYECTO' | 'EVENTO'
+export interface StudentComment {
+  id: number
+  targetType: StudentCommentTargetType
+  targetId: number
+  content: string
+  authorName: string
+  createdAt: string
+}
+export interface StudentCommentList {
+  items: StudentComment[]
+  page: number
+  pageSize: number
+  total: number
+}
+export type StudentCommentRevisionAction = 'EDIT' | 'DELETE'
+export interface StudentCommentRevision {
+  id: number
+  commentId: number
+  targetType: StudentCommentTargetType
+  targetId: number
+  action: StudentCommentRevisionAction
+  previousContent: string
+  nextContent: string | null
+  actorName: string
+  changedAt: string
+}
+export interface StudentCommentRevisionList {
+  items: StudentCommentRevision[]
+  page: number
+  pageSize: number
+  total: number
+}
+export interface StudentLoginInput { email: string; password: string }
+export interface StudentRegistrationInput extends StudentLoginInput { firstNames: string; lastNames: string; isStudent: true }
+
+export type AdminAccountStatus = 'ACTIVO' | 'INACTIVO' | 'BLOQUEADO'
+export interface AdminRole { id: number; name: string; description: string | null; permissions: string[] }
+export interface ManagedAdminUser {
+  id: number; name: string; firstNames: string; lastNames: string; email: string; status: AdminAccountStatus; role: { id: number; name: string }
+  authenticationProviders: Array<'PASSWORD' | 'MICROSOFT'>; createdAt: string; updatedAt: string
+}
+export interface AdminRegistrationRequest { id: number; name: string; firstNames: string; lastNames: string; email: string; status: 'PENDIENTE'; createdAt: string }
 
 export interface NewsCategory { id: number; name: string; active?: boolean }
 
@@ -26,20 +167,55 @@ export interface PublicNews {
   createdBy: { id: number; name: string }
 }
 
+export interface AdminNews extends Omit<PublicNews, 'status'> {
+  status: ContentStatus
+}
+
+export interface AdminNewsList {
+  items: AdminNews[]
+  pagination: Pagination
+}
+
+export interface FeaturedNewsCandidate { id: number; title: string; status: ContentStatus; category: { name: string } }
+export interface FeaturedEventCandidate { id: number; name: string; location: string; status: EventStatus }
+export interface FeaturedCandidateList<T> { items: T[]; selected: T[] }
+
+export interface NewsInput {
+  categoryId: number
+  imageId?: number | null
+  title: string
+  summary: string
+  content: string
+  status?: ContentStatus
+  publishedAt?: string | null
+}
+
 export interface Pagination { page: number; pageSize: number; total: number }
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }
 export interface PublicNewsQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
 
 export interface ResourceCategory { id: number; name: string; active?: boolean }
 export interface ResourceFile { id: number; originalName: string; mimeType: string; downloadUrl?: string | null }
+export interface AdminFile { id: number; uploadedById: number; originalName: string; mimeType: string; sizeBytes: number; sha256: string; createdAt: string }
 export interface ResourceLink { id: number; label: string; url: string; displayOrder: number }
 export interface PublicResource {
   id: number; categoryId: number; fileId: number | null; title: string; description: string; status: 'PUBLICADO'
-  createdAt: string; publishedAt: string | null; category: ResourceCategory; file: ResourceFile | null; links: ResourceLink[]
+  createdAt: string; updatedAt?: string; publishedAt: string | null; category: ResourceCategory; file: ResourceFile | null; links: ResourceLink[]
   createdBy: { id: number; name: string }
 }
 export interface PublicResourceList { items: PublicResource[]; pagination: Pagination }
 export interface PublicResourceQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
+export interface AdminResource extends Omit<PublicResource, 'status'> { status: ContentStatus }
+export interface AdminResourceList { items: AdminResource[]; pagination: Pagination }
+export interface ResourceInput {
+  categoryId: number
+  fileId?: number | null
+  title: string
+  description: string
+  status?: ContentStatus
+  publishedAt?: string | null
+  links?: Array<{ label: string; url: string; displayOrder?: number }>
+}
 
 export interface PublicEvent {
   id: number
@@ -51,12 +227,62 @@ export interface PublicEvent {
   availableCapacity: number
   additionalInformation: string | null
   status: 'PUBLICADO'
+  category: EventCategory | null
   image: { id: number; originalName: string; mimeType: string } | null
 }
 
 export interface PublicEventList {
   items: PublicEvent[]
   pagination: Pagination
+}
+
+export type EventStatus = 'BORRADOR' | 'PUBLICADO' | 'FINALIZADO' | 'CANCELADO' | 'ARCHIVADO'
+export interface EventCategory { id: number; name: string }
+export interface AdminEvent extends Omit<PublicEvent, 'status' | 'availableCapacity'> {
+  createdById: number
+  imageId: number | null
+  categoryId: number | null
+  status: EventStatus
+  createdAt: string
+  createdBy: { id: number; name: string }
+}
+export interface AdminEventList { items: AdminEvent[]; pagination: Pagination }
+export type EventRegistrationStatus = 'CONFIRMADA' | 'CANCELADA'
+export interface StudentEventRegistration {
+  id: number
+  status: EventRegistrationStatus
+  registeredAt: string
+  event: {
+    id: number
+    name: string
+    startsAt: string
+    location: string
+    status: EventStatus
+  }
+}
+export interface StudentEventRegistrationList {
+  items: StudentEventRegistration[]
+  pagination: Pagination
+}
+export interface AdminEventRegistration {
+  id: number
+  fullName: string
+  email: string
+  phone: string
+  status: EventRegistrationStatus
+  registeredAt: string
+}
+export interface AdminEventRegistrationList { items: AdminEventRegistration[]; pagination: Pagination }
+export interface EventInput {
+  imageId?: number | null
+  categoryId?: number | null
+  name: string
+  description: string
+  startsAt: string
+  location: string
+  maximumCapacity: number
+  additionalInformation?: string | null
+  status?: EventStatus
 }
 
 export interface PublicEventQuery {
@@ -66,7 +292,8 @@ export interface PublicEventQuery {
 }
 
 export interface EventRegistrationInput {
-  fullName: string
+  firstNames: string
+  lastNames: string
   email: string
   phone: string
   consent: true
@@ -82,6 +309,17 @@ export interface EventRegistrationResponse {
 }
 
 export type ProjectType = 'TESIS' | 'PROYECTO'
+export type ProjectStatus = 'EN_REVISION' | 'APROBADO' | 'NO_APROBADO'
+export interface AdminProject {
+  id: number; authorId: number; reviewerId: number | null; coverImageId: number | null; documentFileId: number | null
+  title: string; slug: string; description: string; repositoryUrl: string | null; liveUrl: string | null
+  type: ProjectType; status: ProjectStatus; rejectionReason: string | null; reviewedAt: string | null; createdAt: string; updatedAt: string
+  author: { id: number; name: string; email: string }; reviewer: { id: number; name: string } | null
+  documentFile: { id: number; originalName: string; mimeType: string; sizeBytes: number } | null
+}
+export interface AdminProjectList { items: AdminProject[]; pagination: Pagination }
+export interface ProjectInput { title: string; slug: string; description: string; type: ProjectType; repositoryUrl?: string; liveUrl?: string; documentFileId?: number | null }
+export interface ProjectAdminQuery { q?: string; status?: ProjectStatus; type?: ProjectType; page?: number; pageSize?: number }
 
 export interface PublicProject {
   id: number

@@ -43,6 +43,34 @@ tests/
 
 Las páginas consumen `src/services/api.ts`; no contienen URLs duplicadas. Ese servicio selecciona la URL correcta para navegador o SSR y normaliza errores. La identidad visual está centralizada en `src/assets/styles/main.css`.
 
+## Junta Directiva
+
+La ruta pública `/junta-directiva` muestra por defecto el año más reciente y permite consultar años anteriores. Los integrantes aparecen en cada año comprendido entre el inicio y el fin de su periodo. `/administrador/junta-directiva` requiere sesión y `BOARD_MANAGE`; permite agregar, editar, ordenar con flechas y retirar integrantes con nombre, cargo seleccionado de un catálogo, correo institucional, fechas de periodo y estado. La fotografía queda fuera del formulario actual. Todas las mutaciones requieren confirmación, anuncian éxito o error mediante toast, bloquean envíos repetidos y conservan foco y diseño utilizable desde 320 px.
+
+## Acceso administrativo y proyectos
+
+El inicio de sesión está en `/administrador`; el panel muestra los módulos habilitados por los permisos de la sesión. La gestión de proyectos está en `/administrador/proyectos` y requiere `PROJECTS_MANAGE`. La guía API del backend describe permisos, contratos y casos: [`admin-access-flow.md`](../aequvg-backend/docs/admin-access-flow.md) y [`projects-admin-flow.md`](../aequvg-backend/docs/projects-admin-flow.md).
+
+En `/administrador/usuarios` se mantienen por separado las cuentas administrativas y se administran las cuentas normales de estudiantes/interesados: búsqueda, filtros, paginación, detalle, historial, bloqueo temporal/permanente, desbloqueo y baja confirmada con motivo. La baja conserva las inscripciones de eventos y las anonimiza; los comentarios conservan contenido y quedan desvinculados públicamente de la identidad. Las pantallas frontend de solicitud de alta administrativa, recuperación/restablecimiento y acceso Microsoft no están implementadas. Consultar los contratos y evidencia en [`student-access-flow.md`](../aequvg-backend/docs/student-access-flow.md) y [`admin-flows-evidence.md`](../aequvg-backend/docs/admin-flows-evidence.md).
+
+## Acceso de estudiantes
+
+El acceso estudiantil vive dentro del portal público y está separado del administrativo:
+
+- `/acceso` inicia sesión con una cuenta de estudiante.
+- `/registro` crea cuentas únicamente para estudiantes actuales de UVG; solicita nombres y apellidos por separado, exige correo `@uvg.edu.gt`, contraseña robusta y confirmación de la condición estudiantil. No contempla aspirantes.
+- `/mi-cuenta` es el panel personal: permite editar nombres y apellidos, consultar el correo institucional como solo lectura, cerrar sesión y eliminar la cuenta mediante revalidación.
+- `Mis eventos` consulta únicamente el historial propio. Permite filtrar `Todos`, `CONFIRMADA` y `CANCELADA`, recorrer páginas y presenta estados de carga, vacío, error y reintento. Muestra evento, fecha, ubicación, estado y fecha de inscripción, sin PII de la inscripción; una sesión expirada requiere volver a iniciar sesión.
+- `Mis comentarios` consulta el endpoint estudiantil paginado, enlaza al destino original y permite editar o retirar comentarios propios. Cada edición vuelve a pasar por moderación; el historial de versiones y retiros queda disponible solo en el módulo administrativo. Los comentarios públicos se muestran en noticias, investigaciones y eventos, con formulario disponible solo para sesiones estudiantiles activas.
+
+### Eliminar mi cuenta
+
+La acción requiere confirmación explícita y revalidación de email y contraseña con sesión y CSRF. La cuenta queda eliminada lógicamente: los datos personales se anonimizan, las credenciales y sesiones dejan de funcionar, y la actividad histórica necesaria puede conservarse desvinculada públicamente de la identidad. No implica borrar físicamente todas las inscripciones o comentarios. Después de una respuesta exitosa, el frontend limpia la sesión y redirige a `/`; una sesión inválida requiere volver a `/acceso`.
+
+Sin sesión, la esquina derecha del navbar muestra `Ingresar / Registrarse`; con sesión muestra una foto de perfil genérica enlazada al panel personal. Registro e inicio correctos redirigen a `/mi-cuenta`. Un bloqueo temporal presenta su fecha de finalización y uno permanente presenta el canal de revisión enviado por la API.
+
+El frontend no envía roles ni calcula permisos. Las cookies estudiantiles son independientes de las administrativas y las credenciales nunca se guardan en `localStorage` o `sessionStorage`. El contrato completo, los estados de cuenta y la matriz de acceso están en [`student-access-flow.md`](../aequvg-backend/docs/student-access-flow.md).
+
 ## Variables de entorno
 
 ```bash
@@ -67,7 +95,7 @@ El Compose del frontend no levanta PostgreSQL ni el backend. Inícialos primero 
 ### 1. Iniciar el backend
 
 ```bash
-cd ../../Back/aequvg-backend
+cd ../aequvg-backend
 cp .env.example .env
 docker compose up --build -d
 docker compose exec backend bun run migrate:deploy
@@ -183,25 +211,33 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 
 La imagen utiliza un usuario sin privilegios, healthcheck y rotación local de logs. Antes de publicar todavía deben definirse dominio, TLS/proxy inverso, observabilidad centralizada y la infraestructura definitiva del backend.
 
+## Flujo de contacto
+
+La página `/contacto` consulta los medios activos, muestra iconos según el canal y representa la ubicación con un mapa de Google Maps al final de los demás medios. El mismo catálogo ordenado alimenta el footer; no hay correos, teléfonos o direcciones fijos en componentes. Las redes nuevas se agregan como `OTRO`: TikTok, YouTube, LinkedIn y X reciben un icono reconocido por etiqueta/URL, y cualquier otra usa un icono de enlace seguro.
+
+`/administrador/contacto` requiere sesión y permiso `CONTACT_MANAGE`. Ofrece estados de carga, vacío y error, formulario con validaciones visibles, confirmación antes de cada escritura, toasts de resultado y edición/reactivación de medios inactivos. El orden numérico no se expone: los medios se acomodan con flechas y un botón guarda la secuencia completa, mientras que las ubicaciones permanecen fijas al final. El primer correo `EMAIL` activo de la lista se identifica como destinatario del formulario. No existe pantalla ni bandeja de solicitudes.
+
+El formulario público conserva consentimiento, honeypot y validación local; bloquea envíos repetidos mientras la petición está en curso. El backend responde `202` después de que el proveedor acepta el correo. Una falla de entrega se anuncia sin limpiar el formulario.
+
 ## Seed y datos mostrados
 
 El frontend no guarda datos ni posee un seed independiente. Inicio, junta y contacto consultan la API. Los datos iniciales se administran en:
 
 ```text
-Back/aequvg-backend/prisma/seed.ts
+../aequvg-backend/prisma/seed.ts
 ```
 
 Con Docker:
 
 ```bash
-cd ../../Back/aequvg-backend
+cd ../aequvg-backend
 docker compose exec backend bun run db:seed
 ```
 
 Sin Docker:
 
 ```bash
-cd ../../Back/aequvg-backend
+cd ../aequvg-backend
 bun run db:seed
 ```
 
@@ -236,10 +272,59 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/` | Inicio y contenido institucional conectado a la API. |
 | `/junta-directiva` | Integrantes activos conectados a la API. |
 | `/contacto` | Medios y formulario conectados a la API. |
-| `/noticias` | Navegación lista; contenido en desarrollo. |
-| `/eventos` | Conectado a la API: listado, detalle, disponibilidad e inscripción pública. |
+| `/noticias` | Listado y detalle público de noticias publicadas. |
+| `/eventos` | Listado, detalle y disponibilidad públicos; la inscripción solicita una sesión estudiantil. |
 | `/recursos` | Catálogo público de recursos con categorías, búsqueda, paginación, enlaces y materiales disponibles. |
 | `/investigacion` | Navegación lista; contenido en desarrollo. |
+| `/acceso` | Inicio de sesión para estudiantes de UVG. |
+| `/registro` | Alta de estudiantes actuales con correo institucional. |
+| `/mi-cuenta` | Panel protegido para editar el perfil, consultar Mis eventos, gestionar comentarios y eliminar la cuenta. |
+| `/administrador` | Inicio de sesión para cuentas administrativas autorizadas. |
+| `/administrador/panel` | Inicio protegido del panel y acceso a los módulos permitidos para la cuenta. |
+| `/administrador/usuarios` | Solicitudes y cuentas administrativas, además de listado paginado, filtros, historial y acciones para estudiantes e interesados. Requiere `USERS_MANAGE`. |
+| `/administrador/recursos` | Listado y formulario administrativo de recursos; requiere `RESOURCES_MANAGE`. |
+| `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
+| `/administrador/eventos` | Gestión de eventos: listado, búsqueda, filtros, creación, edición, archivado y eliminación confirmada. Requiere `EVENTS_MANAGE`. |
+| `/administrador/investigacion` | Gestión de proyectos de investigación: búsqueda, filtros, paginación, formulario con PDF, detalle, edición, revisión y eliminación confirmada. Requiere `PROJECTS_MANAGE`. |
+| `/administrador/contenido` | Gestión del Hero, anuncios institucionales y destacados. Requiere `INSTITUTIONAL_MANAGE`. |
+
+### Acceso al panel administrativo
+
+El acceso administrativo se mantiene separado de la navegación pública y no aparece en el encabezado ni en el pie del sitio. En desarrollo, abre directamente:
+
+```text
+http://localhost:3001/administrador
+```
+
+Inicia sesión con una cuenta institucional activa creada en el backend. Después de validar la sesión, el frontend redirige a `/administrador/panel`; si se intenta abrir directamente una ruta protegida sin sesión, se vuelve a `/administrador` y se conserva el destino solicitado.
+
+Los módulos visibles dependen de los permisos devueltos por el backend. Las credenciales, sesiones y permisos no se configuran ni se almacenan en el frontend.
+
+### Uso administrativo de recursos
+
+En `/administrador/recursos`, el listado permite buscar, filtrar por categoría o estado y editar, archivar o eliminar recursos con confirmación. El formulario valida de forma visible título, descripción, categoría, destino y enlaces. La selección de un PDF, DOC, DOCX o ZIP inicia la carga multipart y completa el `fileId`; no se envían binarios dentro del JSON del recurso. La edición puede sustituir el archivo y reemplazar los enlaces. Durante carga y guardado se deshabilitan las acciones para evitar envíos duplicados.
+
+Los estados de carga, vacío, error y éxito se muestran en la misma vista. Los controles tienen etiquetas accesibles, foco visible y orden navegable por teclado; el diseño se adapta desde 320 px. La autorización definitiva permanece en el backend: el frontend oculta módulos sin permiso, pero una llamada directa no autorizada debe ser rechazada por la API.
+
+### Flujo de anuncios y noticias
+
+En `/administrador/noticias`, una persona autorizada puede buscar por texto, categoría y estado; crear categorías nuevas; crear o editar una noticia con resumen, contenido e imagen asociada por `imageId`; previsualizarla; cambiar su estado y confirmar su eliminación. La creación de categorías también requiere confirmación y el permiso `NEWS_MANAGE`. El frontend muestra validaciones visibles, estados de carga/vacío/error/éxito y evita envíos duplicados, pero el backend sigue siendo la autoridad para permisos, categorías, imágenes y publicación.
+
+En `/administrador/contenido`, el permiso `INSTITUTIONAL_MANAGE` habilita la edición del Hero, anuncios de cuatro categorías y destacados de inicio. El límite de anuncios es global: máximo tres activos publicados, sin importar la categoría. Las imágenes de anuncios usan `imageUrl` HTTP/HTTPS; un borrador no ocupa el cupo público.
+
+### Uso administrativo de eventos
+
+En `/administrador/eventos`, una cuenta con `EVENTS_MANAGE` puede consultar el listado, buscar por texto, filtrar por estado y administrar la paginación. El formulario permite crear y editar eventos con confirmación, mientras que archivar realiza un retiro lógico y eliminar realiza un borrado físico. La eliminación es rechazada con `EVENT_HAS_REGISTRATIONS` cuando el evento tiene participantes; en ese caso debe archivarse.
+
+En `/administrador/investigacion`, una cuenta con `PROJECTS_MANAGE` puede buscar por título, descripción o autoría, filtrar por estado/tipo y paginar. La junta directiva registra título, slug, descripción, tipo, enlaces y PDF (hasta 25 MB); el backend atribuye el proyecto a la cuenta administrativa y lo crea en `EN_REVISION`. No hay envío por estudiantes. Los estados disponibles son `EN_REVISION`, `APROBADO` y `NO_APROBADO`; el detalle refleja revisor y motivo de rechazo. La carga y consulta del PDF requieren `PROJECTS_MANAGE`. Crear, editar y eliminar piden confirmación y anuncian el resultado con toast.
+
+La acción `Participantes` abre la consulta administrativa del evento seleccionado. Permite buscar por nombre, correo o teléfono, filtrar por estado (`CONFIRMADA` o `CANCELADA`) y recorrer los resultados mediante paginación. Una cuenta autorizada puede ver nombre, correo, teléfono, estado y fecha de inscripción; estos datos se consultan bajo demanda, permanecen solo en memoria mientras el panel está abierto y se limpian al cerrar o cambiar de evento.
+
+La capacidad máxima puede ajustarse desde el formulario de edición. El backend rechaza con `CAPACITY_BELOW_REGISTRATIONS` cualquier reducción por debajo de las inscripciones confirmadas. El panel no permite editar, cancelar, reactivar ni exportar participantes, y no calcula una disponibilidad administrativa desde páginas parciales.
+
+Al editar, las imágenes existentes se conservan. El formulario todavía no permite cargar imágenes nuevas porque no existe un flujo de archivos compatible con `EVENTS_MANAGE`.
+
+Para el contrato HTTP, ejemplos, matriz de permisos, casos de prueba y resultados reproducibles consulta [`aequvg-backend/docs/admin-news-institutional-flow.md`](../aequvg-backend/docs/admin-news-institutional-flow.md). Las credenciales, cookies y tokens nunca deben incluirse en la evidencia.
 
 ## Solución de problemas
 

@@ -1,8 +1,32 @@
 <script setup lang="ts">
 defineProps<{
-  name: 'arrow-up-right' | 'atom' | 'facebook' | 'flask' | 'graduation-cap' | 'instagram' | 'link' | 'mail' | 'map-pin' | 'messages' | 'phone' | 'send'
-  size?: number
-}>()
+  name:
+    | "arrow-up-right"
+    | "atom"
+    | "calendar"
+    | "dashboard"
+    | "facebook"
+    | "file-text"
+    | "flask"
+    | "folder"
+    | "graduation-cap"
+    | "instagram"
+    | "link"
+    | "linkedin"
+    | "log-out"
+    | "mail"
+    | "map-pin"
+    | "menu"
+    | "messages"
+    | "newspaper"
+    | "phone"
+    | "send"
+    | "tiktok"
+    | "users"
+    | "x"
+    | "youtube";
+  size?: number;
+}>();
 </script>
 
 <template>
@@ -26,7 +50,9 @@ defineProps<{
     </template>
     <template v-else-if="name === 'flask'">
       <path d="M9 3h6" />
-      <path d="M10 3v6l-5.4 8.2A2.5 2.5 0 0 0 6.7 21h10.6a2.5 2.5 0 0 0 2.1-3.8L14 9V3" />
+      <path
+        d="M10 3v6l-5.4 8.2A2.5 2.5 0 0 0 6.7 21h10.6a2.5 2.5 0 0 0 2.1-3.8L14 9V3"
+      />
       <path d="M7.5 15h9" />
     </template>
     <template v-else-if="name === 'graduation-cap'">
@@ -35,7 +61,9 @@ defineProps<{
       <path d="M22 9v6" />
     </template>
     <template v-else-if="name === 'messages'">
-      <path d="M20 12a7 7 0 0 1-7 7H8l-4 3v-6a7 7 0 0 1-1-4 7 7 0 0 1 7-7h3a7 7 0 0 1 7 7Z" />
+      <path
+        d="M20 12a7 7 0 0 1-7 7H8l-4 3v-6a7 7 0 0 1-1-4 7 7 0 0 1 7-7h3a7 7 0 0 1 7 7Z"
+      />
       <path d="M8 12h.01M12 12h.01M16 12h.01" />
     </template>
     <template v-else-if="name === 'mail'">
@@ -43,7 +71,9 @@ defineProps<{
       <path d="m3 7 9 6 9-6" />
     </template>
     <template v-else-if="name === 'phone'">
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z" />
+      <path
+        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z"
+      />
     </template>
     <template v-else-if="name === 'map-pin'">
       <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
@@ -55,11 +85,65 @@ defineProps<{
       <circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none" />
     </template>
     <template v-else-if="name === 'facebook'">
-      <path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2.2-2H18V1.5c-.8-.1-1.7-.2-2.5-.2-3.1 0-5.5 1.9-5.5 5.5V9H7v4h3v8" />
+      <path
+        d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2.2-2H18V1.5c-.8-.1-1.7-.2-2.5-.2-3.1 0-5.5 1.9-5.5 5.5V9H7v4h3v8"
+      />
+    </template>
+    <template v-else-if="name === 'youtube'">
+      <path
+        d="M22 12s0-4-1-6c-.6-1.1-1.5-1.4-2.6-1.5C16.6 4.2 12 4.2 12 4.2s-4.6 0-6.4.3C4.5 4.6 3.6 4.9 3 6c-1 2-1 6-1 6s0 4 1 6c.6 1.1 1.5 1.4 2.6 1.5 1.8.3 6.4.3 6.4.3s4.6 0 6.4-.3c1.1-.1 2-.4 2.6-1.5 1-2 1-6 1-6Z"
+      />
+      <path d="m10 9 5 3-5 3Z" />
+    </template>
+    <template v-else-if="name === 'linkedin'">
+      <rect x="3" y="9" width="4" height="12" />
+      <circle cx="5" cy="5" r="2" />
+      <path d="M11 21V9h4v2c1-1.5 6-2.4 6 4v6h-4v-5c0-3-2-3-2 0v5Z" />
+    </template>
+    <template v-else-if="name === 'x'">
+      <path d="M4 4l16 16M20 4 4 20" />
+    </template>
+    <template v-else-if="name === 'tiktok'">
+      <path d="M14 3v11.5a4.5 4.5 0 1 1-4.5-4.5" />
+      <path d="M14 3c.8 3.3 2.6 5 6 5" />
     </template>
     <template v-else-if="name === 'send'">
       <path d="m22 2-7 20-4-9-9-4Z" />
       <path d="M22 2 11 13" />
+    </template>
+    <template v-else-if="name === 'dashboard'">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </template>
+    <template v-else-if="name === 'calendar'">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4M8 3v4M3 10h18" />
+    </template>
+    <template v-else-if="name === 'file-text'">
+      <path d="M6 2h8l4 4v16H6Z" />
+      <path d="M14 2v5h5M9 13h6M9 17h6" />
+    </template>
+    <template v-else-if="name === 'folder'">
+      <path d="M3 6h7l2 2h9v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+    </template>
+    <template v-else-if="name === 'newspaper'">
+      <path d="M4 4h14v16H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+      <path d="M18 8h4v10a2 2 0 0 1-2 2h-2M7 8h8M7 12h3M12 12h3M7 16h8" />
+    </template>
+    <template v-else-if="name === 'users'">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </template>
+    <template v-else-if="name === 'menu'">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </template>
+    <template v-else-if="name === 'log-out'">
+      <path
+        d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+      />
     </template>
     <template v-else-if="name === 'arrow-up-right'">
       <path d="M7 17 17 7" />
