@@ -59,23 +59,25 @@ const visibleMembers = computed(() =>
         <button @click="() => refresh()">Reintentar</button>
       </StatePanel>
       <template v-else-if="members.length">
-        <div class="term-selector">
-          <label for="board-term">Periodo de la Junta Directiva</label>
-          <select
-            id="board-term"
-            v-model.number="selectedYear"
-            :disabled="!ready"
-          >
-            <option v-for="year in years" :key="year" :value="year">
-              {{ year }}
-            </option>
-          </select>
+        <div class="board-toolbar">
+          <div class="term-selector">
+            <label for="board-term">Periodo de la Junta Directiva</label>
+            <select
+              id="board-term"
+              v-model.number="selectedYear"
+              :disabled="!ready"
+            >
+              <option v-for="year in years" :key="year" :value="year">
+                {{ year }}
+              </option>
+            </select>
+          </div>
+          <p class="term-summary" role="status">
+            {{ visibleMembers.length }}
+            {{ visibleMembers.length === 1 ? "integrante" : "integrantes" }}
+            publicados para {{ selectedYear }}.
+          </p>
         </div>
-        <p class="term-summary" role="status">
-          Mostrando {{ visibleMembers.length }}
-          {{ visibleMembers.length === 1 ? "integrante" : "integrantes" }} con
-          periodo vigente durante {{ selectedYear }}.
-        </p>
         <div class="member-grid">
           <BoardMemberCard
             v-for="member in visibleMembers"
@@ -103,7 +105,6 @@ const visibleMembers = computed(() =>
   display: grid;
   width: min(24rem, 100%);
   gap: 0.4rem;
-  margin-bottom: 0.75rem;
 }
 .term-selector label {
   font-weight: 800;
@@ -117,8 +118,19 @@ const visibleMembers = computed(() =>
   border-radius: var(--radius-sm);
 }
 .term-summary {
-  margin-bottom: 1.25rem;
+  align-self: end;
+  margin: 0;
   color: var(--color-muted);
+  font-size: 0.92rem;
+}
+.board-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 @media (max-width: 900px) {
@@ -128,6 +140,10 @@ const visibleMembers = computed(() =>
 }
 
 @media (max-width: 620px) {
+  .board-toolbar {
+    display: grid;
+    gap: 0.75rem;
+  }
   .member-grid {
     grid-template-columns: 1fr;
   }
