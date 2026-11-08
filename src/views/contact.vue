@@ -35,7 +35,7 @@ const nonLocationMethods = computed(() =>
         <section aria-labelledby="contact-methods-title">
           <h2 id="contact-methods-title" class="sr-only">Medios oficiales</h2>
           <div v-if="methods.length" class="contact-methods-stack">
-            <div v-if="nonLocationMethods.length" class="contact-methods">
+            <div v-if="nonLocationMethods.length" class="contact-methods" :class="`contact-methods--count-${nonLocationMethods.length}`">
               <ContactMethodCard
                 v-for="method in nonLocationMethods"
                 :key="method.id"
@@ -93,6 +93,9 @@ const nonLocationMethods = computed(() =>
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.5rem;
 }
+.contact-methods--count-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .contact-methods-stack {
   display: grid;
   gap: 1.5rem;
@@ -137,6 +140,9 @@ const nonLocationMethods = computed(() =>
 
 @media (max-width: 900px) {
   .contact-methods {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .contact-methods--count-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .contact-form-shell {
