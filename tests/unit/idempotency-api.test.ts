@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const apiRequest = vi.hoisted(() => vi.fn().mockResolvedValue({}))
-vi.mock('../../src/services/api', () => ({ useApi: () => apiRequest }))
+vi.mock('../../src/services/api.ts', () => ({ useApi: () => apiRequest }))
 
 import { useStudentCommentsApi } from '../../src/services/student-comments'
 import { useStudentAuthApi } from '../../src/services/student-auth'
