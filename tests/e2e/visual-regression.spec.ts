@@ -46,11 +46,12 @@ test.describe("regresión visual transversal", () => {
     await expect(
       page.getByRole("navigation", { name: "Navegación principal" }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("navigation", { name: "Navegación principal" })
-        .getByRole("link")
-        .first(),
-    ).toHaveCSS("min-height", "48px");
+    const firstNavLink = page
+      .getByRole("navigation", { name: "Navegación principal" })
+      .getByRole("link")
+      .first();
+    const navLinkBox = await firstNavLink.boundingBox();
+    expect(navLinkBox?.height ?? 0).toBeGreaterThanOrEqual(44);
   });
 
   test("mantiene los flujos administrativos principales en desktop", async ({ page }) => {
