@@ -78,6 +78,26 @@ test.describe("regresión visual transversal", () => {
     await expect(page.getByRole("navigation", { name: "Navegación administrativa" })).toBeVisible();
   });
 
+  test.describe("detalles públicos", () => {
+    const details = [
+      { route: "/eventos/10", title: "Taller de Espectrometría UV-Vis", back: "Volver a eventos", href: "/eventos" },
+      { route: "/noticias/7", title: "Convocatoria de laboratorio", back: "Volver a noticias", href: "/noticias" },
+      { route: "/investigacion/20", title: "Análisis de microplásticos en fuentes hídricas urbanas", back: "Volver a investigación", href: "/investigacion" },
+    ];
+
+    for (const detail of details) {
+      test(`${detail.route} tiene un título y regreso contextual`, async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(detail.route);
+
+        await expect(page.locator("h1")).toHaveCount(1);
+        await expect(page.locator("h1")).toHaveText(detail.title);
+        await expect(page.getByRole("link", { name: detail.back })).toHaveAttribute("href", detail.href);
+        await expect(page.locator(".detail-back-link")).toBeVisible();
+      });
+    }
+  });
+
   test("conserva la sesión al navegar por módulos administrativos en móvil", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loginAsAdmin(page);
@@ -86,6 +106,36 @@ test.describe("regresión visual transversal", () => {
       await expect(page).not.toHaveURL(/\/administrador\?returnTo=/);
       await expect(page.locator("main#admin-content")).toBeVisible();
     }
+  });
+
+  test("mantiene el foco fuera del sidebar oculto y limpia la consola al navegar en móvil", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsAdmin(page);
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    const trigger = page.getByRole("button", { name: "Abrir menú administrativo" });
+    const sidebar = page.locator("#admin-sidebar");
+
+    await trigger.click();
+    await page.getByRole("button", { name: "Cerrar menú administrativo" }).click();
+    await expect(trigger).toBeFocused();
+    expect(await sidebar.evaluate((element) => element.contains(document.activeElement))).toBe(false);
+
+    await trigger.click();
+    await expect(sidebar).toHaveClass(/admin-sidebar--open/);
+    await expect(sidebar).toBeInViewport();
+    await expect(sidebar.getByRole("link", { name: "Eventos" })).toBeInViewport();
+    await sidebar.getByRole("link", { name: "Eventos" }).click();
+    await expect(trigger).toBeFocused();
+    expect(await sidebar.evaluate((element) => element.contains(document.activeElement))).toBe(false);
+
+    expect(pageErrors, pageErrors.join("\n")).toEqual([]);
+    expect(consoleErrors, consoleErrors.join("\n")).toEqual([]);
   });
 
   test("permite seleccionar o cargar una imagen de noticia", async ({ page }) => {
