@@ -24,6 +24,7 @@ let adminNews: typeof news | null = { ...news, updatedAt: '2026-01-15T12:00:00.0
 let reflectedNews: typeof news | null = null
 let newsCategories = [{ id: 2, name: 'Convocatorias', active: true }]
 let nextNewsCategoryId = 3
+let adminNewsImages = [{ id: 17, originalName: 'laboratorio.png', mimeType: 'image/png', sizeBytes: 68, createdAt: '2026-01-15T12:00:00.000Z', previewUrl: '/api/v1/admin/news/images/17/preview' }]
 
 const resource = {
   id: 9, categoryId: 3, fileId: 4, title: 'Guía de seguridad de laboratorio', description: 'Material para preparar prácticas de laboratorio de forma segura.', status: 'PUBLICADO',
@@ -441,6 +442,19 @@ Bun.serve({
       const category = { id: nextNewsCategoryId++, name, active: true }
       newsCategories.push(category)
       return json(category, 201)
+    }
+    if (url.pathname === '/api/v1/admin/news/images' || url.pathname.match(/^\/api\/v1\/admin\/news\/images\/\d+\/preview$/)) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (url.pathname.endsWith('/preview')) return new Response(new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), { status: 200, headers: { 'content-type': 'image/png' } })
+      if (request.method === 'GET') return json(adminNewsImages)
+      if (request.method === 'POST') {
+        if (request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+        const form = await request.formData(); const file = form.get('file')
+        if (!(file instanceof File)) return json({ error: { code: 'FILE_REQUIRED', message: 'Debes seleccionar una imagen.' } }, 422)
+        const uploaded = { id: 21, originalName: file.name, mimeType: file.type, sizeBytes: file.size, createdAt: new Date().toISOString(), previewUrl: '/api/v1/admin/news/images/21/preview' }
+        adminNewsImages = [uploaded, ...adminNewsImages]
+        return json(uploaded, 201)
+      }
     }
     if (url.pathname === '/api/v1/admin/news' || url.pathname.match(/^\/api\/v1\/admin\/news\/\d+(\/archive)?$/)) {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)

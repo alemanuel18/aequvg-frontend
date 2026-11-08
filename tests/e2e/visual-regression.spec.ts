@@ -77,4 +77,32 @@ test.describe("regresión visual transversal", () => {
     await menu.click();
     await expect(page.getByRole("navigation", { name: "Navegación administrativa" })).toBeVisible();
   });
+
+  test("conserva la sesión al navegar por módulos administrativos en móvil", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsAdmin(page);
+    for (const route of ["/administrador/eventos", "/administrador/noticias", "/administrador/recursos", "/administrador/junta-directiva", "/administrador/contacto", "/administrador/panel"]) {
+      await page.goto(route);
+      await expect(page).not.toHaveURL(/\/administrador\?returnTo=/);
+      await expect(page.locator("main#admin-content")).toBeVisible();
+    }
+  });
+
+  test("permite seleccionar o cargar una imagen de noticia", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsAdmin(page);
+    await page.goto("/administrador/noticias");
+    await expect(page.getByRole("button", { name: "Seleccionar existente" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "laboratorio.png" })).toBeVisible();
+    await page.getByRole("button", { name: "laboratorio.png" }).click();
+    await expect(page.getByText("Seleccionada: laboratorio.png")).toBeVisible();
+    await page.getByRole("button", { name: "Subir nueva" }).click();
+    await page.locator("#news-image-upload").setInputFiles({
+      name: "nueva.png",
+      mimeType: "image/png",
+      buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    });
+    await expect(page.getByText("La imagen se cargó y quedó seleccionada.")).toBeVisible();
+    await expect(page.getByText("Seleccionada: nueva.png")).toBeVisible();
+  });
 });
