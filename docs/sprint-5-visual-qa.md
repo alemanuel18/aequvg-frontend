@@ -50,7 +50,7 @@ contacto, inscripción de eventos, autenticación estudiantil y Mi cuenta.
   `refactored-mobile-home.png`, `refactored-desktop-home.png`,
   `public-board.png`, `public-events.png`, y variantes `theme-*-home.png` y
   `theme-*-events.png`.
-- QA E2E: `bun run test:e2e`.
+- QA E2E: `eco bun run test:e2e` dentro del contenedor frontend.
 - Unitarias: `eco bun run test`.
 - Typecheck: `bun run typecheck`.
 - Build: `bun run build`.
@@ -59,11 +59,14 @@ contacto, inscripción de eventos, autenticación estudiantil y Mi cuenta.
 
 - `git diff --check`: PASS en cada rama.
 - Chromium del sistema: PASS para capturas manuales.
-- `bun run typecheck`: NO EJECUTADO; `nuxt` no está disponible.
-- `eco bun run test`: NO EJECUTADO; `vitest` no está disponible.
-- `eco bun run test:e2e`: NO EJECUTADO; `playwright` no está disponible.
-- `bun run build`: NO EJECUTADO; `nuxt` no está disponible.
+- `docker compose exec frontend bun run typecheck`: PASS.
+- `eco docker compose exec frontend bun run test`: FAIL, 64/68 tests pasan.
+  Los 4 fallos son preexistentes al stack: dos por `useRuntimeConfig` no
+  mockeado y dos por fixtures de evento sin `categoryId`.
+- `eco docker compose exec frontend bun run test:e2e`: NO EJECUTADO; Playwright
+  está instalado, pero el contenedor no contiene un navegador Chromium.
+- `docker compose exec frontend bun run build`: PASS.
 
-La restauración de dependencias tampoco fue posible: `node_modules` está
-instalado con propietario `root` y `bun install --frozen-lockfile` falla por
-permisos. No se cambiaron ownership global, lockfiles ni dependencias.
+El host conserva un `node_modules` no utilizable por permisos, pero el contenedor
+frontend sí dispone de sus dependencias. No se cambiaron ownership global,
+lockfiles ni dependencias. El E2E manual se hizo con Chromium del host y CDP.
