@@ -5,7 +5,7 @@ const publicRoutes = [
   "/eventos",
   "/eventos/10",
   "/noticias",
-  "/resources",
+  "/recursos",
   "/junta-directiva",
   "/contacto",
   "/acceso",
@@ -15,7 +15,7 @@ const publicRoutes = [
 const loginAsAdmin = async (page: import("@playwright/test").Page) => {
   await page.goto("/administrador");
   await page.getByLabel("Correo institucional").fill("admin@uvg.edu.gt");
-  await page.getByLabel("Contraseña").fill("Admin123!");
+  await page.getByLabel("Contraseña").fill("Acceso123!");
   await page.getByRole("button", { name: "Iniciar sesión" }).click();
   await expect(page).toHaveURL(/\/administrador\/panel$/);
 };
