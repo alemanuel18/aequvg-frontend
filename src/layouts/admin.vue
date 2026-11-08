@@ -88,8 +88,8 @@ const logout = async () => {
 .admin-shell {
   --admin-primary: var(--theme-admin-primary);
   --admin-primary-dark: var(--theme-admin-primary-dark);
-  --admin-soft: #e3f2f0;
-  --admin-border: #bfd8d5;
+  --admin-soft: var(--theme-admin-soft);
+  --admin-border: var(--theme-admin-border);
   --color-primary: var(--admin-primary);
   --color-primary-dark: var(--admin-primary-dark);
   --color-soft: var(--admin-soft);

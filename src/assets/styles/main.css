@@ -4,8 +4,10 @@
   :root {
     --theme-public-primary: #2d4a2b;
     --theme-public-primary-dark: #172716;
-    --theme-admin-primary: #17645f;
-    --theme-admin-primary-dark: #0b3d3a;
+    --theme-admin-primary: #2d4a2b;
+    --theme-admin-primary-dark: #172716;
+    --theme-admin-soft: #eef1e9;
+    --theme-admin-border: #cbd5c5;
     --color-ink: #1a2b18;
     --color-muted: #4d5a49;
     --color-primary: var(--theme-public-primary);
@@ -42,11 +44,30 @@
   :root[data-app-theme="admin-teal"] {
     --theme-public-primary: #17645f;
     --theme-public-primary-dark: #0b3d3a;
+    --theme-admin-primary: #17645f;
+    --theme-admin-primary-dark: #0b3d3a;
+    --theme-admin-soft: #e8f2f0;
+    --theme-admin-border: #c1d9d5;
     --color-soft: #e8f2f0;
     --color-border: #c1d9d5;
   }
 
+  :root[data-app-theme="public-green"] {
+    --theme-public-primary: #2d4a2b;
+    --theme-public-primary-dark: #172716;
+    --theme-admin-primary: #2d4a2b;
+    --theme-admin-primary-dark: #172716;
+    --theme-admin-soft: #eef1e9;
+    --theme-admin-border: #cbd5c5;
+  }
+
   :root[data-app-theme="unified"] {
+    --theme-public-primary: #2d4a2b;
+    --theme-public-primary-dark: #172716;
+    --theme-admin-primary: #2d4a2b;
+    --theme-admin-primary-dark: #172716;
+    --theme-admin-soft: #eef0e8;
+    --theme-admin-border: #d2d8cc;
     --color-soft: #eef0e8;
     --color-border: #d2d8cc;
   }
