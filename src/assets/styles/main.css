@@ -64,10 +64,10 @@
   :root[data-app-theme="unified"] {
     --theme-public-primary: #2d4a2b;
     --theme-public-primary-dark: #172716;
-    --theme-admin-primary: #2d4a2b;
-    --theme-admin-primary-dark: #172716;
-    --theme-admin-soft: #eef0e8;
-    --theme-admin-border: #d2d8cc;
+    --theme-admin-primary: #17645f;
+    --theme-admin-primary-dark: #0b3d3a;
+    --theme-admin-soft: #e8f2f0;
+    --theme-admin-border: #c1d9d5;
     --color-soft: #eef0e8;
     --color-border: #d2d8cc;
   }
