@@ -373,7 +373,7 @@ const deleteAccount = async () => {
 .account__heading p, .profile-form small { color: var(--color-muted); }
 .profile-form { grid-column: 1 / -1; display: grid; gap: .65rem; }
 .profile-form label, .email-field__label { margin-top: .5rem; font-weight: 750; }
-.profile-form input { width: 100%; min-height: 2.8rem; padding: .65rem .8rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: .5rem; font: inherit; }
+.profile-form input { width: 100%; min-height: 2.8rem; padding: .65rem .8rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font: inherit; }
 .email-field { display: grid; gap: .65rem; margin-top: .5rem; }
 .email-field__value { width: 100%; min-height: 2.8rem; display: flex; align-items: center; margin: 0; padding: .65rem .8rem; color: var(--color-muted); background: var(--color-soft); border: 1px solid var(--color-border); border-radius: .5rem; overflow-wrap: anywhere; }
 .email-field small { color: var(--color-muted); }
@@ -385,7 +385,7 @@ const deleteAccount = async () => {
 .account-deletion p { max-width: 50rem; color: var(--color-muted); }
 .deletion-form { display: grid; gap: .65rem; }
 .deletion-form label { margin-top: .35rem; font-weight: 750; }
-.deletion-form input[type="email"], .deletion-form input[type="password"] { width: 100%; min-height: 2.8rem; padding: .65rem .8rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: .5rem; font: inherit; }
+.deletion-form input[type="email"], .deletion-form input[type="password"] { width: 100%; min-height: 2.8rem; padding: .65rem .8rem; color: var(--color-ink); background: white; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font: inherit; }
 .deletion-confirmation { display: flex; gap: .65rem; align-items: flex-start; font-weight: 500 !important; }
 .deletion-confirmation input { margin-top: .25rem; }
 .deletion-button { width: fit-content; min-height: 2.75rem; padding: .65rem 1rem; color: white; background: #8b1e2d; border: 1px solid #8b1e2d; border-radius: .5rem; font: inherit; font-weight: 750; cursor: pointer; }
