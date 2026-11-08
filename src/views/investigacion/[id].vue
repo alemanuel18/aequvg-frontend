@@ -36,6 +36,7 @@ const formatDate = (value: string) =>
 
 <template>
   <div>
+    <DetailBackLink to="/investigacion" label="Volver a investigación" />
     <PageHero
       eyebrow="Investigación estudiantil"
       :title="project?.title || 'Investigación'"
@@ -64,7 +65,6 @@ const formatDate = (value: string) =>
             >Publicado en {{ formatDate(project.createdAt) }}</time
           >
         </div>
-        <h1>{{ project.title }}</h1>
         <p class="project-detail__author">
           Desarrollado por {{ project.author.name }}
         </p>
@@ -91,9 +91,6 @@ const formatDate = (value: string) =>
             <span class="sr-only">(se abre en una nueva pestaña)</span> ↗</a
           >
         </div>
-        <AppButton to="/investigacion" variant="secondary"
-          >← Ver todas las investigaciones</AppButton
-        >
       </article>
       <PublicationComments
         v-if="project.type === 'PROYECTO'"

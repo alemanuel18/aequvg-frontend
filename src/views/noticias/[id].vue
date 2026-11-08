@@ -31,6 +31,7 @@ const formatDate = (value: string | null) =>
 </script>
 <template>
   <div>
+    <DetailBackLink to="/noticias" label="Volver a noticias" />
     <PageHero
       eyebrow="Noticias y anuncios"
       :title="news?.title || 'Publicación'"
@@ -58,13 +59,9 @@ const formatDate = (value: string | null) =>
             >Publicado el {{ formatDate(news.publishedAt) }}</time
           >
         </div>
-        <h1>{{ news.title }}</h1>
         <p class="news-detail__summary">{{ news.summary }}</p>
         <div class="news-detail__content">{{ news.content }}</div>
         <footer>Publicado por {{ news.createdBy.name }}</footer>
-        <AppButton to="/noticias" variant="secondary"
-          >← Ver todas las noticias</AppButton
-        >
       </article>
       <PublicationComments target-type="NOTICIA" :target-id="id" />
       </template>

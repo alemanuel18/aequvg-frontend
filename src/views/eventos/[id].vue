@@ -100,6 +100,7 @@ const formatEventDate = (value: string | null | undefined) => {
 
 <template>
   <div>
+    <DetailBackLink to="/eventos" label="Volver a eventos" />
     <PageHero
       eyebrow="Agenda y actividades"
       :title="event?.name || 'Detalle del evento'"
@@ -130,7 +131,6 @@ const formatEventDate = (value: string | null | undefined) => {
             >
             <span class="event-detail__location">📍 {{ event.location }}</span>
           </div>
-          <h1>{{ event.name }}</h1>
           <p v-if="event.category" class="event-detail__category">▣ {{ event.category.name }}</p>
           <div class="event-detail__capacity">
             <div class="capacity-item">
@@ -188,9 +188,6 @@ const formatEventDate = (value: string | null | undefined) => {
               :to="registrationLoginUrl"
               variant="primary"
             >Inicia sesión para inscribirte</AppButton>
-            <AppButton to="/eventos" variant="secondary"
-              >← Ver todos los eventos</AppButton
-            >
           </div>
         </article>
 
