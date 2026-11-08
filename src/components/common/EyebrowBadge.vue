@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ text?: string }>()
+defineProps<{ text?: string }>();
 </script>
 
 <template>
@@ -16,17 +16,17 @@ defineProps<{ text?: string }>()
   min-height: 2rem;
   align-items: center;
   justify-content: center;
-  gap: .4rem;
-  padding: .48rem .78rem;
+  gap: 0.4rem;
+  padding: 0.48rem 0.78rem;
   color: var(--color-primary);
   background: var(--color-soft);
   border: 1px solid var(--color-border);
   border-radius: 999px;
   font-family: var(--font-body);
-  font-size: .76rem;
+  font-size: 0.76rem;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: .04em;
+  letter-spacing: 0.04em;
   text-align: center;
   text-transform: uppercase;
 }

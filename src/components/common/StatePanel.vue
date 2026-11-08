@@ -1,7 +1,16 @@
 <script setup lang="ts">
-defineProps<{ title: string; message: string; role?: 'status' | 'alert' }>()
+defineProps<{ title: string; message: string; role?: "status" | "alert" }>();
 </script>
-<template><div class="state-panel" :role="role || 'status'"><span class="state-panel__mark" aria-hidden="true">✦</span><div><h2>{{ title }}</h2><p>{{ message }}</p><div v-if="$slots.default" class="state-panel__action"><slot /></div></div></div></template>
+<template>
+  <div class="state-panel" :role="role || 'status'">
+    <span class="state-panel__mark" aria-hidden="true">✦</span>
+    <div>
+      <h2>{{ title }}</h2>
+      <p>{{ message }}</p>
+      <div v-if="$slots.default" class="state-panel__action"><slot /></div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .state-panel {
@@ -25,16 +34,22 @@ defineProps<{ title: string; message: string; role?: 'status' | 'alert' }>()
   border-radius: 50%;
 }
 
-.state-panel h2 { font-size: 1.3rem; }
-.state-panel p { color: var(--color-muted); }
-.state-panel__action { margin-top: .65rem; }
+.state-panel h2 {
+  font-size: 1.3rem;
+}
+.state-panel p {
+  color: var(--color-muted);
+}
+.state-panel__action {
+  margin-top: 0.65rem;
+}
 
 :slotted(button) {
-  padding: .45rem .7rem;
+  padding: 0.45rem 0.7rem;
   color: white;
   background: var(--color-primary);
   border: 1px solid var(--color-primary);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   cursor: pointer;
 }
 </style>

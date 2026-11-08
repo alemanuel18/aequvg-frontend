@@ -1,0 +1,7 @@
+<script setup lang="ts">
+definePageMeta({ layout: false, alias: ['/administrador/acceso-denegado'] })
+useSeoMeta({ title: 'Acceso denegado', robots: 'noindex, nofollow' })
+const session = useAdminSession()
+</script>
+<template><main class="denied"><section><p class="eyebrow">Permisos insuficientes</p><h1>Acceso denegado</h1><p>Tu cuenta inició sesión, pero no tiene permiso para abrir esta sección. Solicita a una persona administradora que revise tu rol.</p><div><NuxtLink to="/administrador/panel">Ir al panel</NuxtLink><button type="button" @click="session.logout().finally(() => navigateTo('/administrador', { replace: true }))">Cerrar sesión</button></div></section></main></template>
+<style scoped>.denied{min-height:100vh;display:grid;place-items:center;padding:1rem;background:#f3f7f6}section{width:min(38rem,100%);padding:clamp(1.25rem,5vw,2.5rem);background:white;border:1px solid #bfd8d5;border-radius:1rem}h1{font-size:clamp(2rem,8vw,3.5rem)}.eyebrow{color:#17645f;font-size:.8rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}section>p:not(.eyebrow){line-height:1.6;color:#53615e}section div{display:flex;flex-wrap:wrap;gap:1rem;margin-top:1.5rem}a,button{min-height:2.8rem;padding:.7rem 1rem;border-radius:.55rem;font-weight:800;color:#fff;background:#17645f;border:1px solid #17645f}button{cursor:pointer}a:focus-visible,button:focus-visible{outline:3px solid #e6aa32;outline-offset:3px}</style>

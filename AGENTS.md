@@ -10,22 +10,36 @@ Usa Bun 1.4, Nuxt 4, Vue 3, TypeScript, CSS nativo, Vitest y Playwright. No hay 
 
 ```text
 src/
-  app.vue                         # raíz Nuxt
+  app.vue                         # raíz Nuxt con AppToastContainer global
   layouts/default.vue             # SiteHeader + contenido + SiteFooter
   views/                          # rutas por archivo configuradas por Nuxt
-    index.vue                     # inicio/promoción
+    index.vue                     # inicio/promoción con Hero, Conocer Licenciatura y Destacados
     junta-directiva.vue           # junta real desde API
     contacto.vue                  # medios y formulario
     eventos.vue, noticias.vue,
     recursos.vue, investigacion.vue # aviso reutilizable de desarrollo
+    administrador/
+      contenido.vue               # gestión de Hero, anuncios (máx 3) y destacados (máx 3 noticias/eventos)
+      index.vue                   # inicio de sesión administrativo independiente
+      sign-up.vue                 # solicitud de cuenta administrativa
+      users.vue                   # gestión de cuentas, roles y estados administrativos
+    acceso.vue                    # inicio de sesión de estudiantes normales
+    registro.vue                  # alta exclusiva para estudiantes UVG
+    mi-cuenta.vue                 # panel de la sesión estudiantil
   components/common/              # AppButton, AppIcon, AppSection, PageHero,
-                                  # ContentCard, EyebrowBadge, StatePanel
+                                  # ContentCard, EyebrowBadge, StatePanel,
+                                  # AppConfirmModal (modal accesible reutilizable),
+                                  # AppToastContainer (notificaciones flotantes)
   components/layout/              # SiteHeader y SiteFooter
   components/public/              # tarjetas, formulario, ilustración y estados
-  components/admin/               # reservado; no inventar panel
-  composables/contact-validation.ts
+  components/admin/               # componentes administrativos compartidos
+  composables/
+    use-toast.ts                  # sistema de toasts global (success, error, warning, info)
+    contact-validation.ts         # reglas de contacto
+    institutional-validation.ts   # reglas de hero, anuncios unificados y destacados
   services/api.ts                 # cliente HTTP y errores
   services/public-content.ts      # consultas públicas
+  services/admin-content.ts       # operaciones administrativas de contenido
   types/api.ts                    # contratos TypeScript
   router/navigation.ts            # enlaces del navbar
   assets/styles/main.css          # tokens, reset, tipografía y utilidades
@@ -37,6 +51,42 @@ tests/e2e/public-site.spec.ts    # teclado, 320px y contacto
 ```
 
 Los componentes `common`, `layout` y `public` deben ser reutilizables mediante props/emits. `PageHero`, `EyebrowBadge`, `StatePanel` y `UnderConstructionPage` son piezas compartidas para encabezados, cápsulas y estados. Las vistas componen estas piezas; no dupliques HTML o mensajes de carga/error.
+
+## Acceso administrativo y estudiantil
+
+- **Flujos separados**: `/administrador` pertenece exclusivamente al acceso administrativo. `/acceso`, `/registro` y `/mi-cuenta` pertenecen al portal de estudiantes normales. No reutilices una sesión como respaldo de la otra ni muestres opciones administrativas dentro del flujo estudiantil.
+- **Navegación pública**: el extremo derecho del navbar muestra las acciones para registrarse o iniciar sesión cuando no existe una sesión estudiantil. Con sesión activa muestra un avatar placeholder, ya que todavía no se almacenan fotografías, y enlaza al panel personal. La navegación pública debe seguir disponible con o sin sesión.
+- **Nombres separados**: todos los formularios de alta y edición de ambos perfiles solicitan `firstNames` (Nombres) y `lastNames` (Apellidos), con `autocomplete="given-name"` y `autocomplete="family-name"` cuando corresponda. No reintroduzcas un único input `name`; el backend puede devolver `name` como texto compuesto únicamente para presentación y compatibilidad.
+- **Contrato estudiantil**: el registro exige correo `@uvg.edu.gt`, confirmación explícita de que la persona es estudiante actual y contraseña fuerte. No existe registro para aspirantes ni selector de rol. El cliente nunca debe enviar un rol administrativo desde este formulario.
+- **Servicios y estado**: usa `services/student-auth.ts` y `use-student-session.ts` para estudiantes; usa `services/admin-auth.ts` y `use-admin-session.ts` para administración. Los tipos compartidos están en `types/api.ts`, pero cookies, endpoints y estados de sesión permanecen separados.
+- **Seguridad de sesión**: ambos logins comparten las mismas reglas de formato y tratamiento de errores. Las credenciales viajan únicamente al backend y nunca se guardan en `localStorage`, logs o estado persistente. Las cookies de sesión son administradas por el servidor; las peticiones autenticadas se realizan con credenciales y las mutaciones incluyen el token CSRF entregado por la sesión.
+- **Estados de cuenta estudiantil**: presenta el fin del bloqueo cuando sea temporal y el canal de revisión cuando sea permanente. Una cuenta eliminada no puede acceder. La baja propia debe conservar el flujo de verificación restringida de identidad aunque la cuenta esté bloqueada.
+- **Pruebas mínimas**: cualquier cambio de autenticación debe cubrir separación de nombres, errores/carga, registro e inicio de sesión estudiantil, logout, recarga y ausencia de regresiones en el login administrativo. Los mocks E2E deben respetar los mismos campos y respuestas del backend; no simplifiques el contrato usando `name`.
+
+## Estándar Obligatorio: Modales de Confirmación y Notificaciones Toast
+
+Para mantener una experiencia homogénea, accesible y modular en todas las vistas administrativas creadas por el equipo:
+
+1. **Modales de confirmación (`AppConfirmModal.vue`)**:
+   - Toda acción de **creación, edición, guardado masivo o eliminación/archivado** DEBE solicitar confirmación explícita mediante `<AppConfirmModal />` antes de disparar la petición HTTP al backend.
+   - Es totalmente accesible (`role="dialog"`, trampa de foco, cierre con tecla Escape, bloqueo de scroll en el body).
+   - Soporta variantes semánticas según la criticidad de la acción (`primary` para guardar/crear, `danger` para eliminar/archivar, `warning` para cambios que impactan visibilidad).
+
+2. **Notificaciones Toast (`useToast.ts` y `AppToastContainer.vue`)**:
+   - **Prohibido** usar banners o mensajes de alerta estáticos en la parte superior de la página para confirmar operaciones o reportar errores de acción.
+   - Se debe importar y utilizar `const toast = useToast()`:
+     - `toast.success('Mensaje...')` tras operaciones exitosas.
+     - `toast.error('Mensaje...')` ante fallas de red, validaciones de servidor o errores de negocio.
+     - `toast.warning('Mensaje...')` para alertas de límite de cupo o advertencias.
+     - `toast.info('Mensaje...')` para información de apoyo.
+   - El contenedor `<AppToastContainer />` está montado globalmente en `src/app.vue` con soporte para transiciones y cierre automático.
+
+## Gestión de Contenido Institucional (`administrador/contenido.vue`)
+
+- **Hero principal**: Permite editar el mensaje principal de bienvenida y llamada a la acción en `/`.
+- **Conocer la Licenciatura en Química**: Formulario único y modular con selector desplegable de categoría (`LABORATORIO`, `TESTIMONIO`, `CAMPO_LABORAL`, `PLAN_ESTUDIOS`).
+  - **Límite estricto de 3 anuncios activos** en total en la sección, sin importar el tipo (ej. pueden ser 3 laboratorios y ninguno de los otros).
+- **Destacados de inicio**: Permite seleccionar hasta un máximo de 3 noticias y hasta 3 eventos activos para mostrarlos en la página de inicio.
 
 ## Estilos y diseño
 

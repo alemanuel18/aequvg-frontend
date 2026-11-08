@@ -1,67 +1,69 @@
 <script setup lang="ts">
-import { usePublicContentService } from '~/services/public-content'
-import type { PublicEventList } from '~/types/api'
+import { usePublicContentService } from "~/services/public-content";
+import type { PublicEventList } from "~/types/api";
 
 useSeoMeta({
-  title: 'Eventos y actividades',
-  description: 'Agenda de charlas, talleres, convivencias y conferencias de AsoQuímica UVG.'
-})
+  title: "Eventos y actividades",
+  description:
+    "Agenda de charlas, talleres, convivencias y conferencias de AsoQuímica UVG.",
+});
 
-const service = usePublicContentService()
-const route = useRoute()
+const service = usePublicContentService();
+const route = useRoute();
 
 const queryNumber = (value: unknown) => {
-  const number = Number(value)
-  return Number.isSafeInteger(number) && number > 0 ? number : undefined
-}
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number > 0 ? number : undefined;
+};
 
-const searchInput = ref(typeof route.query.q === 'string' ? route.query.q : '')
-const appliedSearch = ref(searchInput.value)
-const currentPage = ref(queryNumber(route.query.page) || 1)
-const pageSize = 9
-const requestError = ref<unknown>(null)
+const searchInput = ref(typeof route.query.q === "string" ? route.query.q : "");
+const appliedSearch = ref(searchInput.value);
+const currentPage = ref(queryNumber(route.query.page) || 1);
+const pageSize = 9;
+const requestError = ref<unknown>(null);
 
 const loadEvents = () =>
   service.events({
     q: appliedSearch.value || undefined,
     page: currentPage.value,
-    pageSize
-  })
+    pageSize,
+  });
 
-const { data: result, status, error, refresh } = await useAsyncData(
-  'public-events',
-  loadEvents,
-  {
-    default: (): PublicEventList => ({
-      items: [],
-      pagination: { page: 1, pageSize, total: 0 }
-    })
-  }
-)
+const {
+  data: result,
+  status,
+  error,
+  refresh,
+} = await useAsyncData("public-events", loadEvents, {
+  default: (): PublicEventList => ({
+    items: [],
+    pagination: { page: 1, pageSize, total: 0 },
+  }),
+});
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(result.value.pagination.total / pageSize))
-)
+  Math.max(1, Math.ceil(result.value.pagination.total / pageSize)),
+);
 
 const updateEvents = async () => {
-  requestError.value = null
+  requestError.value = null;
   try {
-    result.value = await loadEvents()
+    result.value = await loadEvents();
   } catch (requestFailure) {
-    requestError.value = requestFailure
+    requestError.value = requestFailure;
   }
-}
+};
 
 const submitSearch = async () => {
-  appliedSearch.value = searchInput.value.trim()
-  currentPage.value = 1
-  await updateEvents()
-}
+  appliedSearch.value = searchInput.value.trim();
+  currentPage.value = 1;
+  await updateEvents();
+};
 
 const goToPage = async (page: number) => {
-  currentPage.value = page
-  await updateEvents()
-}
+  currentPage.value = page;
+  await updateEvents();
+};
 </script>
 
 <template>
@@ -81,7 +83,7 @@ const goToPage = async (page: number) => {
           type="search"
           placeholder="Buscar eventos por nombre, lugar o descripción"
           autocomplete="off"
-        >
+        />
         <button class="events-filters__submit" type="submit">Buscar</button>
       </form>
 
@@ -106,15 +108,39 @@ const goToPage = async (page: number) => {
       <template v-else>
         <p class="events-count" aria-live="polite">
           {{ result.pagination.total }}
-          {{ result.pagination.total === 1 ? 'evento encontrado' : 'eventos encontrados' }}.
+          {{
+            result.pagination.total === 1
+              ? "evento encontrado"
+              : "eventos encontrados"
+          }}.
         </p>
         <div class="events-grid">
-          <EventCard v-for="event in result.items" :key="event.id" :event="event" />
+          <EventCard
+            v-for="event in result.items"
+            :key="event.id"
+            :event="event"
+          />
         </div>
-        <nav v-if="totalPages > 1" class="pagination" aria-label="Paginación de eventos">
-          <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">Anterior</button>
-          <span aria-live="polite">Página {{ currentPage }} de {{ totalPages }}</span>
-          <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">Siguiente</button>
+        <nav
+          v-if="totalPages > 1"
+          class="pagination"
+          aria-label="Paginación de eventos"
+        >
+          <button
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            Anterior
+          </button>
+          <span aria-live="polite"
+            >Página {{ currentPage }} de {{ totalPages }}</span
+          >
+          <button
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            Siguiente
+          </button>
         </nav>
       </template>
     </AppSection>
@@ -124,7 +150,7 @@ const goToPage = async (page: number) => {
 <style scoped>
 .events-filters {
   display: flex;
-  gap: .75rem;
+  gap: 0.75rem;
   margin-bottom: 2rem;
   padding: 1.35rem;
   background: var(--color-soft);
@@ -135,7 +161,7 @@ const goToPage = async (page: number) => {
 .events-filters input {
   flex: 1;
   min-height: 2.65rem;
-  padding: .6rem .8rem;
+  padding: 0.6rem 0.8rem;
   color: var(--color-ink);
   background: white;
   border: 1px solid var(--color-border);
@@ -145,7 +171,7 @@ const goToPage = async (page: number) => {
 .events-filters__submit,
 .pagination button {
   min-height: 2.85rem;
-  padding: .65rem 1.25rem;
+  padding: 0.65rem 1.25rem;
   color: white;
   background: var(--color-primary);
   border: 1px solid var(--color-primary);
@@ -156,7 +182,7 @@ const goToPage = async (page: number) => {
 
 .pagination button:disabled {
   cursor: not-allowed;
-  opacity: .55;
+  opacity: 0.55;
 }
 
 .events-count {

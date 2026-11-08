@@ -1,29 +1,31 @@
 <script setup lang="ts">
-import type { PublicEvent } from '~/types/api'
+import type { PublicEvent } from "~/types/api";
 
-defineProps<{ event: PublicEvent }>()
+defineProps<{ event: PublicEvent }>();
 
 const formatEventDate = (value: string) => {
   try {
-    return new Intl.DateTimeFormat('es-GT', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      timeZone: 'America/Guatemala'
-    }).format(new Date(value))
+    return new Intl.DateTimeFormat("es-GT", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "America/Guatemala",
+    }).format(new Date(value));
   } catch {
-    return 'Fecha por confirmar'
+    return "Fecha por confirmar";
   }
-}
+};
 </script>
 
 <template>
   <article class="event-card">
     <div class="event-card__media" aria-hidden="true">
       <div class="event-card__badge-deco"></div>
-      <span class="event-card__tag">▣ Actividad</span>
+      <span class="event-card__tag">▣ {{ event.category?.name ?? 'Actividad' }}</span>
     </div>
     <div class="event-card__body">
-      <time :datetime="event.startsAt">{{ formatEventDate(event.startsAt) }}</time>
+      <time :datetime="event.startsAt">{{
+        formatEventDate(event.startsAt)
+      }}</time>
       <div class="event-card__location">📍 {{ event.location }}</div>
       <h3>
         <NuxtLink :to="`/eventos/${event.id}`">{{ event.name }}</NuxtLink>
@@ -55,7 +57,12 @@ const formatEventDate = (value: string) => {
   position: relative;
   min-height: 9rem;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--color-primary), #436b41 55%, #6a9167);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    #436b41 55%,
+    #6a9167
+  );
 }
 
 .event-card__media::before,
@@ -63,8 +70,8 @@ const formatEventDate = (value: string) => {
   position: absolute;
   width: 9rem;
   height: 9rem;
-  content: '';
-  border: .45rem solid rgb(255 255 255 / 15%);
+  content: "";
+  border: 0.45rem solid rgb(255 255 255 / 15%);
   border-radius: 50%;
 }
 
@@ -93,29 +100,29 @@ const formatEventDate = (value: string) => {
   position: absolute;
   top: 1rem;
   left: 1rem;
-  padding: .25rem .55rem;
+  padding: 0.25rem 0.55rem;
   color: white;
   background: var(--color-primary-dark);
-  font-size: .85rem;
+  font-size: 0.85rem;
   font-weight: 800;
   border-radius: var(--radius-sm);
 }
 
 .event-card__body {
   display: grid;
-  gap: .65rem;
+  gap: 0.65rem;
   padding: 1.35rem 1.45rem 1.5rem;
 }
 
 .event-card time {
   color: var(--color-primary);
-  font-size: .88rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
 .event-card__location {
   color: var(--color-muted);
-  font-size: .86rem;
+  font-size: 0.86rem;
 }
 
 .event-card h3 {
@@ -141,14 +148,14 @@ const formatEventDate = (value: string) => {
   display: -webkit-box;
   overflow: hidden;
   color: var(--color-muted);
-  font-size: .95rem;
+  font-size: 0.95rem;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
 
 .event-card__link {
   width: fit-content;
-  margin-top: .4rem;
+  margin-top: 0.4rem;
   color: var(--color-primary);
   font-weight: 800;
   text-decoration: none;
