@@ -31,7 +31,7 @@ defineProps<{ item: AdminNavigationItem }>();
   background: white;
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 12px 28px rgb(12 63 60 / 7%);
+  box-shadow: var(--shadow-sm);
   text-decoration: none;
   transition:
     border-color 0.15s ease,

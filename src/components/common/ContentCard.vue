@@ -20,7 +20,7 @@ defineProps<{ eyebrow?: string; title: string; body: string }>();
   background: white;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 25px rgb(26 43 24 / 6%);
+  box-shadow: var(--shadow-sm);
 }
 
 .card p {

@@ -94,7 +94,7 @@ function handleEscape(event: KeyboardEvent) {
   top: 0;
   z-index: 50;
   color: white;
-  background: rgb(45 74 43 / 97%);
+  background: color-mix(in srgb, var(--color-primary-dark) 97%, transparent);
   border-bottom: 1px solid rgb(255 255 255 / 18%);
   backdrop-filter: blur(14px);
 }

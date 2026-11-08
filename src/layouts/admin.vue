@@ -86,8 +86,8 @@ const logout = async () => {
 
 <style scoped>
 .admin-shell {
-  --admin-primary: #17645f;
-  --admin-primary-dark: #0b3d3a;
+  --admin-primary: var(--theme-admin-primary);
+  --admin-primary-dark: var(--theme-admin-primary-dark);
   --admin-soft: #e3f2f0;
   --admin-border: #bfd8d5;
   --color-primary: var(--admin-primary);
@@ -100,10 +100,10 @@ const logout = async () => {
 }
 .admin-workspace {
   min-height: 100vh;
-  margin-left: 17.5rem;
+  margin-left: 17rem;
 }
 .admin-content {
-  width: min(76rem, calc(100% - 2rem));
+  width: min(var(--container-dashboard), calc(100% - 2rem));
   padding-block: clamp(2rem, 5vw, 4rem);
   margin-inline: auto;
 }
@@ -145,6 +145,12 @@ const logout = async () => {
     padding: 0;
     background: rgb(4 35 33 / 52%);
     border: 0;
+  }
+}
+@media (max-width: 620px) {
+  .admin-content {
+    width: min(100% - 1.25rem, var(--container-dashboard));
+    padding-block: 1.5rem 2.5rem;
   }
 }
 </style>

@@ -96,7 +96,7 @@ const visibleMembers = computed(() =>
 <style scoped>
 .member-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
   gap: 1.5rem;
 }
 .term-selector {

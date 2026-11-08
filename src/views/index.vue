@@ -275,7 +275,7 @@ const featuredNews = computed(() => featured.value?.news?.slice(0, 3) ?? []);
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: 1rem;
 }
 

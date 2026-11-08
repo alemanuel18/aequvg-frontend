@@ -290,7 +290,7 @@ const goToPage = async (page: number) => {
 }
 .resource-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: 1.25rem;
 }
 .pagination {
@@ -309,7 +309,7 @@ const goToPage = async (page: number) => {
 }
 .featured-areas {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: 1.25rem;
 }
 .featured-area {
