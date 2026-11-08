@@ -92,11 +92,11 @@ test.describe("regresión visual transversal", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loginAsAdmin(page);
     await page.goto("/administrador/noticias");
-    await expect(page.getByRole("button", { name: "Seleccionar existente" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "laboratorio.png" })).toBeVisible();
-    await page.getByRole("button", { name: "laboratorio.png" }).click();
+    await expect(page.getByRole("tab", { name: "Seleccionar existente" })).toBeVisible();
+    await expect(page.getByRole("radio", { name: "laboratorio.png" })).toBeVisible();
+    await page.getByRole("radio", { name: "laboratorio.png" }).click();
     await expect(page.getByText("Seleccionada: laboratorio.png")).toBeVisible();
-    await page.getByRole("button", { name: "Subir nueva" }).click();
+    await page.getByRole("tab", { name: "Subir nueva" }).click();
     await page.locator("#news-image-upload").setInputFiles({
       name: "nueva.png",
       mimeType: "image/png",
