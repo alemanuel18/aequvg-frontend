@@ -1,11 +1,17 @@
 <script setup lang="ts">
 defineProps<{ userName?: string }>();
 defineEmits<{ menu: [] }>();
+
+const menuButton = ref<HTMLButtonElement | null>(null);
+defineExpose({
+  focusMenuButton: () => menuButton.value?.focus(),
+});
 </script>
 
 <template>
   <header class="admin-topbar">
     <button
+      ref="menuButton"
       type="button"
       aria-label="Abrir menú administrativo"
       aria-controls="admin-sidebar"
