@@ -153,4 +153,7 @@ const logout = async () => {
     padding-block: 1.5rem 2.5rem;
   }
 }
+@media (max-width: 360px) {
+  .admin-content { width: calc(100% - 1rem); }
+}
 </style>

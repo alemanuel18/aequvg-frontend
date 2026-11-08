@@ -297,4 +297,7 @@ function handleEscape(event: KeyboardEvent) {
     padding: 0.65rem 0.8rem;
   }
 }
+@media (max-width: 430px) {
+  .site-header__inner { width: calc(100% - 1.25rem); }
+}
 </style>
