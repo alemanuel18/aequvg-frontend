@@ -33,10 +33,10 @@ const formatDate = (value: string | null) =>
   <div>
     <PageHero
       eyebrow="Noticias y anuncios"
-      title="Publicación"
-      description="Información publicada por AsoQuímica UVG."
+      :title="news?.title || 'Publicación'"
+      :description="news?.summary || 'Información publicada por AsoQuímica UVG.'"
     />
-    <AppSection title="Detalle de la publicación">
+    <AppSection>
       <StatePanel
         v-if="status === 'pending'"
         title="Cargando publicación"
@@ -77,11 +77,7 @@ const formatDate = (value: string | null) =>
   gap: 1.4rem;
   max-width: 52rem;
   margin-inline: auto;
-  padding: clamp(1.25rem, 4vw, 2.5rem);
-  background: white;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  padding-block: 0;
 }
 .news-detail__meta {
   display: flex;
@@ -109,7 +105,7 @@ const formatDate = (value: string | null) =>
 }
 @media (max-width: 620px) {
   .news-detail {
-    padding: 1.25rem;
+    padding-inline: 0;
   }
 }
 </style>

@@ -38,10 +38,10 @@ const formatDate = (value: string) =>
   <div>
     <PageHero
       eyebrow="Investigación estudiantil"
-      title="Detalle de investigación"
-      description="Información de un trabajo aprobado de la comunidad de Química UVG."
+      :title="project?.title || 'Investigación'"
+      :description="project?.description || 'Información de un trabajo aprobado de la comunidad de Química UVG.'"
     />
-    <AppSection title="Información del trabajo">
+    <AppSection>
       <StatePanel
         v-if="status === 'pending'"
         title="Cargando investigación"
@@ -111,11 +111,7 @@ const formatDate = (value: string) =>
   gap: 1.4rem;
   max-width: 52rem;
   margin-inline: auto;
-  padding: clamp(1.25rem, 4vw, 2.5rem);
-  background: white;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  padding-block: 0;
 }
 .project-detail__meta {
   display: flex;
@@ -161,7 +157,7 @@ const formatDate = (value: string) =>
 }
 @media (max-width: 620px) {
   .project-detail {
-    padding: 1.25rem;
+    padding-inline: 0;
   }
 }
 </style>

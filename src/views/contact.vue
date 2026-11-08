@@ -90,7 +90,7 @@ const nonLocationMethods = computed(() =>
 
 .contact-methods {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.5rem;
 }
 .contact-methods-stack {
@@ -136,6 +136,9 @@ const nonLocationMethods = computed(() =>
 }
 
 @media (max-width: 900px) {
+  .contact-methods {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .contact-form-shell {
     grid-template-columns: 1fr;
   }

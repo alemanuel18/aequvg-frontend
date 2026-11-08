@@ -102,10 +102,10 @@ const formatEventDate = (value: string | null | undefined) => {
   <div>
     <PageHero
       eyebrow="Agenda y actividades"
-      title="Detalle del Evento"
-      description="Información de la actividad organizada por AsoQuímica UVG."
+      :title="event?.name || 'Detalle del evento'"
+      :description="event?.description || 'Información de la actividad organizada por AsoQuímica UVG.'"
     />
-    <AppSection title="Información de la actividad">
+    <AppSection>
       <StatePanel
         v-if="status === 'pending'"
         title="Cargando evento"
@@ -238,11 +238,7 @@ const formatEventDate = (value: string | null | undefined) => {
   display: grid;
   gap: 1.4rem;
   width: 100%;
-  padding: clamp(1.25rem, 4vw, 2.5rem);
-  background: white;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  padding-block: 0;
 }
 
 .event-detail__meta {
@@ -359,7 +355,7 @@ const formatEventDate = (value: string | null | undefined) => {
 
 @media (max-width: 620px) {
   .event-detail {
-    padding: 1.25rem;
+    padding-inline: 0;
   }
 }
 </style>
