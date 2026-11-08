@@ -176,6 +176,7 @@ function handleEscape(event: KeyboardEvent) {
 .profile-link__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 
 .nav-toggle {
+  position: relative;
   display: none;
   width: 2.85rem;
   height: 2.85rem;
@@ -188,10 +189,14 @@ function handleEscape(event: KeyboardEvent) {
 }
 
 .nav-toggle span {
+  position: absolute;
+  top: 50%;
+  left: 0.68rem;
+  right: 0.68rem;
   display: block;
-  width: 100%;
+  width: auto;
   height: 2px;
-  margin: 0.27rem 0;
+  margin: 0;
   background: currentColor;
   border-radius: 999px;
   transform-origin: center;
@@ -200,14 +205,17 @@ function handleEscape(event: KeyboardEvent) {
     opacity 0.15s ease;
 }
 
+.nav-toggle span:first-child { transform: translateY(-0.38rem); }
+.nav-toggle span:last-child { transform: translateY(0.38rem); }
+
 .nav-toggle--open span:first-child {
-  transform: translateY(0.52rem) rotate(45deg);
+  transform: translateY(0) rotate(45deg);
 }
 .nav-toggle--open span:nth-child(2) {
   opacity: 0;
 }
 .nav-toggle--open span:last-child {
-  transform: translateY(-0.52rem) rotate(-45deg);
+  transform: translateY(0) rotate(-45deg);
 }
 
 @media (max-width: 1080px) {

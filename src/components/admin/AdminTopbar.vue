@@ -25,6 +25,9 @@ defineEmits<{ menu: [] }>();
 
 <style scoped>
 .admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 35;
   min-height: 4.5rem;
   display: flex;
   align-items: center;
