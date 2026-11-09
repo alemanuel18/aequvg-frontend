@@ -19,8 +19,8 @@ Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chrom
 | Persistencia de cambios | Administrador autorizado | Pasa en PostgreSQL local | La prueba vuelve a consultar el detalle después de editar y verifica la fila directamente después de eliminar. Los datos temporales se limpian en `afterAll`. |
 | Archivos de tesis | Visitante y administrador | Pasa en la aplicación | La pantalla administrativa no ofrece campo de archivo; el modelo y la API solo guardan URL y metadatos. La respuesta de creación no contiene `fileId`. |
 | Vista móvil | Visitante y administrador | Pasa en Playwright | La vista pública y administrativa se revisan a 320 px; no hay desbordamiento horizontal. |
-| Enlace externo | Visitante/estudiante | Parcial | El detalle abre el URL de origen en otra pestaña e informa que el acceso depende del repositorio. La consulta web a la colección indicada devolvió 403; eso no permite distinguir un control anti-bot de un requisito de autorización para personas. La comunidad de Química muestra una URI permanente [123456789/3276](https://repositorio.uvg.edu.gt/handle/123456789/3276). |
-| Archivo universitario después de retirar el enlace | Repositorio UVG | No verificable desde la aplicación | DELETE solo elimina la fila `ThesisLink`; la ruta no hace una solicitud al repositorio. La prueba confirma el borrado local, pero no inspecciona el archivo remoto. |
+| Enlace externo | Visitante/estudiante | Pasa para el ítem probado | La colección `Tesis - Química` reporta 65 ítems archivados. El ítem [123456789/4914](https://repositorio.uvg.edu.gt/handle/123456789/4914) está dentro de esa colección; sus metadatos lo identifican como tesis de Licenciatura en Química y su acceso es `open.access`. La ficha y el PDF respondieron sin sesión. |
+| Archivo universitario después de retirar el enlace | Repositorio UVG | Pasa para el ítem probado | Publiqué temporalmente el enlace al ítem 4914, lo retiré desde el panel y confirmé que la consulta pública local ya no lo lista. Inmediatamente después, una solicitud sin sesión al bitstream remoto respondió HTTP 200, `application/pdf`, 1,206,840 bytes. El PDF remoto siguió accesible. |
 | Validación de una junta real | Junta Directiva | Pendiente | La suite usa un rol temporal con `PAPERS_MANAGE`; esto comprueba la autorización técnica, no registra aprobación de una persona real de la junta. |
 | Publicar pegando únicamente el URL | Administrador | Pendiente de aclarar | La interfaz mantiene como obligatorios título y autor, conforme a la decisión previa. No requiere subir archivos. Si el criterio significa que el URL debe bastar sin esos metadatos, hace falta confirmar el cambio de alcance antes de modificar el formulario. |
 
@@ -30,11 +30,13 @@ Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chrom
 - Backend: `docker compose exec -e THESIS_DATABASE_TEST=true backend bun run vitest run tests/integration/thesis.api.database.test.ts` — 3 pruebas aprobadas contra PostgreSQL local.
 - Tipos del backend: `bun run typecheck` — aprobado.
 - Consulta posterior de solo lectura en PostgreSQL: cero tesis, administradores, roles o estudiantes temporales con el prefijo `thesis-test-`.
-- La suite de navegador usa una API simulada; la suite de integración usa PostgreSQL local. Ninguna verifica las reglas de acceso a documentos individuales en UVG ni sustituye la revisión de la junta.
+- Prueba remota sin sesión: el ítem [123456789/4914](https://repositorio.uvg.edu.gt/handle/123456789/4914), “Validación de un kit de campo para la determinación de fosfatos en pisos hechos de estuco del sitio arqueológico La Corona utilizando el método de Murphy y Riley”, devuelve `open.access`. El bitstream `78d85cfa-c6ff-4e21-a28a-b8ff22042127` respondió HTTP 200 y 1,206,840 bytes después de retirar el enlace local. No se hizo ninguna petición de escritura al repositorio.
+- La herramienta de lectura web inicialmente mostró 403 para la colección; la petición HTTPS directa desde el entorno local respondió HTTP 200. El 403 fue específico de ese lector y no se reprodujo como requisito de autenticación del usuario.
+- La suite automatizada de navegador usa una API simulada y la integración usa PostgreSQL local. La comprobación manual del repositorio confirma acceso abierto para un ítem concreto; no caracteriza ítems restringidos ni sustituye la revisión de la junta.
 
 ## Pendientes para cerrar aceptación
 
 1. La junta debe confirmar el flujo y la matriz de permisos; la aprobación no se ha solicitado ni registrado.
 2. Confirmar si “solo el enlace” significa “sin archivos” o si también elimina la obligatoriedad de título y autor.
-3. Probar un enlace individual de tesis con acceso público o con las credenciales que correspondan. La consulta de la colección retornó 403 desde el lector web y no demuestra por sí sola una restricción para usuarios.
+3. El acceso se comprobó con un ítem público; no se probó una tesis con embargo o permiso restringido. Si se requiere cubrir ese caso, hace falta un enlace de ejemplo restringido y una cuenta autorizada de UVG.
 4. Validar con la junta la estimación propuesta de 2 puntos.
