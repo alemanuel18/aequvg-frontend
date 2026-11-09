@@ -43,6 +43,14 @@ const {
     pagination: { page: 1, pageSize, total: 0, totalPages: 0 },
   }),
 });
+const {
+  data: thesisResult,
+  status: thesisStatus,
+  error: thesisError,
+  refresh: refreshTheses,
+} = await useAsyncData("public-theses", () => service.theses(1, 100), {
+  default: () => ({ items: [], pagination: { page: 1, pageSize: 100, total: 0, totalPages: 0 } }),
+});
 const totalPages = computed(() =>
   Math.max(1, result.value.pagination.totalPages),
 );
@@ -192,6 +200,17 @@ const formatDate = (value: string) =>
         </nav></template
       >
     </AppSection>
+    <AppSection id="tesis" title="Tesis de Química" lead="Consulta los trabajos de graduación y abre cada tesis desde el repositorio de la Universidad del Valle de Guatemala.">
+      <StatePanel v-if="thesisStatus === 'pending'" title="Cargando tesis" message="Consultando las tesis publicadas." />
+      <StatePanel v-else-if="thesisError" role="alert" title="No pudimos cargar las tesis" message="Verifica tu conexión e inténtalo nuevamente."><button type="button" @click="refreshTheses()">Reintentar</button></StatePanel>
+      <StatePanel v-else-if="!thesisResult.items.length" title="Aún no hay tesis publicadas" message="Cuando haya tesis disponibles, aparecerán en esta sección." />
+      <div v-else class="theses-grid">
+        <ContentCard v-for="thesis in thesisResult.items" :key="thesis.id" :eyebrow="thesis.publicationYear ? String(thesis.publicationYear) : 'Tesis de Química'" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
+          <p v-if="thesis.author" class="research-card__meta">Por {{ thesis.author }}</p>
+          <a class="card__link" :href="thesis.url" target="_blank" rel="noopener noreferrer">Consultar tesis en UVG <span aria-hidden="true">↗</span></a>
+        </ContentCard>
+      </div>
+    </AppSection>
   </div>
 </template>
 
@@ -258,6 +277,9 @@ const formatDate = (value: string) =>
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem;
 }
+.theses-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+@media (max-width: 900px) { .theses-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .theses-grid { grid-template-columns: 1fr; } }
 .research-card__meta {
   margin: 0;
   color: var(--color-muted);

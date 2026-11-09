@@ -6,7 +6,7 @@ describe('navegación pública', () => {
     expect(new Set(publicNavigation.map(item => item.to)).size).toBe(publicNavigation.length)
     expect(publicNavigation.some(item => item.to === '/')).toBe(false)
     expect(publicNavigation).toContainEqual({ label: 'Junta Directiva', to: '/junta-directiva' })
-    expect(publicNavigation).toContainEqual({ label: 'Tesis', to: '/tesis' })
+    expect(publicNavigation).toContainEqual({ label: 'Tesis', to: '/investigacion#tesis' })
     expect(publicNavigation).toContainEqual({ label: 'Contacto', to: '/contacto' })
   })
 })

@@ -707,6 +707,7 @@ Bun.serve({
     if (url.pathname === '/api/v1/projects/20') return json(project)
     if (url.pathname === '/api/v1/projects/21') return json(secondProject)
     if (url.pathname.startsWith('/api/v1/projects/')) return json({ error: { code: 'PROJECT_NOT_FOUND', message: 'El proyecto solicitado no existe.' } }, 404)
+    if (url.pathname === '/api/v1/theses') return json({ items: [{ id: 1, sourceIdentifier: '123456789/1', title: 'Tesis de ejemplo', author: 'Estudiante de prueba', publicationYear: 2025, summary: 'Resumen de ejemplo.', url: 'https://repositorio.uvg.edu.gt/handle/123456789/1', publishedAt: '2026-01-01T00:00:00.000Z' }], pagination: { page: 1, pageSize: 100, total: 1, totalPages: 1 } })
     return json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } }, 404)
   }
 })
