@@ -121,6 +121,35 @@ const project = {
 
 const secondProject = { ...project, id: 21, title: 'Tesis de segunda página', slug: 'tesis-segunda-pagina', type: 'TESIS' }
 
+type MockThesis = {
+  id: number
+  sourceIdentifier: string | null
+  title: string
+  author: string | null
+  publicationYear: number | null
+  summary: string | null
+  url: string
+  createdById: number
+  createdAt: string
+  updatedAt: string
+  publishedAt: string | null
+}
+const initialTheses = (): MockThesis[] => [{
+  id: 1,
+  sourceIdentifier: '123456789/1',
+  title: 'Tesis de ejemplo',
+  author: 'Estudiante de prueba',
+  publicationYear: 2025,
+  summary: 'Resumen de ejemplo.',
+  url: 'https://repositorio.uvg.edu.gt/handle/123456789/1',
+  createdById: 1,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+  publishedAt: '2026-01-01T00:00:00.000Z'
+}]
+let theses = initialTheses()
+let nextThesisId = 2
+
 let nextBoardMemberId = 103
 let boardMembers = [
   { id: 101, photoId: null, name: 'Ana Pérez', firstNames: 'Ana', lastNames: 'Pérez', position: 'Presidenta', description: null, institutionalEmail: 'ana@uvg.edu.gt', term: '2026', termStartsAt: '2026-01-01T00:00:00.000Z', termEndsAt: '2026-12-31T00:00:00.000Z', displayOrder: 0, status: 'ACTIVO', photo: null },
@@ -286,12 +315,44 @@ Bun.serve({
       studentSessionActive = false
       return new Response(null, { status: 204, headers: { 'access-control-allow-origin': allowedOrigin, 'access-control-allow-credentials': 'true', 'set-cookie': 'aequvg_student_session=; Max-Age=0; Path=/' } })
     }
+    if (url.pathname === '/api/v1/admin/theses' || url.pathname.match(/^\/api\/v1\/admin\/theses\/\d+$/)) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (!activeUser.permissions.includes('PAPERS_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para gestionar tesis.' } }, 403)
+      if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      if (request.method === 'GET') return json({ items: [...theses].sort((a, b) => b.id - a.id), pagination: { page: 1, pageSize: 100, total: theses.length } })
+      if (request.method === 'POST') {
+        const body = await request.json() as Partial<MockThesis>
+        let parsedUrl: URL
+        try { parsedUrl = new URL(body.url || '') } catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'Ingresa una URL válida que comience con http:// o https://.' } }, 422) }
+        if (!['http:', 'https:'].includes(parsedUrl.protocol) || !body.title || !body.author) return json({ error: { code: 'VALIDATION_ERROR', message: 'Revisa los datos de la tesis.' } }, 422)
+        const now = new Date().toISOString()
+        const created: MockThesis = { id: nextThesisId++, sourceIdentifier: body.sourceIdentifier ?? null, title: body.title, author: body.author, publicationYear: body.publicationYear ?? null, summary: body.summary ?? null, url: body.url!, createdById: 1, createdAt: now, updatedAt: now, publishedAt: body.publishedAt ?? null }
+        theses.unshift(created)
+        return json(created, 201)
+      }
+      const id = Number(url.pathname.split('/').at(-1))
+      const index = theses.findIndex(thesis => thesis.id === id)
+      if (index < 0) return json({ error: { code: 'THESIS_NOT_FOUND', message: 'La tesis no existe.' } }, 404)
+      if (request.method === 'PUT') {
+        const body = await request.json() as Partial<MockThesis>
+        if (body.url !== undefined) {
+          try { const parsedUrl = new URL(body.url); if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('invalid protocol') }
+          catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'Ingresa una URL válida que comience con http:// o https://.' } }, 422) }
+        }
+        theses[index] = { ...theses[index]!, ...body, id, updatedAt: new Date().toISOString() }
+        return json(theses[index])
+      }
+      if (request.method === 'DELETE') {
+        theses.splice(index, 1)
+        return json({ message: 'Enlace de tesis eliminado.' })
+      }
+    }
     const publicationCommentsMatch = url.pathname.match(/^\/api\/v1\/publications\/(NOTICIA|PROYECTO|EVENTO|TESIS)\/(\d+)\/comments$/)
     if (publicationCommentsMatch) {
       const [, targetType, targetIdText] = publicationCommentsMatch
       const targetId = Number(targetIdText)
       const key = `${targetType}:${targetId}`
-      if (!['NOTICIA:7', 'PROYECTO:20', 'EVENTO:10', 'EVENTO:12', 'TESIS:1'].includes(key)) return json({ error: { code: 'PUBLICATION_NOT_FOUND', message: 'La publicación no existe o ya no está disponible.' } }, 404)
+      if (!['NOTICIA:7', 'PROYECTO:20', 'EVENTO:10', 'EVENTO:12'].includes(key) && !(targetType === 'TESIS' && theses.some(thesis => thesis.id === targetId && thesis.publishedAt))) return json({ error: { code: 'PUBLICATION_NOT_FOUND', message: 'La publicación no existe o ya no está disponible.' } }, 404)
       const comments = publicationComments[key] ??= [{ id: 501, targetType, targetId, content: 'Comentario visible para visitantes.', authorName: 'Estudiante de prueba', createdAt: '2026-10-25T12:00:00.000Z' }]
       if (request.method === 'GET') {
         const page = Number(url.searchParams.get('page') || 1)
@@ -385,6 +446,8 @@ Bun.serve({
       adminEvents = initialAdminEvents()
       adminRegistrations = initialAdminRegistrations()
       nextAdminEventId = 14
+      theses = initialTheses()
+      nextThesisId = 2
       activeUser = body.email === 'editor@uvg.edu.gt' ? limitedUser : adminUser
       const response = json({ user: activeUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
@@ -709,11 +772,19 @@ Bun.serve({
     if (url.pathname.startsWith('/api/v1/projects/')) return json({ error: { code: 'PROJECT_NOT_FOUND', message: 'El proyecto solicitado no existe.' } }, 404)
     if (url.pathname === '/api/v1/theses') {
       const q = url.searchParams.get('q')?.toLowerCase() || ''
-      const records = [{ id: 1, sourceIdentifier: '123456789/1', title: 'Tesis de ejemplo', author: 'Estudiante de prueba', publicationYear: 2025, summary: 'Resumen de ejemplo.', url: 'https://repositorio.uvg.edu.gt/handle/123456789/1', publishedAt: '2026-01-01T00:00:00.000Z' }]
-      const filtered = q ? records.filter(record => `${record.title} ${record.author} ${record.summary}`.toLowerCase().includes(q)) : records
-      return json({ items: filtered, pagination: { page: Number(url.searchParams.get('page') || 1), pageSize: Number(url.searchParams.get('pageSize') || 9), total: filtered.length, totalPages: filtered.length ? 1 : 0 } })
+      if (q === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0, totalPages: 0 } })
+      if (q === 'error-prueba') return json({ error: { code: 'REQUEST_FAILED', message: 'Error simulado.' } }, 503)
+      const visible = theses.filter(thesis => thesis.publishedAt && (!q || `${thesis.title} ${thesis.author || ''} ${thesis.summary || ''}`.toLowerCase().includes(q)))
+      const page = Number(url.searchParams.get('page') || 1)
+      const pageSize = Number(url.searchParams.get('pageSize') || 9)
+      const items = visible.slice((page - 1) * pageSize, page * pageSize)
+      return json({ items, pagination: { page, pageSize, total: visible.length, totalPages: Math.ceil(visible.length / pageSize) } })
     }
-    if (url.pathname === '/api/v1/theses/1') return json({ id: 1, sourceIdentifier: '123456789/1', title: 'Tesis de ejemplo', author: 'Estudiante de prueba', publicationYear: 2025, summary: 'Resumen de ejemplo.', url: 'https://repositorio.uvg.edu.gt/handle/123456789/1', publishedAt: '2026-01-01T00:00:00.000Z' })
+    const thesisDetailMatch = url.pathname.match(/^\/api\/v1\/theses\/(\d+)$/)
+    if (thesisDetailMatch) {
+      const thesis = theses.find(item => item.id === Number(thesisDetailMatch[1]) && item.publishedAt)
+      return thesis ? json(thesis) : json({ error: { code: 'THESIS_NOT_FOUND', message: 'La tesis no existe o no está publicada.' } }, 404)
+    }
     return json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } }, 404)
   }
 })

@@ -23,6 +23,7 @@ const errorMessage = computed(() => error.value instanceof PublicApiError ? erro
         <p v-if="thesis.author" class="thesis-detail__author">{{ thesis.author }}</p>
         <div v-if="thesis.summary" class="thesis-detail__summary">{{ thesis.summary }}</div>
         <a class="thesis-detail__link" :href="thesis.url" target="_blank" rel="noopener noreferrer">Consultar tesis en el repositorio UVG <span aria-hidden="true">↗</span></a>
+        <p class="thesis-detail__access-note">La disponibilidad del documento y cualquier requisito de acceso dependen del repositorio de origen.</p>
       </article>
       <PublicationComments v-if="thesis && !error" target-type="TESIS" :target-id="thesis.id" />
     </AppSection>
@@ -30,5 +31,5 @@ const errorMessage = computed(() => error.value instanceof PublicApiError ? erro
 </template>
 
 <style scoped>
-.thesis-detail{display:grid;gap:1.4rem;max-width:52rem;margin-inline:auto}.thesis-detail__meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;color:var(--color-muted);font-size:.92rem}.thesis-detail__author{margin:0;color:var(--color-primary);font-weight:800}.thesis-detail__summary{white-space:pre-line;color:var(--color-ink);font-size:1.06rem;line-height:1.7}.thesis-detail__link{justify-self:start;padding:.7rem 1rem;color:var(--color-primary);border:1px solid var(--color-primary);border-radius:var(--radius-sm);font-weight:800;text-decoration:none}.thesis-detail__link:hover{color:white;background:var(--color-primary)}
+.thesis-detail{display:grid;gap:1.4rem;max-width:52rem;margin-inline:auto}.thesis-detail__meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;color:var(--color-muted);font-size:.92rem}.thesis-detail__author{margin:0;color:var(--color-primary);font-weight:800}.thesis-detail__summary{white-space:pre-line;color:var(--color-ink);font-size:1.06rem;line-height:1.7}.thesis-detail__link{justify-self:start;padding:.7rem 1rem;color:var(--color-primary);border:1px solid var(--color-primary);border-radius:var(--radius-sm);font-weight:800;text-decoration:none}.thesis-detail__link:hover{color:white;background:var(--color-primary)}.thesis-detail__access-note{margin:-.8rem 0 0;color:var(--color-muted);font-size:.92rem}
 </style>
