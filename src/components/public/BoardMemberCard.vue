@@ -52,7 +52,7 @@ const initials = computed(() =>
   background: white;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 10px 26px rgb(26 43 24 / 8%);
+  box-shadow: var(--shadow-sm);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -179,7 +179,7 @@ const initials = computed(() =>
   padding: 0.65rem 1rem;
   color: var(--color-primary);
   border: 1px solid var(--color-primary);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 800;
   text-decoration: none;
