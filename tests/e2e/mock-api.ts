@@ -296,12 +296,12 @@ Bun.serve({
       studentSessionActive = false
       return new Response(null, { status: 204, headers: { 'access-control-allow-origin': allowedOrigin, 'access-control-allow-credentials': 'true', 'set-cookie': 'aequvg_student_session=; Max-Age=0; Path=/' } })
     }
-    const publicationCommentsMatch = url.pathname.match(/^\/api\/v1\/publications\/(NOTICIA|PROYECTO|EVENTO)\/(\d+)\/comments$/)
+    const publicationCommentsMatch = url.pathname.match(/^\/api\/v1\/publications\/(NOTICIA|PROYECTO|EVENTO|TESIS)\/(\d+)\/comments$/)
     if (publicationCommentsMatch) {
       const [, targetType, targetIdText] = publicationCommentsMatch
       const targetId = Number(targetIdText)
       const key = `${targetType}:${targetId}`
-      if (!['NOTICIA:7', 'PROYECTO:20', 'EVENTO:10', 'EVENTO:12'].includes(key)) return json({ error: { code: 'PUBLICATION_NOT_FOUND', message: 'La publicación no existe o ya no está disponible.' } }, 404)
+      if (!['NOTICIA:7', 'PROYECTO:20', 'EVENTO:10', 'EVENTO:12', 'TESIS:1'].includes(key)) return json({ error: { code: 'PUBLICATION_NOT_FOUND', message: 'La publicación no existe o ya no está disponible.' } }, 404)
       const comments = publicationComments[key] ??= [{ id: 501, targetType, targetId, content: 'Comentario visible para visitantes.', authorName: 'Estudiante de prueba', createdAt: '2026-10-25T12:00:00.000Z' }]
       if (request.method === 'GET') {
         const page = Number(url.searchParams.get('page') || 1)
