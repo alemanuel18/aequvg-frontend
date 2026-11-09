@@ -56,14 +56,16 @@ const deleteComment = async (commentId: number) => {
 const targetLabels: Record<StudentComment['targetType'], string> = {
   NOTICIA: 'Noticia',
   PROYECTO: 'Proyecto',
-  EVENTO: 'Evento'
+  EVENTO: 'Evento',
+  TESIS: 'Tesis'
 }
 
 const publicationPath = (comment: StudentComment) => {
   const path: Record<StudentComment['targetType'], string> = {
     NOTICIA: '/noticias',
     PROYECTO: '/investigacion',
-    EVENTO: '/eventos'
+    EVENTO: '/eventos',
+    TESIS: '/investigacion/tesis'
   }
   return `${path[comment.targetType]}/${comment.targetId}`
 }
