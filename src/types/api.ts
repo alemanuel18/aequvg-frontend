@@ -200,6 +200,17 @@ export interface AdminNewsImage {
 }
 
 export interface Pagination { page: number; pageSize: number; total: number }
+export interface PublicThesis {
+  id: number
+  sourceIdentifier: string | null
+  title: string
+  author: string | null
+  publicationYear: number | null
+  summary: string | null
+  url: string
+  publishedAt: string
+}
+export interface PublicThesisList { items: PublicThesis[]; pagination: Pagination & { totalPages: number } }
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }
 export interface PublicNewsQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
 

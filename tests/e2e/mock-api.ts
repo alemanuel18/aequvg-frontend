@@ -766,6 +766,13 @@ Bun.serve({
     if (url.pathname === '/api/v1/projects/20') return json(project)
     if (url.pathname === '/api/v1/projects/21') return json(secondProject)
     if (url.pathname.startsWith('/api/v1/projects/')) return json({ error: { code: 'PROJECT_NOT_FOUND', message: 'El proyecto solicitado no existe.' } }, 404)
+    if (url.pathname === '/api/v1/theses') {
+      const q = url.searchParams.get('q')?.toLowerCase() || ''
+      const records = [{ id: 1, sourceIdentifier: '123456789/1', title: 'Tesis de ejemplo', author: 'Estudiante de prueba', publicationYear: 2025, summary: 'Resumen de ejemplo.', url: 'https://repositorio.uvg.edu.gt/handle/123456789/1', publishedAt: '2026-01-01T00:00:00.000Z' }]
+      const filtered = q ? records.filter(record => `${record.title} ${record.author} ${record.summary}`.toLowerCase().includes(q)) : records
+      return json({ items: filtered, pagination: { page: Number(url.searchParams.get('page') || 1), pageSize: Number(url.searchParams.get('pageSize') || 9), total: filtered.length, totalPages: filtered.length ? 1 : 0 } })
+    }
+    if (url.pathname === '/api/v1/theses/1') return json({ id: 1, sourceIdentifier: '123456789/1', title: 'Tesis de ejemplo', author: 'Estudiante de prueba', publicationYear: 2025, summary: 'Resumen de ejemplo.', url: 'https://repositorio.uvg.edu.gt/handle/123456789/1', publishedAt: '2026-01-01T00:00:00.000Z' })
     return json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } }, 404)
   }
 })

@@ -43,13 +43,30 @@ const {
     pagination: { page: 1, pageSize, total: 0, totalPages: 0 },
   }),
 });
+const {
+  data: thesisResult,
+  status: thesisStatus,
+  error: thesisError,
+} = await useAsyncData("public-theses", () => service.theses(currentPage.value, pageSize, appliedSearch.value || undefined), {
+  default: () => ({ items: [], pagination: { page: 1, pageSize, total: 0, totalPages: 0 } }),
+});
 const totalPages = computed(() =>
-  Math.max(1, result.value.pagination.totalPages),
+  Math.max(1, selectedType.value === 'TESIS' ? thesisResult.value.pagination.totalPages : selectedType.value === undefined ? Math.max(result.value.pagination.totalPages, thesisResult.value.pagination.totalPages) : result.value.pagination.totalPages),
 );
+const totalResults = computed(() => selectedType.value === 'TESIS'
+  ? thesisResult.value.pagination.total
+  : selectedType.value === undefined
+    ? result.value.pagination.total + thesisResult.value.pagination.total
+    : result.value.pagination.total)
 const updateProjects = async () => {
   requestError.value = null;
   try {
-    result.value = await loadProjects();
+    if (selectedType.value === 'TESIS') thesisResult.value = await service.theses(currentPage.value, pageSize, appliedSearch.value || undefined);
+    else if (selectedType.value === undefined) {
+      const [projects, theses] = await Promise.all([loadProjects(), service.theses(currentPage.value, pageSize, appliedSearch.value || undefined)])
+      result.value = projects
+      thesisResult.value = theses
+    } else result.value = await loadProjects();
   } catch (requestFailure) {
     requestError.value = requestFailure;
   }
@@ -127,35 +144,42 @@ const formatDate = (value: string) =>
         /><button class="research-filters__submit" type="submit">Buscar</button>
       </form>
       <StatePanel
-        v-if="status === 'pending'"
+        v-if="status === 'pending' || (selectedType !== 'PROYECTO' && thesisStatus === 'pending')"
         title="Cargando investigaciones"
         message="Consultando los trabajos aprobados."
       />
       <StatePanel
-        v-else-if="error || requestError"
+        v-else-if="(selectedType === 'TESIS' ? thesisError : selectedType === undefined ? thesisError || error : error) || requestError"
         role="alert"
         title="No pudimos cargar las investigaciones"
         message="Verifica tu conexión e inténtalo nuevamente."
-        ><button @click="() => refresh()">Reintentar</button></StatePanel
+        ><button @click="updateProjects()">Reintentar</button></StatePanel
       >
       <StatePanel
-        v-else-if="!result.items.length"
+        v-else-if="selectedType === 'TESIS' ? !thesisResult.items.length : selectedType === undefined ? !thesisResult.items.length && !result.items.length : !result.items.length"
         title="No hay investigaciones para esta búsqueda"
         message="Prueba con otras palabras o selecciona otro tipo de trabajo."
       />
       <template v-else
         ><p class="research-count" aria-live="polite">
-          {{ result.pagination.total }}
+          {{ totalResults }}
           {{
-            result.pagination.total === 1
+            totalResults === 1
               ? "investigación encontrada"
               : "investigaciones encontradas"
           }}.
         </p>
         <div class="research-grid">
+          <template v-if="selectedType !== 'PROYECTO'">
+          <ContentCard v-for="thesis in thesisResult.items" :key="`thesis-${thesis.id}`" eyebrow="Tesis de Química" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
+            <p v-if="thesis.author || thesis.publicationYear" class="research-card__meta">{{ thesis.author ? `Por ${thesis.author}` : 'Trabajo de graduación' }}{{ thesis.publicationYear ? ` · ${thesis.publicationYear}` : '' }}</p>
+            <NuxtLink class="card__link" :to="`/investigacion/tesis/${thesis.id}`" :aria-label="`Ver tesis: ${thesis.title}`">Ver tesis <span aria-hidden="true">→</span></NuxtLink>
+          </ContentCard>
+          </template>
+          <template v-if="selectedType !== 'TESIS'">
           <ContentCard
             v-for="project in result.items"
-            :key="project.id"
+            :key="`project-${project.id}`"
             :eyebrow="typeLabel(project.type)"
             :title="project.title"
             :body="project.description"
@@ -170,6 +194,7 @@ const formatDate = (value: string) =>
               >Ver investigación <span aria-hidden="true">→</span></NuxtLink
             ></ContentCard
           >
+          </template>
         </div>
         <nav
           v-if="totalPages > 1"

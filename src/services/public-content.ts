@@ -1,4 +1,4 @@
-import type { BlogPost, BlogPostList, BoardMember, ContactMethod, ContactRequestInput, EventCategory, EventRegistrationInput, EventRegistrationResponse, FeaturedContentResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory } from '~/types/api'
+import type { BlogPost, BlogPostList, BoardMember, ContactMethod, ContactRequestInput, EventCategory, EventRegistrationInput, EventRegistrationResponse, FeaturedContentResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory, PublicThesisList } from '~/types/api'
 import { useApi } from './api'
 
 export const usePublicContentService = () => {
@@ -22,6 +22,8 @@ export const usePublicContentService = () => {
       }),
     projects: (query: PublicProjectQuery = {}) => api<PublicProjectList>('/projects', { query }),
     projectById: (id: number) => api<PublicProject>(`/projects/${id}`),
+    theses: (page = 1, pageSize = 20, q?: string) => api<PublicThesisList>('/theses', { query: { page, pageSize, q } }),
+    thesisById: (id: number) => api<import('~/types/api').PublicThesis>(`/theses/${id}`),
     resources: (query: PublicResourceQuery = {}) => api<PublicResourceList>('/resources', { query }),
     resourceCategories: () => api<ResourceCategory[]>('/resources/categories'),
     sendContactRequest: (body: ContactRequestInput) => api<{ accepted: true }>('/contact-requests', { method: 'POST', body })
