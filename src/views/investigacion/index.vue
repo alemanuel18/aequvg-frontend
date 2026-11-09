@@ -171,8 +171,8 @@ const formatDate = (value: string) =>
         </p>
         <div class="research-grid">
           <template v-if="selectedType !== 'PROYECTO'">
-          <ContentCard v-for="thesis in thesisResult.items" :key="`thesis-${thesis.id}`" :eyebrow="thesis.publicationYear ? String(thesis.publicationYear) : 'Tesis de Química'" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
-            <p v-if="thesis.author" class="research-card__meta">Por {{ thesis.author }}</p>
+          <ContentCard v-for="thesis in thesisResult.items" :key="`thesis-${thesis.id}`" eyebrow="Tesis de Química" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
+            <p v-if="thesis.author || thesis.publicationYear" class="research-card__meta">{{ thesis.author ? `Por ${thesis.author}` : 'Trabajo de graduación' }}{{ thesis.publicationYear ? ` · ${thesis.publicationYear}` : '' }}</p>
             <NuxtLink class="card__link" :to="`/investigacion/tesis/${thesis.id}`" :aria-label="`Ver tesis: ${thesis.title}`">Ver tesis <span aria-hidden="true">→</span></NuxtLink>
           </ContentCard>
           </template>
