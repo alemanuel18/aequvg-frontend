@@ -8,6 +8,14 @@ const loginAsAdmin = async (page: import('@playwright/test').Page) => {
   await expect(page).toHaveURL(/\/administrador\/panel$/)
 }
 
+const loginAsStudent = async (page: import('@playwright/test').Page) => {
+  await page.goto('/acceso')
+  await page.getByLabel('Correo institucional').fill('estudiante@uvg.edu.gt')
+  await page.getByLabel('Contraseña').fill('Estudiante123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/mi-cuenta$/)
+}
+
 const expectNoHorizontalOverflow = async (page: import('@playwright/test').Page) => {
   const dimensions = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
@@ -108,4 +116,52 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
   await page.getByLabel('Buscar investigaciones').fill('error-prueba')
   await page.getByRole('button', { name: 'Buscar' }).click()
   await expect(page.getByRole('heading', { name: 'No pudimos cargar las investigaciones' })).toBeVisible()
+})
+
+test('muestra errores claros por URL insegura, duplicado y fallo de guardado', async ({ page }) => {
+  await loginAsAdmin(page)
+  await page.goto('/administrador/tesis')
+
+  await page.getByLabel('Título').fill('Intento con URL insegura')
+  await page.getByLabel('Autor').fill('Autora de prueba')
+  const urlField = page.getByLabel('Enlace a la tesis')
+  await urlField.fill('')
+  await page.getByRole('button', { name: 'Agregar enlace' }).click()
+  expect(await urlField.evaluate((element: HTMLInputElement) => element.validity.valueMissing)).toBe(true)
+
+  await urlField.fill('ftp://repositorio.uvg.edu.gt/tesis.pdf')
+  await page.getByRole('button', { name: 'Agregar enlace' }).click()
+  await expect(page.getByRole('alert')).toContainText('El enlace debe comenzar con http:// o https://.')
+
+  await page.getByLabel('Título').fill('Intento duplicado')
+  await urlField.fill('https://repositorio.uvg.edu.gt/handle/123456789/1')
+  await page.getByRole('button', { name: 'Agregar enlace' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Agregar', exact: true }).click()
+  await expect(page.getByText('Ya existe una tesis con ese enlace o identificador.')).toBeVisible()
+  await expect(page.locator('.thesis-item').filter({ hasText: 'Intento duplicado' })).toHaveCount(0)
+
+  await page.getByLabel('Título').fill('Falla de guardado')
+  await urlField.fill('https://repositorio.uvg.edu.gt/fallo-guardado')
+  await page.getByRole('button', { name: 'Agregar enlace' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Agregar', exact: true }).click()
+  await expect(page.getByText('Fallo simulado al guardar.')).toBeVisible()
+  await expect(page.locator('.thesis-item').filter({ hasText: 'Falla de guardado' })).toHaveCount(0)
+})
+
+test('estudiantes consultan tesis sin ver controles administrativos', async ({ page }) => {
+  await loginAsStudent(page)
+  await page.goto('/investigacion')
+  await page.waitForLoadState('networkidle')
+  await selectTheses(page)
+  await expect(page.getByRole('heading', { name: 'Tesis de ejemplo' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Editar' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Eliminar' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Consultar tesis en el repositorio UVG/ })).toHaveCount(0)
+  await page.getByRole('link', { name: 'Ver tesis: Tesis de ejemplo' }).click()
+  await expect(page.getByRole('link', { name: /Consultar tesis en el repositorio UVG/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Editar' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Eliminar' })).toHaveCount(0)
+
+  await page.goto('/administrador/tesis')
+  await expect(page).toHaveURL(/\/administrador\?returnTo=/)
 })
