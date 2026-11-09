@@ -169,16 +169,17 @@ const formatDate = (value: string) =>
               : "investigaciones encontradas"
           }}.
         </p>
-        <div v-if="selectedType !== 'PROYECTO' && thesisResult.items.length" class="research-grid">
-          <ContentCard v-for="thesis in thesisResult.items" :key="thesis.id" :eyebrow="thesis.publicationYear ? String(thesis.publicationYear) : 'Tesis de Química'" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
+        <div class="research-grid">
+          <template v-if="selectedType !== 'PROYECTO'">
+          <ContentCard v-for="thesis in thesisResult.items" :key="`thesis-${thesis.id}`" :eyebrow="thesis.publicationYear ? String(thesis.publicationYear) : 'Tesis de Química'" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
             <p v-if="thesis.author" class="research-card__meta">Por {{ thesis.author }}</p>
-            <a class="card__link" :href="thesis.url" target="_blank" rel="noopener noreferrer">Consultar tesis en UVG <span aria-hidden="true">↗</span></a>
+            <NuxtLink class="card__link" :to="`/investigacion/tesis/${thesis.id}`" :aria-label="`Ver tesis: ${thesis.title}`">Ver tesis <span aria-hidden="true">→</span></NuxtLink>
           </ContentCard>
-        </div>
-        <div v-if="selectedType !== 'TESIS' && result.items.length" class="research-grid">
+          </template>
+          <template v-if="selectedType !== 'TESIS'">
           <ContentCard
             v-for="project in result.items"
-            :key="project.id"
+            :key="`project-${project.id}`"
             :eyebrow="typeLabel(project.type)"
             :title="project.title"
             :body="project.description"
@@ -193,6 +194,7 @@ const formatDate = (value: string) =>
               >Ver investigación <span aria-hidden="true">→</span></NuxtLink
             ></ContentCard
           >
+          </template>
         </div>
         <nav
           v-if="totalPages > 1"
