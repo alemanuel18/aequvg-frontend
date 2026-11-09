@@ -3,6 +3,7 @@ export const publicNavigation = [
   { label: 'Eventos', to: '/eventos' },
   { label: 'Recursos', to: '/recursos' },
   { label: 'Investigación', to: '/investigacion' },
+  { label: 'Tesis', to: '/tesis' },
   { label: 'Junta Directiva', to: '/junta-directiva' },
   { label: 'Contacto', to: '/contacto' }
 ] as const
