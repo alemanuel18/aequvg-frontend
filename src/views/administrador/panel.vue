@@ -63,16 +63,6 @@ const modules = computed(() =>
         />
       </section>
 
-      <section class="dashboard__notice" aria-labelledby="pending-title">
-        <span><AppIcon name="file-text" :size="22" /></span>
-        <div>
-          <h2 id="pending-title">Tesis aún no está disponible</h2>
-          <p>
-            El módulo se mantiene visible como referencia, pero no tiene un
-            enlace activo en este sprint.
-          </p>
-        </div>
-      </section>
     </template>
   </div>
 </template>

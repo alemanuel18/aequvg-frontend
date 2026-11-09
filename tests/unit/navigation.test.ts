@@ -18,9 +18,10 @@ describe('navegación administrativa', () => {
     expect(routes.every(route => route.startsWith('/administrador/'))).toBe(true)
   })
 
-  it('mantiene tesis visible pero sin un enlace activo', () => {
+  it('habilita la gestión de tesis para cuentas con el permiso correspondiente', () => {
     const thesis = adminNavigation.find(item => item.label === 'Tesis')
-    expect(thesis?.disabled).toBe(true)
-    expect(thesis?.to).toBeUndefined()
+    expect(thesis?.disabled).toBeUndefined()
+    expect(thesis?.to).toBe('/administrador/tesis')
+    expect(thesis?.permission).toBe('PAPERS_MANAGE')
   })
 })
