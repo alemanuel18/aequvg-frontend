@@ -14,6 +14,7 @@ const editingId = computed(() => {
 })
 const loading = ref(false)
 const saving = ref(false)
+const confirmModal = reactive({ open: false, title: '', message: '', confirmLabel: 'Confirmar', loading: false, action: (async () => {}) as () => Promise<void> })
 const loadError = ref('')
 const images = ref<AdminNewsImage[]>([])
 const imageInput = ref<HTMLInputElement | null>(null)
@@ -112,10 +113,7 @@ const uploadInlineImage = async (file: File) => {
     throw error
   }
 }
-const save = async () => {
-  const textContent = form.content.replace(/<[^>]*>/g, ' ').replace(/&(?:nbsp|amp|lt|gt|quot|#\d+|#x[\da-f]+);/gi, ' ').replace(/\s+/g, ' ').trim()
-  if (textContent.length < 20) { toast.error('El contenido debe incluir al menos 20 caracteres de texto.'); return }
-  if (form.content.length > 20000) { toast.error('El contenido no puede superar los 20,000 caracteres.'); return }
+const executeSave = async () => {
   saving.value = true
   try {
     const { slug, ...fields } = form
@@ -128,6 +126,18 @@ const save = async () => {
     await navigateTo('/administrador/blog')
   } catch (error) { toast.error(errorMessage(error)) }
   finally { saving.value = false }
+}
+const save = () => {
+  const textContent = form.content.replace(/<[^>]*>/g, ' ').replace(/&(?:nbsp|amp|lt|gt|quot|#\d+|#x[\da-f]+);/gi, ' ').replace(/\s+/g, ' ').trim()
+  if (textContent.length < 20) { toast.error('El contenido debe incluir al menos 20 caracteres de texto.'); return }
+  if (form.content.length > 20000) { toast.error('El contenido no puede superar los 20,000 caracteres.'); return }
+  Object.assign(confirmModal, { open: true, title: editingId.value ? '¿Guardar cambios?' : '¿Crear entrada?', message: `Confirma que deseas ${editingId.value ? 'actualizar' : 'crear'} “${form.title.trim()}” como ${statusLabel[form.status ?? 'BORRADOR'].toLowerCase()}.`, confirmLabel: editingId.value ? 'Guardar cambios' : 'Crear entrada', loading: false, action: executeSave })
+}
+const handleConfirmation = async () => {
+  if (confirmModal.loading) return
+  confirmModal.loading = true
+  try { await confirmModal.action(); confirmModal.open = false }
+  finally { confirmModal.loading = false }
 }
 const statusLabel: Record<ContentStatus, string> = { BORRADOR: 'Borrador', PUBLICADO: 'Publicado', ARCHIVADO: 'Archivado' }
 onMounted(() => { void Promise.all([loadPost(), loadImages()]) })
@@ -152,6 +162,7 @@ watch(editingId, () => { if (import.meta.client) void loadPost() })
         <div class="form-actions"><button class="primary-button" type="submit" :disabled="saving">{{ saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Crear entrada' }}</button><NuxtLink class="secondary-button" to="/administrador/blog">Cancelar</NuxtLink></div>
       </form>
     </section>
+    <AppConfirmModal :open="confirmModal.open" :title="confirmModal.title" :message="confirmModal.message" :confirm-label="confirmModal.confirmLabel" :loading="confirmModal.loading" @cancel="confirmModal.open = false" @confirm="handleConfirmation" />
   </div>
 </template>
 
