@@ -214,6 +214,15 @@ export interface PublicThesisList { items: PublicThesis[]; pagination: Paginatio
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }
 export interface PublicNewsQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }
 
+export interface BlogPost {
+  id: number; imageId: number | null; title: string; slug: string; summary: string; content: string; status: ContentStatus
+  createdAt: string; updatedAt: string; publishedAt: string | null
+  image: { id: number; originalName: string; mimeType: string } | null
+  createdBy: { id: number; name: string }
+}
+export interface BlogPostList { items: BlogPost[]; pagination: Pagination }
+export interface BlogPostInput { imageId?: number | null; title: string; slug?: string; summary: string; content: string; status?: ContentStatus; publishedAt?: string | null }
+
 export interface ResourceCategory { id: number; name: string; active?: boolean }
 export interface ResourceFile { id: number; originalName: string; mimeType: string; downloadUrl?: string | null }
 export interface AdminFile { id: number; uploadedById: number; originalName: string; mimeType: string; sizeBytes: number; sha256: string; createdAt: string }

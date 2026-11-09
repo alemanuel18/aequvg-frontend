@@ -14,6 +14,16 @@ const news = {
   createdBy: { id: 1, name: 'Contenido de desarrollo' }
 }
 
+const blogPost = {
+  id: 71, imageId: null, title: 'Experiencias de AsoQuímica en ACS', slug: 'experiencias-asoquimica-acs',
+  summary: 'Una historia de colaboración y aprendizaje de nuestra comunidad química.',
+  content: '<h2>Una comunidad conectada</h2><p>Compartimos aprendizajes y experiencias con colegas de la American Chemical Society.</p>',
+  status: 'PUBLICADO', createdAt: '2026-01-15T12:00:00.000Z', updatedAt: '2026-01-15T12:00:00.000Z', publishedAt: '2026-01-15T12:00:00.000Z',
+  image: null, createdBy: { id: 1, name: 'Administración de prueba' }
+}
+let adminBlogPosts = [blogPost, { ...blogPost, id: 72, title: 'Borrador interno ACS', slug: 'borrador-interno-acs', status: 'BORRADOR', publishedAt: null }]
+let nextBlogPostId = 73
+
 const secondNews = { ...news, id: 8, title: 'Anuncio de segunda página', summary: 'Contenido para validar la paginación.' }
 const featuredNewsCandidates = [
   ...Array.from({ length: 4 }, (_, index) => ({ id: 40 + index, title: `Noticia reciente ${index + 1}`, status: 'PUBLICADO', category: { name: 'Noticias' } })),
@@ -220,7 +230,7 @@ const adminUser = {
   email: 'admin@uvg.edu.gt',
   status: 'ACTIVO',
   role: 'Administrador',
-  permissions: ['ADMIN_ACCESS', 'BOARD_MANAGE', 'CONTACT_MANAGE', 'EVENTS_MANAGE', 'INSTITUTIONAL_MANAGE', 'NEWS_MANAGE', 'PAPERS_MANAGE', 'PROJECTS_MANAGE', 'RESOURCES_MANAGE', 'USERS_MANAGE']
+  permissions: ['ADMIN_ACCESS', 'BLOG_MANAGE', 'BOARD_MANAGE', 'CONTACT_MANAGE', 'EVENTS_MANAGE', 'INSTITUTIONAL_MANAGE', 'NEWS_MANAGE', 'PAPERS_MANAGE', 'PROJECTS_MANAGE', 'RESOURCES_MANAGE', 'USERS_MANAGE']
 }
 const limitedUser = {
   ...adminUser,
@@ -445,6 +455,8 @@ Bun.serve({
       adminResource = { ...resource }
       adminEvents = initialAdminEvents()
       adminRegistrations = initialAdminRegistrations()
+      adminBlogPosts = [blogPost, { ...blogPost, id: 72, title: 'Borrador interno ACS', slug: 'borrador-interno-acs', status: 'BORRADOR', publishedAt: null }]
+      nextBlogPostId = 73
       nextAdminEventId = 14
       theses = initialTheses()
       nextThesisId = 2
@@ -546,6 +558,44 @@ Bun.serve({
         adminNews = null
         if (id === 30) reflectedNews = null
         return json(removed)
+      }
+    }
+    if (url.pathname.startsWith('/api/v1/admin/blog')) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (!activeUser.permissions.includes('BLOG_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para gestionar el Blog ACS.' } }, 403)
+      if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      if (url.pathname === '/api/v1/admin/blog/images' && request.method === 'GET') return json([])
+      if (url.pathname === '/api/v1/admin/blog/images' && request.method === 'POST') {
+        const form = await request.formData(); const file = form.get('file')
+        if (!(file instanceof File)) return json({ error: { code: 'FILE_REQUIRED', message: 'Debes seleccionar una imagen.' } }, 422)
+        return json({ id: 80, originalName: file.name, mimeType: file.type, sizeBytes: file.size, createdAt: new Date().toISOString(), previewUrl: '/api/v1/admin/blog/images/80/preview' }, 201)
+      }
+      if (/^\/api\/v1\/admin\/blog\/images\/\d+\/preview$/.test(url.pathname)) return new Response(new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), { status: 200, headers: { 'content-type': 'image/png' } })
+      if (url.pathname === '/api/v1/admin/blog' && request.method === 'GET') return json({ items: adminBlogPosts, pagination: { page: 1, pageSize: 9, total: adminBlogPosts.length } })
+      if (url.pathname === '/api/v1/admin/blog' && request.method === 'POST') {
+        const body = await request.json() as Record<string, unknown>
+        const created = { ...blogPost, id: nextBlogPostId++, ...body, status: body.status || 'BORRADOR', publishedAt: body.status === 'PUBLICADO' ? new Date().toISOString() : null, createdBy: adminUser }
+        adminBlogPosts = [created as typeof blogPost, ...adminBlogPosts]
+        return json(created, 201)
+      }
+      const id = Number(url.pathname.split('/')[5])
+      const current = adminBlogPosts.find(item => item.id === id)
+      if (!current) return json({ error: { code: 'BLOG_POST_NOT_FOUND', message: 'La entrada solicitada no existe.' } }, 404)
+      if (request.method === 'GET') return json(current)
+      if (request.method === 'PUT') {
+        const body = await request.json() as Record<string, unknown>
+        const updated = { ...current, ...body, updatedAt: new Date().toISOString(), publishedAt: body.status === 'PUBLICADO' ? new Date().toISOString() : current.publishedAt }
+        adminBlogPosts = adminBlogPosts.map(item => item.id === id ? updated as typeof blogPost : item)
+        return json(updated)
+      }
+      if (request.method === 'PATCH') {
+        const archived = { ...current, status: 'ARCHIVADO', publishedAt: null }
+        adminBlogPosts = adminBlogPosts.map(item => item.id === id ? archived as typeof blogPost : item)
+        return json(archived)
+      }
+      if (request.method === 'DELETE') {
+        adminBlogPosts = adminBlogPosts.filter(item => item.id !== id)
+        return json(current)
       }
     }
     if (url.pathname === '/api/v1/institutional-content/featured') return json({ news: [news], events: [event] })
@@ -728,6 +778,15 @@ Bun.serve({
       }
     }
     if (url.pathname === '/api/v1/news/categories') return json(newsCategories.filter(category => category.active).map(({ id, name }) => ({ id, name })))
+    if (url.pathname === '/api/v1/blog') {
+      const published = adminBlogPosts.filter(post => post.status === 'PUBLICADO')
+      return json({ items: published, pagination: { page: 1, pageSize: 12, total: published.length } })
+    }
+    if (url.pathname.startsWith('/api/v1/blog/')) {
+      const slug = decodeURIComponent(url.pathname.split('/').at(-1) || '')
+      const published = adminBlogPosts.find(post => post.slug === slug && post.status === 'PUBLICADO')
+      return published ? json(published) : json({ error: { code: 'BLOG_POST_NOT_FOUND', message: 'La entrada solicitada no existe.' } }, 404)
+    }
     if (url.pathname === '/api/v1/news') {
       const query = url.searchParams.get('q')?.toLowerCase() || ''
       if (query === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0 } })

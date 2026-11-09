@@ -1,4 +1,4 @@
-import type { BoardMember, ContactMethod, ContactRequestInput, EventCategory, EventRegistrationInput, EventRegistrationResponse, FeaturedContentResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory, PublicThesisList } from '~/types/api'
+import type { BlogPost, BlogPostList, BoardMember, ContactMethod, ContactRequestInput, EventCategory, EventRegistrationInput, EventRegistrationResponse, FeaturedContentResponse, InstitutionalBlock, PublicNews, PublicNewsList, PublicNewsQuery, NewsCategory, PublicEvent, PublicEventList, PublicEventQuery, PublicProject, PublicProjectList, PublicProjectQuery, PublicResourceList, PublicResourceQuery, ResourceCategory, PublicThesisList } from '~/types/api'
 import { useApi } from './api'
 
 export const usePublicContentService = () => {
@@ -11,6 +11,8 @@ export const usePublicContentService = () => {
     news: (query: PublicNewsQuery = {}) => api<PublicNewsList>('/news', { query }),
     newsCategories: () => api<NewsCategory[]>('/news/categories'),
     newsById: (id: number) => api<PublicNews>(`/news/${id}`),
+    blogPosts: (query: { page?: number; pageSize?: number } = {}) => api<BlogPostList>('/blog', { query }),
+    blogPostBySlug: (slug: string) => api<BlogPost>(`/blog/${encodeURIComponent(slug)}`),
     events: (query: PublicEventQuery = {}) => api<PublicEventList>('/events', { query }),
     eventCategories: () => api<EventCategory[]>('/events/categories'),
     eventById: (id: number) => api<PublicEvent>(`/events/${id}`),

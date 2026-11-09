@@ -1,0 +1,70 @@
+import { expect, test } from '@playwright/test'
+
+const loginAsAdmin = async (page: import('@playwright/test').Page, email = 'admin@uvg.edu.gt') => {
+  await page.goto('/administrador')
+  await page.getByLabel('Correo institucional').fill(email)
+  await page.getByLabel('Contraseña').fill('Acceso123!')
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/administrador\/panel$/)
+}
+
+test.describe('ACS · aceptación pública y administración', () => {
+  test('muestra contenido publicado, navegación de detalle y adaptación a 320 px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 })
+    await page.goto('/blog')
+    await expect(page.getByRole('heading', { name: 'Blog ACS' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Experiencias de AsoQuímica en ACS' })).toBeVisible()
+    await expect(page.getByText('Borrador interno ACS')).toHaveCount(0)
+    await page.getByRole('link', { name: 'Leer entrada' }).click()
+    await expect(page).toHaveURL(/\/blog\/experiencias-asoquimica-acs$/)
+    await expect(page.getByRole('heading', { name: 'Una comunidad conectada', level: 2 })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Volver al blog ACS' })).toHaveAttribute('href', '/blog')
+    const sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }))
+    expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
+  })
+
+  test('administra borradores, genera slug y recupera el borrador tras recargar', async ({ page }) => {
+    await loginAsAdmin(page)
+    await page.goto('/administrador/blog')
+    await expect(page.getByRole('heading', { name: 'Blog ACS' })).toBeVisible()
+    await expect(page.getByText('Publicado', { exact: true })).toBeVisible()
+    await expect(page.getByText('Borrador', { exact: true })).toBeVisible()
+
+    await page.getByRole('link', { name: /Nueva entrada/ }).click()
+    await page.getByLabel('Título').fill('Encuentro de AsoQuímica con ACS')
+    await expect(page.getByLabel('Slug (opcional)')).toHaveValue('encuentro-de-asoquimica-con-acs')
+    await expect(page.getByLabel('Jerarquía de título').locator('option')).toHaveText(['Párrafo', 'Título 1', 'Título 2', 'Título 3'])
+    await expect(page.getByRole('button', { name: 'Negrita' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Cursiva' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Justificar' })).toBeVisible()
+    await page.getByLabel('Resumen').fill('Resumen de prueba para la entrada de aceptación ACS.')
+    await page.getByRole('textbox', { name: 'Contenido de la entrada' }).fill('Contenido de prueba sobre nuestra colaboración con ACS y sus resultados.')
+    await page.reload()
+    await expect(page.getByLabel('Título')).toHaveValue('Encuentro de AsoQuímica con ACS')
+    await expect(page.getByLabel('Slug (opcional)')).toHaveValue('encuentro-de-asoquimica-con-acs')
+    await expect(page.getByRole('textbox', { name: 'Contenido de la entrada' })).toContainText('colaboración con ACS')
+
+    await page.getByRole('button', { name: 'Crear entrada' }).click()
+    const createConfirmation = page.getByRole('dialog')
+    await expect(createConfirmation.getByRole('heading', { name: '¿Crear entrada?' })).toBeVisible()
+    await createConfirmation.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(page.getByRole('button', { name: 'Crear entrada' })).toBeVisible()
+    await page.getByRole('button', { name: 'Crear entrada' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Crear entrada' }).click()
+    await expect(page).toHaveURL(/\/administrador\/blog$/)
+    const createdCard = page.locator('.blog-item').filter({ hasText: 'Encuentro de AsoQuímica con ACS' })
+    await expect(createdCard.getByText('Borrador', { exact: true })).toBeVisible()
+    await createdCard.getByRole('button', { name: 'Archivar' }).click()
+    const archiveConfirmation = page.getByRole('dialog')
+    await expect(archiveConfirmation.getByRole('heading', { name: '¿Archivar entrada?' })).toBeVisible()
+    await archiveConfirmation.getByRole('button', { name: 'Archivar entrada' }).click()
+    await expect(createdCard.getByText('Archivado', { exact: true })).toBeVisible()
+  })
+
+  test('oculta Blog ACS a una cuenta administrativa sin BLOG_MANAGE', async ({ page }) => {
+    await loginAsAdmin(page, 'editor@uvg.edu.gt')
+    await expect(page.getByRole('navigation', { name: 'Navegación administrativa' }).getByRole('link', { name: 'Blog ACS' })).toHaveCount(0)
+    await page.goto('/administrador/blog')
+    await expect(page).not.toHaveURL(/\/administrador\/blog$/)
+  })
+})
