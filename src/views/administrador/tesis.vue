@@ -37,7 +37,7 @@ const edit = (item: ThesisLink) => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 const payload = (): ThesisInput => ({
-  title: form.title.trim(), url: form.url.trim(),
+  title: form.title.trim() || 'Tesis enlazada', url: form.url.trim(),
   author: form.author.trim() || null,
   publicationYear: form.publicationYear ? Number(form.publicationYear) : null,
   summary: form.summary.trim() || null,
@@ -50,10 +50,8 @@ const askSave = () => {
   try { parsed = new URL(form.url.trim()) }
   catch { formError.value = 'Ingresa una dirección web válida.'; return }
   if (!['http:', 'https:'].includes(parsed.protocol)) { formError.value = 'El enlace debe comenzar con http:// o https://.'; return }
-  if (form.title.trim().length < 3) { formError.value = 'Escribe un título de al menos 3 caracteres.'; return }
-  if (!form.author.trim()) { formError.value = 'Escribe el autor de la tesis.'; return }
-  if (!form.publicationYear || !Number.isInteger(Number(form.publicationYear)) || Number(form.publicationYear) < 1900 || Number(form.publicationYear) > 9999) { formError.value = 'Ingresa un año de publicación válido.'; return }
-  if (!form.summary.trim()) { formError.value = 'Escribe el resumen de la tesis.'; return }
+  if (form.title.trim() && form.title.trim().length < 3) { formError.value = 'El título debe tener al menos 3 caracteres.'; return }
+  if (form.publicationYear && (!Number.isInteger(Number(form.publicationYear)) || Number(form.publicationYear) < 1900 || Number(form.publicationYear) > 9999)) { formError.value = 'Revisa el año de publicación.'; return }
   confirmation.title = editingId.value ? 'Guardar cambios' : form.published ? 'Publicar tesis' : 'Agregar tesis'
   confirmation.message = editingId.value ? 'Se actualizarán los datos de esta tesis.' : form.published ? 'La tesis aparecerá como publicada.' : 'La tesis se guardará como borrador.'
   confirmation.label = editingId.value ? 'Guardar' : form.published ? 'Publicar' : 'Agregar'
@@ -107,10 +105,10 @@ const askPublish = (item: ThesisLink) => {
     <section class="form-card" aria-labelledby="thesis-form-title">
       <h2 id="thesis-form-title">{{ editingId ? 'Editar tesis' : 'Agregar tesis' }}</h2>
       <form @submit.prevent="askSave">
-        <label>Título<input v-model="form.title" required minlength="3" maxlength="300" /></label>
+        <label>Título (opcional)<input v-model="form.title" minlength="3" maxlength="300" /></label>
         <label>Enlace a la tesis<input v-model="form.url" type="url" required maxlength="2048" placeholder="https://repositorio.uvg.edu.gt/handle/..." /></label>
-        <div class="field-row"><label>Autor<input v-model="form.author" required maxlength="300" /></label><label>Año<input v-model="form.publicationYear" type="number" required min="1900" max="9999" /></label></div>
-        <label>Resumen<textarea v-model="form.summary" required rows="4" maxlength="12000" /></label>
+        <div class="field-row"><label>Autor (opcional)<input v-model="form.author" maxlength="300" /></label><label>Año (opcional)<input v-model="form.publicationYear" type="number" min="1900" max="9999" /></label></div>
+        <label>Resumen (opcional)<textarea v-model="form.summary" rows="4" maxlength="12000" /></label>
         <label>Identificador del repositorio (opcional)<input v-model="form.sourceIdentifier" maxlength="255" placeholder="Handle u otro identificador" /></label>
         <label class="publish-check"><input v-model="form.published" type="checkbox" /> Publicar ahora</label>
         <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>

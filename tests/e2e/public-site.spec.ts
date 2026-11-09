@@ -391,8 +391,7 @@ test('protege el panel y valida el inicio de sesión administrativo', async ({ p
   await expect(page).toHaveURL(/\/administrador\/panel$/)
   await expect(page.getByRole('heading', { name: 'Módulos disponibles', level: 2 })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Abrir módulo: Noticias' })).toBeVisible()
-  await expect(page.getByText('Tesis aún no está disponible')).toBeVisible()
-  await expect(page.getByRole('link', { name: /Tesis/ })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Abrir módulo: Tesis' })).toBeVisible()
 
   await page.route('**/api/v1/auth/me', async (route) => {
     await new Promise(resolve => setTimeout(resolve, 300))
