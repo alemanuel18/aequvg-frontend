@@ -1,5 +1,6 @@
 export const publicNavigation = [
   { label: 'Noticias', to: '/noticias' },
+  { label: 'Blog ACS', to: '/blog' },
   { label: 'Eventos', to: '/eventos' },
   { label: 'Recursos', to: '/recursos' },
   { label: 'Investigación', to: '/investigacion' },
@@ -20,6 +21,7 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
   { label: 'Resumen', description: 'Inicio del panel administrativo.', to: '/administrador/panel', icon: 'dashboard' },
   { label: 'Contenido institucional', description: 'Información general del sitio.', to: '/administrador/contenido', permission: 'INSTITUTIONAL_MANAGE', icon: 'file-text' },
   { label: 'Noticias', description: 'Publicaciones y anuncios.', to: '/administrador/noticias', permission: 'NEWS_MANAGE', icon: 'newspaper' },
+  { label: 'Blog ACS', description: 'Entradas sobre el trabajo de la asociación con ACS.', to: '/administrador/blog', permission: 'BLOG_MANAGE', icon: 'file-text' },
   { label: 'Eventos', description: 'Actividades e inscripciones.', to: '/administrador/eventos', permission: 'EVENTS_MANAGE', icon: 'calendar' },
   { label: 'Recursos', description: 'Materiales para estudiantes.', to: '/administrador/recursos', permission: 'RESOURCES_MANAGE', icon: 'folder' },
   { label: 'Investigación', description: 'Proyectos estudiantiles.', to: '/administrador/investigacion', permission: 'PROJECTS_MANAGE', icon: 'file-text' },
