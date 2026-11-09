@@ -29,6 +29,7 @@ Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chrom
 - Frontend: `PLAYWRIGHT_FRONTEND_PORT=3003 PLAYWRIGHT_API_PORT=3004 bun run test:e2e -- tests/e2e/thesis-flow.spec.ts` — 3 pruebas aprobadas.
 - Backend: `docker compose exec -e THESIS_DATABASE_TEST=true backend bun run vitest run tests/integration/thesis.api.database.test.ts` — 3 pruebas aprobadas contra PostgreSQL local.
 - Tipos del backend: `bun run typecheck` — aprobado.
+- Consulta posterior de solo lectura en PostgreSQL: cero tesis, administradores, roles o estudiantes temporales con el prefijo `thesis-test-`.
 - La suite de navegador usa una API simulada; la suite de integración usa PostgreSQL local. Ninguna verifica las reglas de acceso a documentos individuales en UVG ni sustituye la revisión de la junta.
 
 ## Pendientes para cerrar aceptación
