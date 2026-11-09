@@ -332,6 +332,8 @@ Bun.serve({
       if (request.method === 'GET') return json({ items: [...theses].sort((a, b) => b.id - a.id), pagination: { page: 1, pageSize: 100, total: theses.length } })
       if (request.method === 'POST') {
         const body = await request.json() as Partial<MockThesis>
+        if (body.url?.includes('/fallo-guardado')) return json({ error: { code: 'THESIS_SAVE_FAILED', message: 'Fallo simulado al guardar.' } }, 503)
+        if (theses.some(thesis => thesis.url === body.url || (body.sourceIdentifier && thesis.sourceIdentifier === body.sourceIdentifier))) return json({ error: { code: 'THESIS_LINK_EXISTS', message: 'Ya existe una tesis con ese enlace o identificador.' } }, 409)
         let parsedUrl: URL
         try { parsedUrl = new URL(body.url || '') } catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'Ingresa una URL válida que comience con http:// o https://.' } }, 422) }
         if (!['http:', 'https:'].includes(parsedUrl.protocol) || !body.title || !body.author) return json({ error: { code: 'VALIDATION_ERROR', message: 'Revisa los datos de la tesis.' } }, 422)
