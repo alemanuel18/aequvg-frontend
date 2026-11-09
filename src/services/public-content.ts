@@ -20,7 +20,7 @@ export const usePublicContentService = () => {
       }),
     projects: (query: PublicProjectQuery = {}) => api<PublicProjectList>('/projects', { query }),
     projectById: (id: number) => api<PublicProject>(`/projects/${id}`),
-    theses: (page = 1, pageSize = 20) => api<PublicThesisList>('/theses', { query: { page, pageSize } }),
+    theses: (page = 1, pageSize = 20, q?: string) => api<PublicThesisList>('/theses', { query: { page, pageSize, q } }),
     resources: (query: PublicResourceQuery = {}) => api<PublicResourceList>('/resources', { query }),
     resourceCategories: () => api<ResourceCategory[]>('/resources/categories'),
     sendContactRequest: (body: ContactRequestInput) => api<{ accepted: true }>('/contact-requests', { method: 'POST', body })

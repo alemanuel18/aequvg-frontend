@@ -48,16 +48,17 @@ const {
   status: thesisStatus,
   error: thesisError,
   refresh: refreshTheses,
-} = await useAsyncData("public-theses", () => service.theses(1, 100), {
-  default: () => ({ items: [], pagination: { page: 1, pageSize: 100, total: 0, totalPages: 0 } }),
+} = await useAsyncData("public-theses", () => service.theses(currentPage.value, pageSize, appliedSearch.value || undefined), {
+  default: () => ({ items: [], pagination: { page: 1, pageSize, total: 0, totalPages: 0 } }),
 });
 const totalPages = computed(() =>
-  Math.max(1, result.value.pagination.totalPages),
+  Math.max(1, selectedType.value === 'TESIS' ? thesisResult.value.pagination.totalPages : result.value.pagination.totalPages),
 );
 const updateProjects = async () => {
   requestError.value = null;
   try {
-    result.value = await loadProjects();
+    if (selectedType.value === 'TESIS') thesisResult.value = await service.theses(currentPage.value, pageSize, appliedSearch.value || undefined);
+    else result.value = await loadProjects();
   } catch (requestFailure) {
     requestError.value = requestFailure;
   }
@@ -135,32 +136,38 @@ const formatDate = (value: string) =>
         /><button class="research-filters__submit" type="submit">Buscar</button>
       </form>
       <StatePanel
-        v-if="status === 'pending'"
+        v-if="status === 'pending' || (selectedType === 'TESIS' && thesisStatus === 'pending')"
         title="Cargando investigaciones"
         message="Consultando los trabajos aprobados."
       />
       <StatePanel
-        v-else-if="error || requestError"
+        v-else-if="(selectedType === 'TESIS' ? thesisError : error) || requestError"
         role="alert"
         title="No pudimos cargar las investigaciones"
         message="Verifica tu conexión e inténtalo nuevamente."
-        ><button @click="() => refresh()">Reintentar</button></StatePanel
+        ><button @click="selectedType === 'TESIS' ? refreshTheses() : refresh()">Reintentar</button></StatePanel
       >
       <StatePanel
-        v-else-if="!result.items.length"
+        v-else-if="selectedType === 'TESIS' ? !thesisResult.items.length : !result.items.length"
         title="No hay investigaciones para esta búsqueda"
         message="Prueba con otras palabras o selecciona otro tipo de trabajo."
       />
       <template v-else
         ><p class="research-count" aria-live="polite">
-          {{ result.pagination.total }}
+          {{ selectedType === 'TESIS' ? thesisResult.pagination.total : result.pagination.total }}
           {{
-            result.pagination.total === 1
+            (selectedType === 'TESIS' ? thesisResult.pagination.total : result.pagination.total) === 1
               ? "investigación encontrada"
               : "investigaciones encontradas"
           }}.
         </p>
-        <div class="research-grid">
+        <div v-if="selectedType === 'TESIS'" class="research-grid">
+          <ContentCard v-for="thesis in thesisResult.items" :key="thesis.id" :eyebrow="thesis.publicationYear ? String(thesis.publicationYear) : 'Tesis de Química'" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
+            <p v-if="thesis.author" class="research-card__meta">Por {{ thesis.author }}</p>
+            <a class="card__link" :href="thesis.url" target="_blank" rel="noopener noreferrer">Consultar tesis en UVG <span aria-hidden="true">↗</span></a>
+          </ContentCard>
+        </div>
+        <div v-else class="research-grid">
           <ContentCard
             v-for="project in result.items"
             :key="project.id"
@@ -199,17 +206,6 @@ const formatDate = (value: string) =>
           </button>
         </nav></template
       >
-    </AppSection>
-    <AppSection id="tesis" title="Tesis de Química" lead="Consulta los trabajos de graduación y abre cada tesis desde el repositorio de la Universidad del Valle de Guatemala.">
-      <StatePanel v-if="thesisStatus === 'pending'" title="Cargando tesis" message="Consultando las tesis publicadas." />
-      <StatePanel v-else-if="thesisError" role="alert" title="No pudimos cargar las tesis" message="Verifica tu conexión e inténtalo nuevamente."><button type="button" @click="refreshTheses()">Reintentar</button></StatePanel>
-      <StatePanel v-else-if="!thesisResult.items.length" title="Aún no hay tesis publicadas" message="Cuando haya tesis disponibles, aparecerán en esta sección." />
-      <div v-else class="theses-grid">
-        <ContentCard v-for="thesis in thesisResult.items" :key="thesis.id" :eyebrow="thesis.publicationYear ? String(thesis.publicationYear) : 'Tesis de Química'" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
-          <p v-if="thesis.author" class="research-card__meta">Por {{ thesis.author }}</p>
-          <a class="card__link" :href="thesis.url" target="_blank" rel="noopener noreferrer">Consultar tesis en UVG <span aria-hidden="true">↗</span></a>
-        </ContentCard>
-      </div>
     </AppSection>
   </div>
 </template>
@@ -277,9 +273,6 @@ const formatDate = (value: string) =>
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem;
 }
-.theses-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
-@media (max-width: 900px) { .theses-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .theses-grid { grid-template-columns: 1fr; } }
 .research-card__meta {
   margin: 0;
   color: var(--color-muted);
