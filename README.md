@@ -71,6 +71,16 @@ Sin sesión, la esquina derecha del navbar muestra `Ingresar / Registrarse`; con
 
 El frontend no envía roles ni calcula permisos. Las cookies estudiantiles son independientes de las administrativas y las credenciales nunca se guardan en `localStorage` o `sessionStorage`. El contrato completo, los estados de cuenta y la matriz de acceso están en [`student-access-flow.md`](../aequvg-backend/docs/student-access-flow.md).
 
+## Tesis de Química
+
+Estudiantes e interesados consultan tesis en `/investigacion`, filtran por **Tesis**, abren su ficha y siguen el enlace a UVG. La [guía para estudiantes](docs/guides/thesis-students.md) y la [guía para la junta](docs/guides/thesis-board.md) incluyen capturas de la interfaz.
+
+La junta administra enlaces manualmente desde `/administrador/tesis` con `PAPERS_MANAGE`. El archivo permanece en el repositorio universitario; su disponibilidad y permisos dependen de UVG. La automatización no está implementada ni se presenta como activa.
+
+El modelo, contrato y permisos están en el [documento API del backend](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-documentation/docs/thesis-links.md); su OpenAPI local está en `http://localhost:3000/openapi` y sus solicitudes manuales están en la colección Hoppscotch del backend. La [matriz E2E](docs/thesis-e2e-permissions.md), el [registro de defectos y repeticiones](docs/thesis-defect-log.md), el [estado de acuerdos y pendientes](docs/thesis-scope-status.md) y el [informe de investigación UVG](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-documentation/docs/thesis-repository-research.md) reúnen la evidencia disponible.
+
+El criterio documental que pide URL como único campo obligatorio sigue pendiente de alinear con el formulario: la pantalla actualmente requiere título, URL y autor. Las capturas usan datos de demostración servidos por una API simulada.
+
 ## Variables de entorno
 
 ```bash
@@ -275,7 +285,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/noticias` | Listado y detalle público de noticias publicadas. |
 | `/eventos` | Listado, detalle y disponibilidad públicos; la inscripción solicita una sesión estudiantil. |
 | `/recursos` | Catálogo público de recursos con categorías, búsqueda, paginación, enlaces y materiales disponibles. |
-| `/investigacion` | Navegación lista; contenido en desarrollo. |
+| `/investigacion` | Catálogo de proyectos y tesis publicados, con filtros, búsqueda y estados de carga, vacío y error. |
 | `/acceso` | Inicio de sesión para estudiantes de UVG. |
 | `/registro` | Alta de estudiantes actuales con correo institucional. |
 | `/mi-cuenta` | Panel protegido para editar el perfil, consultar Mis eventos, gestionar comentarios y eliminar la cuenta. |
@@ -286,6 +296,7 @@ Los E2E verifican navegación por teclado, ausencia de desplazamiento horizontal
 | `/administrador/noticias` | Gestión de noticias: listado, filtros, formulario, previsualización, estados y eliminación confirmada. Requiere `NEWS_MANAGE`. |
 | `/administrador/eventos` | Gestión de eventos: listado, búsqueda, filtros, creación, edición, archivado y eliminación confirmada. Requiere `EVENTS_MANAGE`. |
 | `/administrador/investigacion` | Gestión de proyectos de investigación: búsqueda, filtros, paginación, formulario con PDF, detalle, edición, revisión y eliminación confirmada. Requiere `PROJECTS_MANAGE`. |
+| `/administrador/tesis` | Gestión de enlaces de tesis: alta, publicación, edición y retiro local. Requiere sesión administrativa y `PAPERS_MANAGE`. |
 | `/administrador/contenido` | Gestión del Hero, anuncios institucionales y destacados. Requiere `INSTITUTIONAL_MANAGE`. |
 
 ### Acceso al panel administrativo
