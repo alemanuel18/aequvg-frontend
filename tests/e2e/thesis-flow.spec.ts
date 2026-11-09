@@ -148,6 +148,23 @@ test('muestra errores claros por URL insegura, duplicado y fallo de guardado', a
   await expect(page.locator('.thesis-item').filter({ hasText: 'Falla de guardado' })).toHaveCount(0)
 })
 
+test('comprueba alta usando solo la URL y registra los metadatos que todavía son obligatorios', async ({ page }) => {
+  await loginAsAdmin(page)
+  await page.goto('/administrador/tesis')
+
+  const urlField = page.getByLabel('Enlace a la tesis')
+  const titleField = page.getByLabel('Título')
+  const authorField = page.getByLabel('Autor')
+  await urlField.fill('https://repositorio.uvg.edu.gt/handle/123456789/4914')
+  expect(await urlField.evaluate((element: HTMLInputElement) => element.validity.valid)).toBe(true)
+  expect(await titleField.evaluate((element: HTMLInputElement) => element.validity.valueMissing)).toBe(true)
+  expect(await authorField.evaluate((element: HTMLInputElement) => element.validity.valueMissing)).toBe(true)
+
+  await page.getByRole('button', { name: 'Agregar enlace' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.locator('.thesis-item').filter({ hasText: '123456789/4914' })).toHaveCount(0)
+})
+
 test('estudiantes consultan tesis sin ver controles administrativos', async ({ page }) => {
   await loginAsStudent(page)
   await page.goto('/investigacion')
