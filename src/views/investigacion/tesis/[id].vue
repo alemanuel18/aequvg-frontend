@@ -25,7 +25,6 @@ const errorMessage = computed(() => error.value instanceof PublicApiError ? erro
         <a class="thesis-detail__link" :href="thesis.url" target="_blank" rel="noopener noreferrer">Consultar tesis en el repositorio UVG <span aria-hidden="true">↗</span></a>
         <p class="thesis-detail__access-note">La disponibilidad del documento y cualquier requisito de acceso dependen del repositorio de origen.</p>
       </article>
-      <PublicationComments v-if="thesis && !error" target-type="TESIS" :target-id="thesis.id" />
     </AppSection>
   </div>
 </template>
