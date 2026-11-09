@@ -114,7 +114,7 @@ export interface StudentSessionResponse {
   csrfToken?: string
   expiresAt?: string
 }
-export type StudentCommentTargetType = 'NOTICIA' | 'PROYECTO' | 'EVENTO' | 'TESIS'
+export type StudentCommentTargetType = 'NOTICIA' | 'PROYECTO' | 'EVENTO'
 export interface StudentComment {
   id: number
   targetType: StudentCommentTargetType
