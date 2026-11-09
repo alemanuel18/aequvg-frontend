@@ -31,7 +31,7 @@ const load = async () => {
 
 const targetPath = (item: StudentCommentRevision) => {
   const base: Record<StudentCommentRevision['targetType'], string> = {
-    NOTICIA: '/noticias', PROYECTO: '/investigacion', EVENTO: '/eventos'
+    NOTICIA: '/noticias', PROYECTO: '/investigacion', EVENTO: '/eventos', TESIS: '/investigacion/tesis'
   }
   return `${base[item.targetType]}/${item.targetId}`
 }
