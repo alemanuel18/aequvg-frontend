@@ -17,6 +17,7 @@ const page = ref(1)
 const pageSize = 9
 const total = ref(0)
 const config = useRuntimeConfig()
+const confirmModal = reactive({ open: false, title: '', message: '', confirmLabel: 'Confirmar', variant: 'primary' as 'primary' | 'danger' | 'warning', loading: false, action: (async () => {}) as () => Promise<void> })
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const statusLabel: Record<ContentStatus, string> = { BORRADOR: 'Borrador', PUBLICADO: 'Publicado', ARCHIVADO: 'Archivado' }
 const errorMessage = (error: unknown) => error instanceof PublicApiError ? error.message : 'No se pudieron cargar las entradas del blog.'
@@ -34,14 +35,25 @@ const submitSearch = () => { appliedSearch.value = search.value.trim(); page.val
 const filterStatus = () => { page.value = 1; void load() }
 const goToPage = (next: number) => { page.value = next; void load() }
 const edit = (post: BlogPost) => navigateTo({ path: '/administrador/blog/editor', query: { id: post.id } })
-const archive = async (post: BlogPost) => {
+const executeArchive = async (post: BlogPost) => {
   try { await service.archive(post.id); toast.success('La entrada se archivó.'); await load() }
   catch (error) { toast.error(errorMessage(error)) }
 }
-const remove = async (post: BlogPost) => {
-  if (!window.confirm(`¿Eliminar permanentemente “${post.title}”?`)) return
+const archive = (post: BlogPost) => {
+  Object.assign(confirmModal, { open: true, title: '¿Archivar entrada?', message: `Confirma que deseas retirar “${post.title}” del listado público.`, confirmLabel: 'Archivar entrada', variant: 'warning', loading: false, action: () => executeArchive(post) })
+}
+const executeRemove = async (post: BlogPost) => {
   try { await service.remove(post.id); toast.success('La entrada se eliminó.'); await load() }
   catch (error) { toast.error(errorMessage(error)) }
+}
+const remove = (post: BlogPost) => {
+  Object.assign(confirmModal, { open: true, title: '¿Eliminar entrada?', message: `Esta acción eliminará permanentemente “${post.title}”.`, confirmLabel: 'Eliminar entrada', variant: 'danger', loading: false, action: () => executeRemove(post) })
+}
+const handleConfirmation = async () => {
+  if (confirmModal.loading) return
+  confirmModal.loading = true
+  try { await confirmModal.action(); confirmModal.open = false }
+  finally { confirmModal.loading = false }
 }
 const formatDate = (value: string | null) => value ? new Intl.DateTimeFormat('es-GT', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(value)) : 'Sin publicar'
 const coverUrl = (imageId: number) => new URL(`/api/v1/admin/blog/images/${imageId}/preview`, config.public.apiBaseUrl).toString()
@@ -71,6 +83,7 @@ onMounted(load)
       </div>
       <nav v-if="!loading && !loadError && totalPages > 1" class="pagination" aria-label="Paginación de entradas"><button type="button" :disabled="page === 1" @click="goToPage(page - 1)">Anterior</button><span aria-live="polite">Página {{ page }} de {{ totalPages }}</span><button type="button" :disabled="page === totalPages" @click="goToPage(page + 1)">Siguiente</button></nav>
     </section>
+    <AppConfirmModal :open="confirmModal.open" :title="confirmModal.title" :message="confirmModal.message" :confirm-label="confirmModal.confirmLabel" :variant="confirmModal.variant" :loading="confirmModal.loading" @cancel="confirmModal.open = false" @confirm="handleConfirmation" />
   </div>
 </template>
 
