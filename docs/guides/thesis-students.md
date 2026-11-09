@@ -16,7 +16,7 @@ La ficha presenta título, autoría, año y resumen cuando esos datos están dis
 
 Si una tesis no aparece, revisa que esté publicada o busca por menos palabras. Si el enlace abre una página de acceso restringido o ya no está disponible, contacta a la unidad que administra el repositorio UVG; AEQUVG no puede cambiar esos permisos.
 
-La consulta pública no requiere una cuenta de estudiante. La pantalla de detalle puede incluir comentarios; publicar un comentario requiere iniciar sesión como estudiante UVG.
+La consulta pública no requiere una cuenta de estudiante. Las tesis no tienen sección de comentarios.
 
 ## Información para equipo técnico
 
