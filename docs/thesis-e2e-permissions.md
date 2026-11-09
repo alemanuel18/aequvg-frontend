@@ -46,6 +46,8 @@ Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chrom
 
 No se encontraron defectos funcionales abiertos en los casos repetidos. La cobertura no demuestra autorización de una junta real ni acceso a documentos con embargo; esos pendientes siguen indicados arriba.
 
+El registro independiente de cada hallazgo, clasificación, acción y repetición está en [thesis-defect-log.md](thesis-defect-log.md).
+
 ## Pendientes para cerrar aceptación
 
 1. La junta debe confirmar el flujo y la matriz de permisos; la aprobación no se ha solicitado ni registrado.
