@@ -259,7 +259,7 @@ const submit = async () => {
   background: white;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 10px 28px rgb(26 43 24 / 7%);
+  box-shadow: var(--shadow-sm);
 }
 
 .form-grid {
@@ -288,8 +288,8 @@ const submit = async () => {
   padding: 0.65rem 0.75rem;
   color: var(--color-ink);
   background: white;
-  border: 1px solid #9ca397;
-  border-radius: 0.55rem;
+  border: 1px solid #87948a;
+  border-radius: var(--radius-sm);
 }
 
 .field textarea {
@@ -323,7 +323,7 @@ const submit = async () => {
   padding: 0.9rem;
   background: white;
   border: 1px solid var(--color-border);
-  border-radius: 0.6rem;
+  border-radius: var(--radius-sm);
 }
 .form-status--error {
   color: var(--color-danger);
