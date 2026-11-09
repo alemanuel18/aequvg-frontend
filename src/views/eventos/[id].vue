@@ -100,12 +100,13 @@ const formatEventDate = (value: string | null | undefined) => {
 
 <template>
   <div>
+    <DetailBackLink to="/eventos" label="Volver a eventos" />
     <PageHero
       eyebrow="Agenda y actividades"
-      title="Detalle del Evento"
-      description="Información de la actividad organizada por AsoQuímica UVG."
+      :title="event?.name || 'Detalle del evento'"
+      :description="event?.description || 'Información de la actividad organizada por AsoQuímica UVG.'"
     />
-    <AppSection title="Información de la actividad">
+    <AppSection>
       <StatePanel
         v-if="status === 'pending'"
         title="Cargando evento"
@@ -130,7 +131,6 @@ const formatEventDate = (value: string | null | undefined) => {
             >
             <span class="event-detail__location">📍 {{ event.location }}</span>
           </div>
-          <h1>{{ event.name }}</h1>
           <p v-if="event.category" class="event-detail__category">▣ {{ event.category.name }}</p>
           <div class="event-detail__capacity">
             <div class="capacity-item">
@@ -188,9 +188,6 @@ const formatEventDate = (value: string | null | undefined) => {
               :to="registrationLoginUrl"
               variant="primary"
             >Inicia sesión para inscribirte</AppButton>
-            <AppButton to="/eventos" variant="secondary"
-              >← Ver todos los eventos</AppButton
-            >
           </div>
         </article>
 
@@ -238,11 +235,7 @@ const formatEventDate = (value: string | null | undefined) => {
   display: grid;
   gap: 1.4rem;
   width: 100%;
-  padding: clamp(1.25rem, 4vw, 2.5rem);
-  background: white;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  padding-block: 0;
 }
 
 .event-detail__meta {
@@ -359,7 +352,7 @@ const formatEventDate = (value: string | null | undefined) => {
 
 @media (max-width: 620px) {
   .event-detail {
-    padding: 1.25rem;
+    padding-inline: 0;
   }
 }
 </style>

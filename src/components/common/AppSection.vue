@@ -1,7 +1,7 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    title: string;
+    title?: string;
     lead?: string;
     tone?: "default" | "soft" | "dark";
     labelledBy?: string;
@@ -16,7 +16,7 @@ withDefaults(
     :aria-labelledby="labelledBy || undefined"
   >
     <div class="container">
-      <header class="section__header">
+      <header v-if="title" class="section__header">
         <h2 :id="labelledBy" class="section__title">{{ title }}</h2>
         <p v-if="lead" class="section__lead">{{ lead }}</p>
       </header>

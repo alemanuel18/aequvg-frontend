@@ -8,7 +8,7 @@ import {
 import { useToast } from "~/composables/use-toast";
 import { PublicApiError } from "~/services/api";
 import { useAdminNewsService } from "~/services/admin-news";
-import type { AdminNews, ContentStatus, NewsCategory } from "~/types/api";
+import type { AdminNews, AdminNewsImage, ContentStatus, NewsCategory } from "~/types/api";
 
 definePageMeta({
   layout: "admin",
@@ -24,6 +24,12 @@ const refreshing = ref(false);
 const loadError = ref("");
 const items = ref<AdminNews[]>([]);
 const categories = ref<NewsCategory[]>([]);
+const images = ref<AdminNewsImage[]>([]);
+const imagesLoading = ref(false);
+const imagesError = ref("");
+const imageMode = ref<"existing" | "new">("existing");
+const uploadingImage = ref(false);
+const imageInput = ref<HTMLInputElement | null>(null);
 const page = ref(1);
 const pageSize = 9;
 const total = ref(0);
@@ -70,9 +76,21 @@ const previewCategory = computed(
       ?.name || "Sin categoría",
 );
 const previewImage = computed(() =>
-  form.imageId.trim()
-    ? `Imagen asociada · ID ${form.imageId.trim()}`
-    : "Sin imagen asociada",
+  selectedImage.value?.originalName || "Sin imagen asociada",
+);
+const config = useRuntimeConfig();
+const imagePreviewUrl = computed(() => {
+  const image = selectedImage.value;
+  if (!image) return "";
+  const base = import.meta.server ? config.apiBaseUrl : config.public.apiBaseUrl;
+  return new URL(image.previewUrl, base).toString();
+});
+const imageUrl = (image: AdminNewsImage) => {
+  const base = import.meta.server ? config.apiBaseUrl : config.public.apiBaseUrl;
+  return new URL(image.previewUrl, base).toString();
+};
+const selectedImage = computed(() =>
+  images.value.find((image) => image.id === Number(form.imageId)) || null,
 );
 const categoryCounts = computed(() =>
   categories.value.map((category) => ({
@@ -174,6 +192,17 @@ const loadData = async (initial = false) => {
     else refreshing.value = false;
   }
 };
+const loadImages = async () => {
+  imagesLoading.value = true;
+  imagesError.value = "";
+  try {
+    images.value = await service.images();
+  } catch (error) {
+    imagesError.value = errorMessage(error, "No se pudieron cargar las imágenes disponibles.");
+  } finally {
+    imagesLoading.value = false;
+  }
+};
 
 const applyFilters = async () => {
   appliedSearch.value = search.value.trim();
@@ -194,6 +223,7 @@ const resetForm = () => {
   editingId.value = null;
   form.categoryId = categories.value[0]?.id ?? null;
   form.imageId = "";
+  imageMode.value = "existing";
   form.title = "";
   form.summary = "";
   form.content = "";
@@ -205,6 +235,7 @@ const editNews = (news: AdminNews) => {
   editingId.value = news.id;
   form.categoryId = news.categoryId;
   form.imageId = news.imageId ? String(news.imageId) : "";
+  imageMode.value = "existing";
   form.title = news.title;
   form.summary = news.summary;
   form.content = news.content;
@@ -212,6 +243,28 @@ const editNews = (news: AdminNews) => {
   errors.value = {};
   nextTick(() => titleInput.value?.focus());
   toast.info(`Editando la noticia “${news.title}”.`);
+};
+const uploadImage = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const accepted = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  if (!accepted.includes(file.type)) {
+    toast.error("Selecciona una imagen JPEG, PNG, GIF o WebP.");
+    return;
+  }
+  uploadingImage.value = true;
+  try {
+    const uploaded = await service.uploadImage(file);
+    images.value = [uploaded, ...images.value.filter((image) => image.id !== uploaded.id)];
+    form.imageId = String(uploaded.id);
+    imageMode.value = "new";
+    toast.success("La imagen se cargó y quedó seleccionada.");
+  } catch (error) {
+    toast.error(errorMessage(error, "No se pudo cargar la imagen."));
+  } finally {
+    uploadingImage.value = false;
+    if (imageInput.value) imageInput.value.value = "";
+  }
 };
 const openConfirmation = (
   title: string,
@@ -421,6 +474,7 @@ const handleStatusSelection = (news: AdminNews) =>
   requestStatusChange(news, statusDrafts[news.id] ?? news.status);
 onMounted(async () => {
   await loadData(true);
+  await loadImages();
   if (!form.categoryId && categories.value.length)
     form.categoryId = categories.value[0]!.id;
 });
@@ -784,25 +838,36 @@ onMounted(async () => {
                 }}</span>
               </div>
             </div>
-            <div class="field">
-              <label for="news-image">ID de imagen (opcional)</label
-              ><input
-                id="news-image"
-                v-model="form.imageId"
-                inputmode="numeric"
-                placeholder="Ej. 42"
-                :aria-invalid="Boolean(errors.imageId)"
-                aria-describedby="news-image-hint news-image-error"
-              /><span id="news-image-hint" class="hint"
-                >La imagen debe estar previamente cargada en el sistema.</span
-              ><span
-                v-if="errors.imageId"
-                id="news-image-error"
-                class="field-error"
-                role="alert"
-                >{{ errors.imageId }}</span
-              >
-            </div>
+            <fieldset class="image-picker" aria-describedby="news-image-hint news-image-error">
+              <legend>Imagen de la noticia (opcional)</legend>
+              <div class="image-picker__tabs" role="tablist" aria-label="Origen de imagen">
+                <button type="button" role="tab" :aria-selected="imageMode === 'existing'" :class="{ 'is-active': imageMode === 'existing' }" @click="imageMode = 'existing'">Seleccionar existente</button>
+                <button type="button" role="tab" :aria-selected="imageMode === 'new'" :class="{ 'is-active': imageMode === 'new' }" @click="imageMode = 'new'">Subir nueva</button>
+              </div>
+              <div v-if="imageMode === 'existing'" class="image-picker__panel">
+                <p v-if="imagesLoading" class="hint" aria-live="polite">Cargando imágenes disponibles…</p>
+                <p v-else-if="imagesError" class="field-error" role="alert">{{ imagesError }} <button type="button" class="text-button" @click="loadImages">Reintentar</button></p>
+                <p v-else-if="!images.length" class="hint">Todavía no hay imágenes cargadas.</p>
+                <div v-else class="image-options" role="radiogroup" aria-label="Imágenes disponibles">
+                  <button v-for="image in images" :key="image.id" type="button" class="image-option" :class="{ 'is-selected': form.imageId === String(image.id) }" role="radio" :aria-checked="form.imageId === String(image.id)" @click="form.imageId = String(image.id)">
+                    <img :src="imageUrl(image)" :alt="image.originalName" loading="lazy">
+                    <span>{{ image.originalName }}</span>
+                  </button>
+                </div>
+                <button v-if="form.imageId" type="button" class="text-button" @click="form.imageId = ''">Quitar selección</button>
+              </div>
+              <div v-else class="image-picker__panel">
+                <label for="news-image-upload" class="upload-choice">{{ uploadingImage ? "Cargando imagen…" : "Seleccionar archivo" }}</label>
+                <input id="news-image-upload" ref="imageInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" :disabled="uploadingImage" @change="uploadImage">
+                <span class="hint">JPEG, PNG, GIF o WebP. Máximo 25 MB.</span>
+              </div>
+              <div v-if="imagePreviewUrl" class="image-selection-preview">
+                <img :src="imagePreviewUrl" :alt="`Vista previa de ${selectedImage?.originalName}`">
+                <span>Seleccionada: {{ selectedImage?.originalName }}</span>
+              </div>
+              <span id="news-image-hint" class="hint">Puedes elegir una imagen existente o cargar una nueva; no necesitas escribir un ID.</span>
+              <span v-if="errors.imageId" id="news-image-error" class="field-error" role="alert">{{ errors.imageId }}</span>
+            </fieldset>
             <div class="editor-actions">
               <button
                 class="primary-button"
@@ -1281,6 +1346,114 @@ onMounted(async () => {
 .category-tabs .category-tab--active {
   color: white;
   background: var(--admin-primary);
+}
+.image-picker {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.image-picker legend {
+  padding: 0;
+  font-weight: 800;
+}
+.image-picker__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.image-picker__tabs button,
+.text-button {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--admin-primary-dark);
+  background: transparent;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+.image-picker__tabs button.is-active {
+  color: white;
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+}
+.image-picker__panel {
+  display: grid;
+  gap: 0.65rem;
+}
+.image-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.65rem;
+  max-height: 16rem;
+  overflow: auto;
+  padding: 0.15rem;
+}
+.image-option {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.45rem;
+  color: var(--color-ink);
+  text-align: left;
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.image-option.is-selected {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--admin-primary) 22%, transparent);
+}
+.image-option img,
+.image-selection-preview img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 0.35rem;
+  background: var(--admin-soft);
+}
+.image-option span,
+.image-selection-preview span {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upload-choice {
+  width: fit-content;
+  padding: 0.65rem 0.85rem;
+  color: white;
+  background: var(--admin-primary);
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  cursor: pointer;
+}
+.image-picker input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.image-selection-preview {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  max-width: 24rem;
+  padding: 0.55rem;
+  background: var(--admin-soft);
+  border-radius: var(--radius-sm);
+}
+.image-selection-preview img {
+  width: 6rem;
 }
 .news-item__image-placeholder {
   display: grid;

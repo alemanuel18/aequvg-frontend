@@ -36,12 +36,13 @@ const formatDate = (value: string) =>
 
 <template>
   <div>
+    <DetailBackLink to="/investigacion" label="Volver a investigación" />
     <PageHero
       eyebrow="Investigación estudiantil"
-      title="Detalle de investigación"
-      description="Información de un trabajo aprobado de la comunidad de Química UVG."
+      :title="project?.title || 'Investigación'"
+      :description="project?.description || 'Información de un trabajo aprobado de la comunidad de Química UVG.'"
     />
-    <AppSection title="Información del trabajo">
+    <AppSection>
       <StatePanel
         v-if="status === 'pending'"
         title="Cargando investigación"
@@ -64,7 +65,6 @@ const formatDate = (value: string) =>
             >Publicado en {{ formatDate(project.createdAt) }}</time
           >
         </div>
-        <h1>{{ project.title }}</h1>
         <p class="project-detail__author">
           Desarrollado por {{ project.author.name }}
         </p>
@@ -91,9 +91,6 @@ const formatDate = (value: string) =>
             <span class="sr-only">(se abre en una nueva pestaña)</span> ↗</a
           >
         </div>
-        <AppButton to="/investigacion" variant="secondary"
-          >← Ver todas las investigaciones</AppButton
-        >
       </article>
       <PublicationComments
         v-if="project.type === 'PROYECTO'"
@@ -111,11 +108,7 @@ const formatDate = (value: string) =>
   gap: 1.4rem;
   max-width: 52rem;
   margin-inline: auto;
-  padding: clamp(1.25rem, 4vw, 2.5rem);
-  background: white;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  padding-block: 0;
 }
 .project-detail__meta {
   display: flex;
@@ -161,7 +154,7 @@ const formatDate = (value: string) =>
 }
 @media (max-width: 620px) {
   .project-detail {
-    padding: 1.25rem;
+    padding-inline: 0;
   }
 }
 </style>

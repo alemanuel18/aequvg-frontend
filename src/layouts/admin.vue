@@ -7,6 +7,16 @@ const route = useRoute();
 const menuOpen = ref(false);
 const loggingOut = ref(false);
 const logoutError = ref("");
+const topbar = ref<{ focusMenuButton: () => void } | null>(null);
+
+const closeMenu = () => {
+  menuOpen.value = false;
+  nextTick(() => topbar.value?.focusMenuButton());
+};
+
+const openMenu = () => {
+  menuOpen.value = true;
+};
 
 const visibleNavigation = computed(() =>
   adminNavigation.filter(
@@ -19,12 +29,12 @@ const visibleNavigation = computed(() =>
 watch(
   () => route.fullPath,
   () => {
-    menuOpen.value = false;
+    if (menuOpen.value) closeMenu();
   },
 );
 
 const onKeydown = (event: KeyboardEvent) => {
-  if (event.key === "Escape") menuOpen.value = false;
+  if (event.key === "Escape" && menuOpen.value) closeMenu();
 };
 
 onMounted(() => document.addEventListener("keydown", onKeydown));
@@ -61,7 +71,7 @@ const logout = async () => {
       :open="menuOpen"
       :user="session.user.value"
       :logging-out="loggingOut"
-      @close="menuOpen = false"
+      @close="closeMenu"
       @logout="logout"
     />
     <button
@@ -69,12 +79,13 @@ const logout = async () => {
       class="admin-overlay"
       type="button"
       aria-label="Cerrar menú administrativo"
-      @click="menuOpen = false"
+      @click="closeMenu"
     />
     <div class="admin-workspace">
       <AdminTopbar
+        ref="topbar"
         :user-name="session.user.value?.name"
-        @menu="menuOpen = true"
+        @menu="openMenu"
       />
       <p v-if="logoutError" class="admin-alert" role="alert">
         {{ logoutError }}

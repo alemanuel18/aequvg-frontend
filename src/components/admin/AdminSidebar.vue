@@ -8,7 +8,19 @@ defineProps<{
   user: AdminUser | null;
   loggingOut: boolean;
 }>();
-defineEmits<{ close: []; logout: [] }>();
+const emit = defineEmits<{ close: []; logout: [] }>();
+
+const sidebar = ref<HTMLElement | null>(null);
+const closeSidebar = () => {
+  const activeElement = document.activeElement;
+  if (
+    activeElement instanceof HTMLElement &&
+    sidebar.value?.contains(activeElement)
+  ) {
+    activeElement.blur();
+  }
+  emit("close");
+};
 
 const isMobile = ref(false);
 let mediaQuery: MediaQueryList | undefined;
@@ -27,6 +39,7 @@ onBeforeUnmount(() =>
 
 <template>
   <aside
+    ref="sidebar"
     id="admin-sidebar"
     class="admin-sidebar"
     :class="{ 'admin-sidebar--open': open }"
@@ -37,7 +50,7 @@ onBeforeUnmount(() =>
       <NuxtLink
         to="/administrador/panel"
         aria-label="Ir al inicio del panel"
-        @click="$emit('close')"
+        @click="closeSidebar"
       >
         <span class="admin-sidebar__mark"
           ><AppIcon name="atom" :size="28"
@@ -55,7 +68,7 @@ onBeforeUnmount(() =>
           <NuxtLink
             v-if="item.to && !item.disabled"
             :to="item.to"
-            @click="$emit('close')"
+            @click="closeSidebar"
           >
             <AppIcon :name="item.icon" :size="20" />
             <span>{{ item.label }}</span>

@@ -190,6 +190,15 @@ export interface NewsInput {
   publishedAt?: string | null
 }
 
+export interface AdminNewsImage {
+  id: number
+  originalName: string
+  mimeType: string
+  sizeBytes: number
+  createdAt: string
+  previewUrl: string
+}
+
 export interface Pagination { page: number; pageSize: number; total: number }
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }
 export interface PublicNewsQuery { q?: string; categoryId?: number; page?: number; pageSize?: number }

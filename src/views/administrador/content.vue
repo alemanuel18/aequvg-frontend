@@ -30,6 +30,17 @@ useSeoMeta({
 const service = useAdminContentService();
 const toast = useToast();
 
+const actionRouteOptions = [
+  { value: "/", label: "Inicio" },
+  { value: "/noticias", label: "Noticias" },
+  { value: "/eventos", label: "Eventos" },
+  { value: "/recursos", label: "Recursos" },
+  { value: "/investigacion", label: "Investigación" },
+  { value: "/junta-directiva", label: "Junta Directiva" },
+  { value: "/contacto", label: "Contacto" },
+  { value: "/acceso", label: "Acceso / registro" },
+] as const;
+
 // Lifecycle & data state
 const loading = ref(true);
 const loadError = ref("");
@@ -116,6 +127,15 @@ const heroForm = reactive<HeroFormState>({
 });
 const heroErrors = ref<Record<string, string>>({});
 const submittingHero = ref(false);
+const heroActionRoute = computed({
+  get: () =>
+    actionRouteOptions.some((option) => option.value === heroForm.actionUrl)
+      ? heroForm.actionUrl
+      : "__custom",
+  set: (value: string) => {
+    heroForm.actionUrl = value === "__custom" ? "" : value;
+  },
+});
 
 // Section 2: Announcement single unified form state
 const editingAnnouncementId = ref<number | null>(null);
@@ -130,6 +150,17 @@ const announcementForm = reactive<AnnouncementFormState>({
 });
 const announcementErrors = ref<Record<string, string>>({});
 const submittingAnnouncement = ref(false);
+const announcementActionRoute = computed({
+  get: () =>
+    actionRouteOptions.some(
+      (option) => option.value === announcementForm.actionUrl,
+    )
+      ? announcementForm.actionUrl
+      : "__custom",
+  set: (value: string) => {
+    announcementForm.actionUrl = value === "__custom" ? "" : value;
+  },
+});
 const archivingAnnouncementId = ref<number | null>(null);
 
 // Section 3: Featured items state
@@ -640,17 +671,29 @@ const getTypeLabel = (type: BlockType) => {
               <span v-if="heroErrors.actionLabel" id="hero-action-label-error" class="field-error" role="alert">{{ heroErrors.actionLabel }}</span>
             </div>
             <div class="form-group">
-              <label for="hero-action-url">Enlace del botón de acción <span class="required-indicator">*</span></label>
+              <label for="hero-action-route">Destino del botón de acción <span class="required-indicator">*</span></label>
+              <select
+                id="hero-action-route"
+                v-model="heroActionRoute"
+                required
+                :aria-invalid="Boolean(heroErrors.actionUrl)"
+                aria-describedby="hero-url-hint hero-url-error"
+              >
+                <option v-for="option in actionRouteOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                <option value="__custom">Otra ruta o URL…</option>
+              </select>
               <input
+                v-if="heroActionRoute === '__custom'"
                 id="hero-action-url"
                 v-model="heroForm.actionUrl"
                 required
                 type="text"
                 maxlength="2048"
-                placeholder="/contacto"
+                placeholder="/mi-ruta o https://..."
                 :aria-invalid="Boolean(heroErrors.actionUrl)"
-                aria-describedby="hero-url-error"
+                aria-describedby="hero-url-hint hero-url-error"
               />
+              <span id="hero-url-hint" class="field-hint">Selecciona una pantalla conocida o escribe una ruta personalizada.</span>
               <span
                 v-if="heroErrors.actionUrl"
                 id="hero-url-error"
@@ -942,8 +985,19 @@ const getTypeLabel = (type: BlockType) => {
                   <span v-if="announcementErrors.actionLabel" id="announcement-action-label-error" class="field-error" role="alert">{{ announcementErrors.actionLabel }}</span>
                 </div>
                 <div class="form-group">
-                  <label for="announcement-action-url">Enlace <span v-if="announcementForm.actionLabel.trim()" class="required-indicator">*</span><span v-else>(opcional)</span></label>
+                  <label for="announcement-action-route">Destino del enlace <span v-if="announcementForm.actionLabel.trim()" class="required-indicator">*</span><span v-else>(opcional)</span></label>
+                  <select
+                    id="announcement-action-route"
+                    v-model="announcementActionRoute"
+                    :required="Boolean(announcementForm.actionLabel.trim())"
+                    :aria-invalid="Boolean(announcementErrors.actionUrl)"
+                    aria-describedby="announcement-url-hint announcement-url-error"
+                  >
+                    <option value="__custom">Sin destino / ruta personalizada…</option>
+                    <option v-for="option in actionRouteOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
                   <input
+                    v-if="announcementActionRoute === '__custom'"
                     id="announcement-action-url"
                     v-model="announcementForm.actionUrl"
                     :required="Boolean(announcementForm.actionLabel.trim())"
@@ -951,8 +1005,9 @@ const getTypeLabel = (type: BlockType) => {
                     maxlength="2048"
                     placeholder="/contacto o https://..."
                     :aria-invalid="Boolean(announcementErrors.actionUrl)"
-                    aria-describedby="announcement-url-error"
+                    aria-describedby="announcement-url-hint announcement-url-error"
                   />
+                  <span id="announcement-url-hint" class="field-hint">Elige un destino conocido o usa una ruta personalizada.</span>
                   <span
                     v-if="announcementErrors.actionUrl"
                     id="announcement-url-error"

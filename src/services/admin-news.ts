@@ -1,4 +1,4 @@
-import type { AdminNews, AdminNewsList, ContentStatus, NewsCategory, NewsInput } from '~/types/api'
+import type { AdminNews, AdminNewsImage, AdminNewsList, ContentStatus, NewsCategory, NewsInput } from '~/types/api'
 import { useApi } from './api'
 
 export const useAdminNewsService = () => {
@@ -20,6 +20,14 @@ export const useAdminNewsService = () => {
       return api<AdminNewsList>(`/admin/news${params.size ? `?${params.toString()}` : ''}`, { credentials: 'include' })
     },
     categories: () => api<NewsCategory[]>('/news/categories'),
+    images: () => api<AdminNewsImage[]>('/admin/news/images', { credentials: 'include' }),
+    uploadImage: (file: File) => {
+      const body = new FormData()
+      body.append('file', file)
+      return api<AdminNewsImage>('/admin/news/images', {
+        method: 'POST', body, credentials: 'include', headers: { 'x-csrf-token': getCsrfToken() }
+      })
+    },
     createCategory: (name: string) => api<NewsCategory>('/admin/news/categories', mutationOptions('POST', { name })),
     create: (body: NewsInput) => api<AdminNews>('/admin/news', mutationOptions('POST', body)),
     update: (id: number, body: NewsInput) => api<AdminNews>(`/admin/news/${id}`, mutationOptions('PUT', body)),

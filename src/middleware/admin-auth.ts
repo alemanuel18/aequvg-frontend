@@ -3,7 +3,9 @@ import { adminNavigation } from '~/router/navigation'
 export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return
   const session = useAdminSession()
-  const user = await session.load()
+  // Revalidar la cookie al cambiar de módulo evita dejar una vista montada
+  // cuando el backend revocó la sesión en otra pestaña o por expiración.
+  const user = await session.load(true)
   if (!user) {
     return navigateTo({ path: '/administrador', query: { returnTo: to.fullPath, reason: 'expired' } }, { replace: true })
   }
