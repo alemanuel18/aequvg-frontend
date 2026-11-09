@@ -34,6 +34,18 @@ Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chrom
 - La herramienta de lectura web inicialmente mostró 403 para la colección; la petición HTTPS directa desde el entorno local respondió HTTP 200. El 403 fue específico de ese lector y no se reprodujo como requisito de autenticación del usuario.
 - La suite automatizada de navegador usa una API simulada y la integración usa PostgreSQL local. La comprobación manual del repositorio confirma acceso abierto para un ítem concreto; no caracteriza ítems restringidos ni sustituye la revisión de la junta.
 
+## Registro de defectos e incidencias de prueba
+
+| ID | Hallazgo inicial | Clasificación y corrección | Repetición y resultado |
+| --- | --- | --- | --- |
+| QA-TH-01 | La primera comprobación del estado vacío encontró el filtro `Todas` activo después de navegar directamente a Investigación; el resultado podía depender de cuándo terminaba de cargar la página. | Incidencia de sincronización de la prueba, no defecto funcional confirmado. Se esperó la carga de la página y se verificó que el filtro `Tesis` estuviera activo antes de evaluar el listado. | Se repitió el flujo E2E completo, incluyendo lista vacía y error de consulta: aprobado. La repetición más reciente pasó 3/3 pruebas. |
+| QA-TH-02 | La comprobación del PDF esperaba HTTP 206 por solicitar un rango, pero el servidor respondió HTTP 200 con el documento completo (1,206,840 bytes). | Suposición incorrecta del guion de prueba, no defecto de la aplicación ni del repositorio. Se verificó la respuesta completa mediante una solicitud HTTPS directa. | Después de retirar la publicación local se volvió a solicitar el archivo sin sesión: HTTP 200, `application/pdf`, 1,206,840 bytes. El archivo remoto seguía accesible. |
+| QA-TH-03 | Un guion manual de edición se interrumpió al intentar reasignar una variable declarada como constante. | Error del guion de prueba. Se limpió el registro temporal desde el panel y se corrigió el guion para permitir cambiar el título. | Se repitió alta, publicación, consulta, edición y retiro, incluida la vista móvil; el flujo terminó correctamente. La suite E2E actual también pasó 3/3. |
+| QA-TH-04 | El lector web mostró 403 al abrir la colección UVG. | Resultado específico del lector web; no se clasificó como defecto del repositorio porque el acceso directo desde el entorno local y la API de DSpace respondieron correctamente. | Consulta HTTPS directa repetida: HTTP 200. También se confirmó el acceso `open.access` al ítem 123456789/4914 y a su PDF sin sesión. |
+| QA-TH-05 | La integración PostgreSQL no pudo ejecutarse con `docker compose exec` porque los servicios de ese proyecto estaban detenidos. Al intentar iniciarlos, el contenedor de base de datos no pudo enlazar el puerto 5432, ocupado por el stack local ya activo. | Incidencia de entorno, no defecto de la aplicación. Se ejecutó la misma prueba dentro del contenedor backend activo, conectado a la base local en uso. | Repetición completada: 1 archivo y 3/3 pruebas aprobadas contra PostgreSQL. El hook `afterAll` elimina las tesis y cuentas temporales. |
+
+No se encontraron defectos funcionales abiertos en los casos repetidos. La cobertura no demuestra autorización de una junta real ni acceso a documentos con embargo; esos pendientes siguen indicados arriba.
+
 ## Pendientes para cerrar aceptación
 
 1. La junta debe confirmar el flujo y la matriz de permisos; la aprobación no se ha solicitado ni registrado.
