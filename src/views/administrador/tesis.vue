@@ -51,6 +51,7 @@ const askSave = () => {
   catch { formError.value = 'Ingresa una dirección web válida.'; return }
   if (!['http:', 'https:'].includes(parsed.protocol)) { formError.value = 'El enlace debe comenzar con http:// o https://.'; return }
   if (form.title.trim().length < 3) { formError.value = 'Escribe un título de al menos 3 caracteres.'; return }
+  if (!form.author.trim()) { formError.value = 'Escribe el autor de la tesis.'; return }
   if (form.publicationYear && (!Number.isInteger(Number(form.publicationYear)) || Number(form.publicationYear) < 1900 || Number(form.publicationYear) > 9999)) { formError.value = 'Revisa el año de publicación.'; return }
   confirmation.title = editingId.value ? 'Guardar cambios' : form.published ? 'Publicar tesis' : 'Agregar tesis'
   confirmation.message = editingId.value ? 'Se actualizarán los datos de esta tesis.' : form.published ? 'La tesis aparecerá como publicada.' : 'La tesis se guardará como borrador.'
@@ -84,6 +85,19 @@ const askDelete = (item: ThesisLink) => {
   }
   confirmation.open = true
 }
+const askPublish = (item: ThesisLink) => {
+  confirmation.title = 'Publicar tesis'
+  confirmation.message = `“${item.title}” aparecerá como publicada.`
+  confirmation.label = 'Publicar'
+  confirmation.variant = 'primary'
+  confirmation.action = async () => {
+    saving.value = true
+    try { await service.update(item.id, { publishedAt: new Date().toISOString() }); toast.success('La tesis se publicó.'); confirmation.open = false; await load() }
+    catch (error) { confirmation.open = false; toast.error(errorText(error)) }
+    finally { saving.value = false }
+  }
+  confirmation.open = true
+}
 </script>
 
 <template>
@@ -94,7 +108,7 @@ const askDelete = (item: ThesisLink) => {
       <form @submit.prevent="askSave">
         <label>Título<input v-model="form.title" required minlength="3" maxlength="300" /></label>
         <label>Enlace a la tesis<input v-model="form.url" type="url" required maxlength="2048" placeholder="https://repositorio.uvg.edu.gt/handle/..." /></label>
-        <div class="field-row"><label>Autor (opcional)<input v-model="form.author" maxlength="300" /></label><label>Año (opcional)<input v-model="form.publicationYear" type="number" min="1900" max="9999" /></label></div>
+        <div class="field-row"><label>Autor<input v-model="form.author" required maxlength="300" /></label><label>Año (opcional)<input v-model="form.publicationYear" type="number" min="1900" max="9999" /></label></div>
         <label>Resumen (opcional)<textarea v-model="form.summary" rows="4" maxlength="12000" /></label>
         <label>Identificador del repositorio (opcional)<input v-model="form.sourceIdentifier" maxlength="255" placeholder="Handle u otro identificador" /></label>
         <label class="publish-check"><input v-model="form.published" type="checkbox" /> Publicar ahora</label>
@@ -109,7 +123,7 @@ const askDelete = (item: ThesisLink) => {
       <ul v-else class="thesis-list">
         <li v-for="item in items" :key="item.id" class="thesis-item">
           <div class="thesis-copy"><span class="status" :class="item.publishedAt ? 'status--published' : 'status--draft'">{{ item.publishedAt ? 'Publicada' : 'Borrador' }}</span><h3>{{ item.title }}</h3><p>{{ [item.author, item.publicationYear].filter(Boolean).join(' · ') || 'Autor y año no especificados' }}</p><a :href="item.url" target="_blank" rel="noopener noreferrer">Abrir tesis en el repositorio</a></div>
-          <div class="item-actions"><button class="secondary" type="button" @click="edit(item)">Editar</button><button class="danger" type="button" @click="askDelete(item)">Eliminar</button></div>
+          <div class="item-actions"><button v-if="!item.publishedAt" class="primary" type="button" @click="askPublish(item)">Publicar</button><button class="secondary" type="button" @click="edit(item)">Editar</button><button class="danger" type="button" @click="askDelete(item)">Eliminar</button></div>
         </li>
       </ul>
     </section>
