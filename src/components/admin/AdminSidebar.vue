@@ -93,7 +93,7 @@ onBeforeUnmount(() =>
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 40;
-  width: 17.5rem;
+  width: 17rem;
   display: flex;
   flex-direction: column;
   color: #effafa;
@@ -240,7 +240,7 @@ onBeforeUnmount(() =>
 }
 @media (max-width: 900px) {
   .admin-sidebar {
-    width: min(19rem, calc(100% - 2rem));
+    width: min(19rem, calc(100% - 1rem));
     box-shadow: 18px 0 48px rgb(3 34 32 / 35%);
     transform: translateX(-105%);
     transition: transform 0.2s ease;

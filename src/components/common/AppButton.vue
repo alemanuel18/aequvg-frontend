@@ -40,9 +40,7 @@ withDefaults(
   cursor: pointer;
   font-weight: 800;
   text-decoration: none;
-  transition:
-    transform 0.15s ease,
-    background 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .button:hover {
@@ -63,5 +61,8 @@ withDefaults(
   cursor: wait;
   opacity: 0.68;
   transform: none;
+}
+@media (max-width: 420px) {
+  .button { width: 100%; }
 }
 </style>

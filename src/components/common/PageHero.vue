@@ -20,7 +20,7 @@ defineProps<{
 <style scoped>
 .page-hero {
   padding-block: clamp(3.4rem, 7vw, 5.5rem);
-  background: linear-gradient(135deg, var(--color-soft), white);
+  background: linear-gradient(135deg, var(--color-soft), var(--color-surface));
   border-bottom: 1px solid var(--color-border);
 }
 

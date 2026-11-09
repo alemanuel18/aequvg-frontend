@@ -37,8 +37,13 @@ withDefaults(
   background: var(--color-primary);
 }
 .section__header {
-  max-width: 48rem;
+  max-width: var(--container-reading);
   margin-bottom: 2.3rem;
+}
+.section > .container > :deep(.cards-grid),
+.section > .container > :deep(.events-grid),
+.section > .container > :deep(.member-grid) {
+  width: 100%;
 }
 .section__lead {
   margin-top: 0.8rem;
