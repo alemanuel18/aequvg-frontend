@@ -47,18 +47,26 @@ const {
   data: thesisResult,
   status: thesisStatus,
   error: thesisError,
-  refresh: refreshTheses,
 } = await useAsyncData("public-theses", () => service.theses(currentPage.value, pageSize, appliedSearch.value || undefined), {
   default: () => ({ items: [], pagination: { page: 1, pageSize, total: 0, totalPages: 0 } }),
 });
 const totalPages = computed(() =>
-  Math.max(1, selectedType.value === 'TESIS' ? thesisResult.value.pagination.totalPages : result.value.pagination.totalPages),
+  Math.max(1, selectedType.value === 'TESIS' ? thesisResult.value.pagination.totalPages : selectedType.value === undefined ? Math.max(result.value.pagination.totalPages, thesisResult.value.pagination.totalPages) : result.value.pagination.totalPages),
 );
+const totalResults = computed(() => selectedType.value === 'TESIS'
+  ? thesisResult.value.pagination.total
+  : selectedType.value === undefined
+    ? result.value.pagination.total + thesisResult.value.pagination.total
+    : result.value.pagination.total)
 const updateProjects = async () => {
   requestError.value = null;
   try {
     if (selectedType.value === 'TESIS') thesisResult.value = await service.theses(currentPage.value, pageSize, appliedSearch.value || undefined);
-    else result.value = await loadProjects();
+    else if (selectedType.value === undefined) {
+      const [projects, theses] = await Promise.all([loadProjects(), service.theses(currentPage.value, pageSize, appliedSearch.value || undefined)])
+      result.value = projects
+      thesisResult.value = theses
+    } else result.value = await loadProjects();
   } catch (requestFailure) {
     requestError.value = requestFailure;
   }
@@ -136,38 +144,38 @@ const formatDate = (value: string) =>
         /><button class="research-filters__submit" type="submit">Buscar</button>
       </form>
       <StatePanel
-        v-if="status === 'pending' || (selectedType === 'TESIS' && thesisStatus === 'pending')"
+        v-if="status === 'pending' || (selectedType !== 'PROYECTO' && thesisStatus === 'pending')"
         title="Cargando investigaciones"
         message="Consultando los trabajos aprobados."
       />
       <StatePanel
-        v-else-if="(selectedType === 'TESIS' ? thesisError : error) || requestError"
+        v-else-if="(selectedType === 'TESIS' ? thesisError : selectedType === undefined ? thesisError || error : error) || requestError"
         role="alert"
         title="No pudimos cargar las investigaciones"
         message="Verifica tu conexión e inténtalo nuevamente."
-        ><button @click="selectedType === 'TESIS' ? refreshTheses() : refresh()">Reintentar</button></StatePanel
+        ><button @click="updateProjects()">Reintentar</button></StatePanel
       >
       <StatePanel
-        v-else-if="selectedType === 'TESIS' ? !thesisResult.items.length : !result.items.length"
+        v-else-if="selectedType === 'TESIS' ? !thesisResult.items.length : selectedType === undefined ? !thesisResult.items.length && !result.items.length : !result.items.length"
         title="No hay investigaciones para esta búsqueda"
         message="Prueba con otras palabras o selecciona otro tipo de trabajo."
       />
       <template v-else
         ><p class="research-count" aria-live="polite">
-          {{ selectedType === 'TESIS' ? thesisResult.pagination.total : result.pagination.total }}
+          {{ totalResults }}
           {{
-            (selectedType === 'TESIS' ? thesisResult.pagination.total : result.pagination.total) === 1
+            totalResults === 1
               ? "investigación encontrada"
               : "investigaciones encontradas"
           }}.
         </p>
-        <div v-if="selectedType === 'TESIS'" class="research-grid">
+        <div v-if="selectedType !== 'PROYECTO' && thesisResult.items.length" class="research-grid">
           <ContentCard v-for="thesis in thesisResult.items" :key="thesis.id" :eyebrow="thesis.publicationYear ? String(thesis.publicationYear) : 'Tesis de Química'" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
             <p v-if="thesis.author" class="research-card__meta">Por {{ thesis.author }}</p>
             <a class="card__link" :href="thesis.url" target="_blank" rel="noopener noreferrer">Consultar tesis en UVG <span aria-hidden="true">↗</span></a>
           </ContentCard>
         </div>
-        <div v-else class="research-grid">
+        <div v-if="selectedType !== 'TESIS' && result.items.length" class="research-grid">
           <ContentCard
             v-for="project in result.items"
             :key="project.id"
