@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { datetimeLocalToIsoUtc, eventFormPayload, isoUtcToDatetimeLocal, validateEventForm, type EventFormState } from '../../src/composables/event-validation'
 
 const validForm = (): EventFormState => ({
-  imageId: '', name: 'Taller de laboratorio', description: 'Descripción suficientemente extensa para el evento.',
+  imageId: '', categoryId: '', name: 'Taller de laboratorio', description: 'Descripción suficientemente extensa para el evento.',
   startsAt: '2030-05-15T18:00', location: 'Auditorio Central UVG', maximumCapacity: '30', additionalInformation: '', status: 'BORRADOR'
 })
 
