@@ -14,9 +14,9 @@ const saving = ref(false)
 const editingId = ref<number | null>(null)
 const formError = ref('')
 const form = reactive({ title: '', url: '', publicationYear: '', summary: '', published: false })
-type ContributorDraft = { key: number; personId: number | null; name: string; createNew: boolean; search: string; options: Array<{ id: number; name: string }>; loading: boolean }
+type ContributorDraft = { key: number; personId: number | null; name: string; createNew: boolean; search: string; searchOpen: boolean; searchRequest: number; options: Array<{ id: number; name: string }>; loading: boolean }
 let nextContributorKey = 1
-const newContributor = (name = '', personId: number | null = null): ContributorDraft => ({ key: nextContributorKey++, personId, name, createNew: !personId, search: '', options: [], loading: false })
+const newContributor = (name = '', personId: number | null = null): ContributorDraft => ({ key: nextContributorKey++, personId, name, createNew: !personId, search: name, searchOpen: false, searchRequest: 0, options: [], loading: false })
 const contributors = ref<ContributorDraft[]>([newContributor()])
 const authorNameCollator = new Intl.Collator('es', { sensitivity: 'base' })
 const sortedContributors = computed(() => {
@@ -42,16 +42,19 @@ onMounted(() => { void load() })
 onBeforeUnmount(() => { for (const timer of authorSearchTimers.values()) clearTimeout(timer) })
 
 const loadAuthorOptions = async (contributor: ContributorDraft) => {
+  const request = ++contributor.searchRequest
+  const query = contributor.search.trim()
   contributor.loading = true
   try {
-    const result = await service.authors(contributor.search.trim())
+    const result = await service.authors(query)
+    if (request !== contributor.searchRequest) return
     const options = [...result.items]
     if (contributor.personId && !options.some(({ id }) => id === contributor.personId)) {
       options.push({ id: contributor.personId, name: contributor.name })
     }
     contributor.options = options
-  } catch (error) { toast.error(errorText(error)) }
-  finally { contributor.loading = false }
+  } catch (error) { if (request === contributor.searchRequest) toast.error(errorText(error)) }
+  finally { if (request === contributor.searchRequest) contributor.loading = false }
 }
 const searchAuthors = (contributor: ContributorDraft) => {
   const timer = authorSearchTimers.get(contributor.key)
@@ -63,14 +66,25 @@ const toggleCreateAuthor = (contributor: ContributorDraft, event: Event) => {
   contributor.personId = null
   contributor.name = ''
   contributor.search = ''
+  contributor.searchOpen = false
   if (!contributor.createNew) void loadAuthorOptions(contributor)
 }
-const selectExistingAuthor = (contributor: ContributorDraft, event: Event) => {
-  const value = (event.target as HTMLSelectElement).value
-  const personId = Number(value)
-  const person = contributor.options.find(({ id }) => id === personId)
-  contributor.personId = person?.id ?? null
-  contributor.name = person?.name ?? ''
+const updateAuthorSearch = (contributor: ContributorDraft, event: Event) => {
+  contributor.search = (event.target as HTMLInputElement).value
+  contributor.personId = null
+  contributor.name = ''
+  contributor.searchOpen = true
+  searchAuthors(contributor)
+}
+const openAuthorSearch = (contributor: ContributorDraft) => {
+  contributor.searchOpen = true
+  if (!contributor.options.length && !contributor.loading) void loadAuthorOptions(contributor)
+}
+const chooseExistingAuthor = (contributor: ContributorDraft, person: { id: number; name: string }) => {
+  contributor.personId = person.id
+  contributor.name = person.name
+  contributor.search = person.name
+  contributor.searchOpen = false
 }
 const addContributor = () => contributors.value.push(newContributor())
 const removeContributor = (key: number) => {
@@ -183,14 +197,13 @@ const askPublish = (item: ThesisLink) => {
               <strong>{{ contributorLabel(index) }}</strong>
               <label class="create-author-check"><input type="checkbox" :checked="contributor.createNew" @change="toggleCreateAuthor(contributor, $event)" /> Crear autor nuevo</label>
               <label v-if="contributor.createNew"><span class="field-label">Nombre completo <span aria-hidden="true">*</span></span><input v-model="contributor.name" required maxlength="300" :aria-label="`Nombre de ${contributorLabel(index)}`" /></label>
-              <div v-else class="registered-author-fields">
-                <label>Buscar autor registrado<input v-model="contributor.search" type="search" placeholder="Escribe para buscar" @input="searchAuthors(contributor)" /><small v-if="contributor.loading">Buscando…</small></label>
-                <label>Seleccionar autor
-                  <select :value="contributor.personId ?? ''" @change="selectExistingAuthor(contributor, $event)">
-                    <option value="">Selecciona un autor</option>
-                    <option v-for="person in contributor.options" :key="person.id" :value="person.id" :disabled="contributors.some((item) => item.key !== contributor.key && item.personId === person.id)">{{ person.name }}</option>
-                  </select>
-                </label>
+              <div v-else class="registered-author-picker">
+                <label><span class="field-label">Buscar o seleccionar autor <span aria-hidden="true">*</span></span><input :value="contributor.search" type="search" autocomplete="off" placeholder="Escribe para buscar o elige un autor" :aria-label="`Buscar o seleccionar autor para ${contributorLabel(index)}`" role="combobox" aria-autocomplete="list" :aria-expanded="contributor.searchOpen" @input="updateAuthorSearch(contributor, $event)" @focus="openAuthorSearch(contributor)" @blur="contributor.searchOpen = false" @keydown.esc="contributor.searchOpen = false" /></label>
+                <small v-if="contributor.loading">Buscando…</small>
+                <ul v-if="contributor.searchOpen && contributor.options.length" class="author-results" role="listbox">
+                  <li v-for="person in contributor.options" :key="person.id" role="option" :aria-selected="contributor.personId === person.id" :aria-disabled="contributors.some((item) => item.key !== contributor.key && item.personId === person.id)" @mousedown.prevent="!contributors.some((item) => item.key !== contributor.key && item.personId === person.id) && chooseExistingAuthor(contributor, person)">{{ person.name }}</li>
+                </ul>
+                <small v-else-if="contributor.searchOpen && !contributor.loading && contributor.search.trim()">No hay autores con ese nombre.</small>
               </div>
               <div v-if="contributors.length > 1" class="contributor-actions">
                 <button v-if="contributors.length > 1" class="danger" type="button" :aria-label="`Quitar ${contributorLabel(index)}`" @click="removeContributor(contributor.key)">Quitar</button>
@@ -305,10 +318,15 @@ const askPublish = (item: ThesisLink) => {
 .contributor-row > strong { padding-bottom: .7rem; }
 .contributor-row label { min-width: 0; }
 .contributor-row select { min-width: 0; max-width: 100%; }
+.contributor-row:focus-within { position: relative; z-index: 2; }
 .create-author-check { display: flex !important; align-items: center; gap: .5rem !important; padding-bottom: .8rem; }
 .create-author-check input { width: 1.1rem; height: 1.1rem; margin: 0; }
-.registered-author-fields { display: grid; grid-column: span 2; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; min-width: 0; }
-.registered-author-fields label { min-width: 0; }
+.registered-author-picker { position: relative; min-width: 0; }
+.author-results { position: absolute; z-index: 5; top: calc(100% + .25rem); left: 0; right: 0; max-height: 14rem; overflow-y: auto; margin: 0; padding: .25rem; list-style: none; background: #fff; border: 1px solid #b9c6d0; border-radius: .55rem; box-shadow: 0 8px 20px #17212b1a; }
+.author-results li { padding: .55rem .65rem; border-radius: .35rem; cursor: pointer; }
+.author-results li:hover,
+.author-results li[aria-selected="true"] { background: #edf5f5; }
+.author-results li[aria-disabled="true"] { color: #8a969f; cursor: not-allowed; }
 .thesis-copy { min-width: 0; overflow-wrap: anywhere; }
 .contributor-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
 .contributor-actions button { padding: .55rem .65rem; }
@@ -346,7 +364,6 @@ const askPublish = (item: ThesisLink) => {
   .contributor-row--removable { grid-template-columns: minmax(0, 1fr); }
   .contributor-row > strong { padding-bottom: 0; }
   .create-author-check { padding-bottom: 0; }
-  .registered-author-fields { grid-column: auto; grid-template-columns: minmax(0, 1fr); }
   .field-row { grid-template-columns: minmax(0, 1fr); }
   .form-actions,
   .list-heading { flex-wrap: wrap; justify-content: flex-start; }
@@ -358,7 +375,6 @@ const askPublish = (item: ThesisLink) => {
   .contributor-row--removable { grid-template-columns: minmax(0, 1fr); }
   .contributor-row > strong { padding-bottom: 0; }
   .create-author-check { padding-bottom: 0; }
-  .registered-author-fields { grid-column: auto; grid-template-columns: minmax(0, 1fr); }
   .field-row { grid-template-columns: minmax(0, 1fr); }
   .thesis-item { align-items: flex-start; flex-direction: column; }
   .item-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
