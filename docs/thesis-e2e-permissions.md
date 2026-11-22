@@ -1,6 +1,25 @@
 # Matriz de pruebas: tesis, extremo a extremo y permisos
 
-Actualizado: 21 de noviembre de 2026. Las pruebas de navegador usan Chromium. La suite backend general deja omitidas las integraciones que requieren base de datos si no se habilitan sus variables; para S6-04 se ejecutó además la integración de tesis con PostgreSQL activando `THESIS_DATABASE_TEST=true`.
+Actualizado: 22 de noviembre de 2026. Las pruebas de navegador usan Chromium. La corrida vigente de S6-10 y sus límites están documentados al inicio; los resultados anteriores más abajo son antecedentes de S6-04 a S6-07.
+
+## Cierre de flujo S6-10
+
+La modalidad vigente es **ingreso y publicación manual**, según la decisión reportada para S6-08. Por tanto, importación/sincronización automática, reintentos automáticos y revisión automática son **no aplicables**: no están aprobados ni implementados. La aprobación por una segunda persona tampoco forma parte del contrato disponible; la cuenta con `PAPERS_MANAGE` registra y decide publicar. Consulte el [contrato de modalidad](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-automation-contract/docs/thesis-automation-contract.md) y el [contrato API manual](https://github.com/alemanuel18/aequvg-backend/blob/test/thesis-s6-10-manual-flow/docs/thesis-manual-flow-api.md).
+
+| Caso de aceptación | Evidencia ejecutada en S6-10 | Resultado |
+| --- | --- | --- |
+| Campos requeridos, URL HTTPS y errores | E2E de campos/URL y PostgreSQL API (duplicados secuenciales y concurrentes, datos inválidos) | Pasa |
+| Autor principal, coautores, orden y reutilización | E2E consulta/selección/creación y vista pública; PostgreSQL guarda/edita y devuelve autoría | Pasa |
+| Categorías, edición, desactivación y filtro | E2E administra dos categorías y filtra; PostgreSQL verifica varias, inactivas y filtro público | Pasa |
+| Publicación manual, lectura pública y edición/retiro local | E2E administra/publica y confirma vista pública; PostgreSQL crea, consulta, edita y retira sin modificar UVG | Pasa |
+| Roles y permisos | PostgreSQL verifica visitantes/estudiantes para lectura y cuenta sin `PAPERS_MANAGE` para escrituras | Pasa |
+| Publicación automática, fuente, frecuencia y reintento | Excluido por modalidad S6-08 manual; no existe integración UVG ejecutable | No aplica al alcance; reabrir con nueva aprobación |
+| Revisión de segunda persona | No definida por la decisión ni implementada | Pendiente de definición solo si la Asociación la requiere |
+| Regresión de consulta manual | E2E lista, detalle y enlace UVG sin sesión; estudiante sin controles | Pasa |
+
+**Resultados de esta corrida:** backend `bun run typecheck` aprobado; backend `bun run test` con 312 aprobadas y 161 omitidas (integraciones de otros módulos); PostgreSQL `tests/integration/thesis.api.database.test.ts` 7/7 aprobadas; frontend `bun run typecheck` aprobado; frontend `bun run test` 68/68 aprobadas; Playwright `tests/e2e/thesis-flow.spec.ts` 5/5 aprobadas. El E2E usa API simulada, la integración usa PostgreSQL local y ninguna prueba escribe en UVG. La primera integración falló porque el Prisma Client del contenedor estaba desactualizado; se regeneró, se confirmó que las migraciones estaban al día y la repetición pasó 7/7. La primera corrida E2E encontró un selector ambiguo por el nuevo checkbox «Crear autor nuevo»; se actualizó el selector al campo «Nombre de Autor principal» y la repetición pasó 5/5.
+
+No se observan defectos funcionales abiertos en el flujo repetido. Sigue pendiente una revisión de una persona real de la junta; las pruebas de permisos validan técnicamente el rol, no equivalen a aprobación institucional. El caso de documento UVG restringido tampoco se cubrió porque los 65 registros consultados en la colección de Química reportaron `open.access`.
 
 ## Resultados
 

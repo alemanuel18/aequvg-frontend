@@ -38,13 +38,13 @@ La vista y la API aplican la misma matriz. El identificador de repositorio se re
 
 La autoría se guarda como personas vinculadas a la tesis, con una relación principal y coautores numerados. La migración conserva cada autor anterior como una sola persona principal, sin dividir cadenas; el campo API `author` se mantiene como alias de compatibilidad.
 
-El proceso actual es manual: la junta pega el enlace y administra la publicación. La detección automática o la importación para aprobación fueron investigadas, pero no están implementadas ni activadas. No hay confirmación del cliente sobre una modalidad automática en los registros disponibles.
+El proceso actual es manual: la junta ingresa el enlace y decide la publicación. La detección automática o la importación para aprobación fueron investigadas, pero no están implementadas ni activadas.
 
 ## Modelo, contrato y evidencias
 
-- [Modelo, rutas, permisos y errores de API](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-documentation/docs/thesis-links.md).
+- [Contrato de API del flujo manual, campos, rutas y permisos](https://github.com/alemanuel18/aequvg-backend/blob/test/thesis-s6-10-manual-flow/docs/thesis-manual-flow-api.md).
 - [OpenAPI local](http://localhost:3000/openapi) y colección `docs/aequvg-hoppscotch.json` del backend.
 - [Matriz de pruebas](../thesis-e2e-permissions.md), [defectos y re pruebas](../thesis-defect-log.md) e [investigación del repositorio UVG](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-documentation/docs/thesis-repository-research.md).
 - [Estado de acuerdos y pendientes con el cliente](../thesis-scope-status.md).
 
-Las capturas usan datos demostrativos y una API simulada; no muestran datos de una tesis real. La validación de una junta real y el caso de un documento restringido siguen pendientes.
+Las capturas usan datos demostrativos y una API simulada; no muestran datos de una tesis real. La modalidad vigente es manual; el formulario no sincroniza con UVG ni crea una etapa de aprobación de una segunda persona. La validación de una junta real y el caso de un documento restringido siguen pendientes.

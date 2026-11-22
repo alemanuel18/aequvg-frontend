@@ -28,6 +28,8 @@ Evidencia reproducible: `docker compose exec -e THESIS_DATABASE_TEST=true backen
 
 ## Pendientes del módulo fuera de S6-04
 
+- **S6-10 verificado en `test/thesis-s6-10-manual-flow`:** campos, autoría principal y coautores, categorías, borrador, publicación manual, edición/retiro, consulta pública y permisos técnicos pasaron en la integración PostgreSQL (7/7), E2E (5/5), unitarias frontend (68/68) y typechecks de ambos repos. La matriz completa, límites y defectos repetidos están en [thesis-e2e-permissions.md](./thesis-e2e-permissions.md) y [thesis-defect-log.md](./thesis-defect-log.md). S6-09 no se ejecutó porque la modalidad manual de S6-08 no autoriza automatización; publicación desde fuente UVG, reintentos y revisión por segunda persona quedan fuera del alcance actual.
+
 - S6-06 implementa autoría estructurada en backend y frontend. Verificación en la rama `feature/thesis-authorship`: integración PostgreSQL 6/6 y E2E de tesis 2/2 aprobados; typecheck y suites generales también pasan. Se probó además el backfill en una base efímera con una tesis legado sintética: el texto quedó intacto y se vinculó como `PRINCIPAL`, orden 1. La base de desarrollo activa se auditó en solo lectura y no se modificó.
 
 - S6-07 implementa categorías múltiples para las tesis. El catálogo inicial se basa en materias y temas del repositorio de tesis UVG; la junta puede crear y desactivar categorías en `/administrador/tesis`. La vista pública muestra categorías y filtra tesis por una categoría activa. Las tesis anteriores quedan sin clasificación, pero siguen en los listados sin filtro. Ver [categorías de tesis](./thesis-categories.md). Evidencia: PostgreSQL 7/7, E2E de tesis 2/2, unitarias frontend 68/68 y typecheck de ambos repos correcto.
