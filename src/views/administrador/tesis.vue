@@ -187,7 +187,7 @@ const askPublish = (item: ThesisLink) => {
               </label>
               <label v-if="!contributor.personId"><span class="field-label">Nombre completo <span aria-hidden="true">*</span></span><input v-model="contributor.name" required maxlength="300" :aria-label="`Nombre de ${contributorLabel(index)}`" /></label>
               <div v-else class="selected-author"><span>Seleccionada: {{ contributor.name }} · registro #{{ contributor.personId }}</span><button class="secondary" type="button" @click="contributor.personId = null; contributor.name = ''">Usar un nombre nuevo</button></div>
-              <div class="contributor-actions">
+              <div v-if="contributors.length > 1" class="contributor-actions">
                 <button v-if="contributors.length > 1" class="danger" type="button" :aria-label="`Quitar ${contributorLabel(index)}`" @click="removeContributor(contributor.key)">Quitar</button>
               </div>
             </li>
@@ -217,31 +217,142 @@ const askPublish = (item: ThesisLink) => {
 </template>
 
 <style scoped>
-.theses-admin{grid-template-columns:minmax(0,1fr)}
-.form-card form{min-width:0;grid-template-columns:minmax(0,1fr)}
-.contributors-fieldset{min-inline-size:0;width:100%;max-width:100%;box-sizing:border-box}
-.contributors-fieldset > *,.contributor-editor,.contributor-row{min-width:0;max-width:100%}
-.contributor-row{grid-template-columns:minmax(8rem,.6fr) minmax(12rem,1fr) minmax(12rem,1fr)}
-.contributor-row--removable{grid-template-columns:minmax(8rem,.6fr) minmax(12rem,1fr) minmax(12rem,1fr) auto}
-.theses-admin{container-type:inline-size}
-.field-label{display:block;font-weight:650}
-.form-card,.list-section,.contributor-row>*{min-width:0}
-.contributor-row select{max-width:100%}
-.selected-author span,.thesis-copy{min-width:0;overflow-wrap:anywhere}
-@container (max-width: 760px){
-  .contributor-row{grid-template-columns:minmax(0,1fr)}
-  .contributor-row>strong{padding-bottom:0}
-  .field-row{grid-template-columns:1fr}
-  .form-actions,.list-heading{flex-wrap:wrap;justify-content:flex-start}
-  .thesis-item{align-items:flex-start;flex-direction:column}
-  .item-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+.theses-admin {
+  max-width: 1000px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  color: #17212b;
+  container-type: inline-size;
 }
-@media(max-width:760px){
-  .contributor-row{grid-template-columns:minmax(0,1fr)}
-  .contributor-row>strong{padding-bottom:0}
-  .field-row{grid-template-columns:1fr}
-  .thesis-item{align-items:flex-start;flex-direction:column}
-  .item-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
-  .list-heading{align-items:flex-start;flex-wrap:wrap}
+.page-heading h1 { margin: .2rem 0; font-size: clamp(2rem, 4vw, 3rem); }
+.page-heading > p:last-child { max-width: 65ch; color: #566575; }
+.eyebrow { text-transform: uppercase; letter-spacing: .12em; font-weight: 700; color: #087b83; font-size: .8rem; }
+.form-card,
+.list-section {
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  background: #fff;
+  border: 1px solid #dbe3e8;
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px #17212b0a;
+}
+.form-card h2,
+.list-heading h2 { margin: 0 0 1rem; }
+.form-card form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  min-width: 0;
+}
+.form-card label { display: grid; gap: .4rem; font-weight: 650; min-width: 0; }
+.field-label { display: block; font-weight: 650; }
+.form-card input:not([type="checkbox"]),
+.form-card textarea,
+.form-card select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: .75rem;
+  color: inherit;
+  font: inherit;
+  background: #fff;
+  border: 1px solid #b9c6d0;
+  border-radius: .55rem;
+}
+.form-card input:focus,
+.form-card textarea:focus,
+.form-card select:focus { outline: 3px solid #0a8c9633; border-color: #087b83; }
+.field-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+.contributors-fieldset {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .8rem;
+  min-inline-size: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 1rem;
+  box-sizing: border-box;
+  border: 1px solid #dbe3e8;
+  border-radius: .7rem;
+}
+.contributors-fieldset > * { min-width: 0; max-width: 100%; }
+.contributors-fieldset legend { padding: 0 .35rem; font-weight: 750; }
+.author-search { width: 100%; max-width: 35rem; }
+.contributor-editor { display: grid; gap: .75rem; min-width: 0; width: 100%; margin: 0; padding: 0; list-style: none; }
+.contributor-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, .6fr) minmax(12rem, 1fr) minmax(12rem, 1fr);
+  align-items: end;
+  gap: .75rem;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: .8rem;
+  box-sizing: border-box;
+  border: 1px solid #e0e7eb;
+  border-radius: .65rem;
+}
+.contributor-row--removable { grid-template-columns: minmax(8rem, .6fr) minmax(12rem, 1fr) minmax(12rem, 1fr) auto; }
+.contributor-row > strong { padding-bottom: .7rem; }
+.contributor-row label { min-width: 0; }
+.contributor-row select { min-width: 0; max-width: 100%; }
+.selected-author { display: grid; gap: .4rem; align-self: stretch; min-width: 0; }
+.selected-author span,
+.thesis-copy { min-width: 0; overflow-wrap: anywhere; }
+.contributor-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
+.contributor-actions button,
+.selected-author button { padding: .55rem .65rem; }
+.add-coauthor { justify-self: start; }
+.publish-check { display: flex !important; align-items: center; gap: .55rem !important; }
+.form-actions,
+.item-actions,
+.list-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.form-actions { justify-content: flex-start; }
+.primary,
+.secondary,
+.danger { padding: .7rem 1rem; border: 0; border-radius: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
+.primary { color: #fff; background: #087b83; }
+.secondary { color: #203040; background: #edf2f5; }
+.danger { color: #a83220; background: #fff0ed; }
+.primary:disabled,
+.secondary:disabled,
+.danger:disabled { opacity: .55; cursor: not-allowed; }
+.primary:focus-visible,
+.secondary:focus-visible,
+.danger:focus-visible { outline: 3px solid #f2a900; outline-offset: 2px; }
+.form-error { margin: 0; color: #a32619; }
+.list-heading p { margin: 0; color: #657482; }
+.empty-state { padding: 1.5rem; color: #596978; text-align: center; }
+.thesis-list { display: grid; gap: .8rem; margin: 0; padding: 0; list-style: none; }
+.thesis-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; border: 1px solid #e0e7eb; border-radius: .75rem; }
+.thesis-copy h3 { margin: .45rem 0; }
+.thesis-copy p { margin: .2rem 0 .5rem; color: #5d6b78; }
+.thesis-copy a { color: #087b83; overflow-wrap: anywhere; }
+.status { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 700; }
+.status--published { color: #12633e; background: #e4f5ed; }
+.status--draft { color: #7a4a00; background: #fff3d9; }
+@container (max-width: 760px) {
+  .contributor-row,
+  .contributor-row--removable { grid-template-columns: minmax(0, 1fr); }
+  .contributor-row > strong { padding-bottom: 0; }
+  .field-row { grid-template-columns: minmax(0, 1fr); }
+  .form-actions,
+  .list-heading { flex-wrap: wrap; justify-content: flex-start; }
+  .thesis-item { align-items: flex-start; flex-direction: column; }
+  .item-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
+}
+@media (max-width: 760px) {
+  .contributor-row,
+  .contributor-row--removable { grid-template-columns: minmax(0, 1fr); }
+  .contributor-row > strong { padding-bottom: 0; }
+  .field-row { grid-template-columns: minmax(0, 1fr); }
+  .thesis-item { align-items: flex-start; flex-direction: column; }
+  .item-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
+  .list-heading { align-items: flex-start; flex-wrap: wrap; }
 }
 </style>

@@ -86,11 +86,15 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
   await expect(page.locator('.contributor-row input[aria-label="Nombre de Coautor 1"]')).toHaveValue('Carlos Pérez')
   await expect(page.locator('.contributor-row input[aria-label="Nombre de Coautor 2"]')).toHaveValue('Luis García')
   await expect(page.getByRole('button', { name: /Mover/ })).toHaveCount(0)
+  await page.setViewportSize({ width: 1920, height: 1080 })
   for (const width of [967, 768, 390]) {
     await page.setViewportSize({ width, height: 900 })
+    await page.waitForTimeout(250)
     await expectNoHorizontalOverflow(page)
     const rowSize = await page.locator('.contributor-row').first().evaluate((element) => ({ scroll: element.scrollWidth, client: element.clientWidth }))
     expect(rowSize.scroll).toBeLessThanOrEqual(rowSize.client)
+    const fieldsetRight = await page.locator('.contributors-fieldset').evaluate((element) => Math.ceil(element.getBoundingClientRect().right))
+    expect(fieldsetRight).toBeLessThanOrEqual(width)
   }
   await page.getByLabel('Año').fill('2026')
   await page.getByLabel('Resumen').fill('Estudio de catalizadores de origen natural para reducir residuos en procesos de síntesis.')
