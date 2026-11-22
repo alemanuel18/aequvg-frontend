@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PublicApiError } from '~/services/api'
-import { useAdminThesesService, type ThesisInput, type ThesisLink } from '~/services/admin-theses'
+import { useAdminThesesService, type ThesisCategory, type ThesisInput, type ThesisLink } from '~/services/admin-theses'
 import { useToast } from '~/composables/use-toast'
 
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
@@ -9,11 +9,14 @@ useSeoMeta({ title: 'Tesis · Administración', robots: 'noindex, nofollow' })
 const service = useAdminThesesService()
 const toast = useToast()
 const items = ref<ThesisLink[]>([])
+const categories = ref<ThesisCategory[]>([])
 const loading = ref(true)
 const saving = ref(false)
 const editingId = ref<number | null>(null)
 const formError = ref('')
-const form = reactive({ title: '', url: '', publicationYear: '', summary: '', published: false })
+const categoryName = ref('')
+const categorySaving = ref(false)
+const form = reactive({ title: '', url: '', publicationYear: '', summary: '', published: false, categoryIds: [] as number[] })
 type ContributorDraft = { key: number; personId: number | null; name: string; createNew: boolean; search: string; searchOpen: boolean; searchRequest: number; options: Array<{ id: number; name: string }>; loading: boolean }
 let nextContributorKey = 1
 const newContributor = (name = '', personId: number | null = null): ContributorDraft => ({ key: nextContributorKey++, personId, name, createNew: !personId, search: name, searchOpen: false, searchRequest: 0, options: [], loading: false })
@@ -34,7 +37,11 @@ const errorText = (error: unknown) => error instanceof PublicApiError ? error.me
 
 const load = async () => {
   loading.value = true
-  try { items.value = (await service.list()).items }
+  try {
+    const [thesisResult, categoryResult] = await Promise.all([service.list(), service.categories()])
+    items.value = thesisResult.items
+    categories.value = categoryResult
+  }
   catch (error) { toast.error(errorText(error)) }
   finally { loading.value = false }
 }
@@ -85,6 +92,30 @@ const chooseExistingAuthor = (contributor: ContributorDraft, person: { id: numbe
   contributor.search = person.name
   contributor.searchOpen = false
 }
+const toggleCategory = (id: number, event: Event) => {
+  const selected = (event.target as HTMLInputElement).checked
+  form.categoryIds = selected
+    ? [...new Set([...form.categoryIds, id])]
+    : form.categoryIds.filter((categoryId) => categoryId !== id)
+}
+const createCategory = async () => {
+  categorySaving.value = true
+  try {
+    const created = await service.createCategory(categoryName.value.trim())
+    categories.value = [...categories.value, created].sort((a, b) => a.name.localeCompare(b.name, 'es'))
+    categoryName.value = ''
+    toast.success(`Se creó la categoría «${created.name}».`)
+  } catch (error) { toast.error(errorText(error)) }
+  finally { categorySaving.value = false }
+}
+const toggleCategoryStatus = async (category: ThesisCategory) => {
+  try {
+    const updated = await service.setCategoryActive(category.id, !category.active)
+    categories.value = categories.value.map((item) => item.id === updated.id ? updated : item)
+    items.value = items.value.map((thesis) => ({ ...thesis, categories: thesis.categories.map((item) => item.id === updated.id ? updated : item) }))
+    toast.success(updated.active ? `Se activó «${updated.name}».` : `Se desactivó «${updated.name}».`)
+  } catch (error) { toast.error(errorText(error)) }
+}
 const addContributor = () => contributors.value.push(newContributor())
 const removeContributor = (key: number) => {
   if (contributors.value.length > 1) {
@@ -100,13 +131,13 @@ const displayAuthors = (item: ThesisLink) => {
 
 const resetForm = () => {
   editingId.value = null
-  Object.assign(form, { title: '', url: '', publicationYear: '', summary: '', published: false })
+  Object.assign(form, { title: '', url: '', publicationYear: '', summary: '', published: false, categoryIds: [] })
   contributors.value = [newContributor()]
   formError.value = ''
 }
 const edit = (item: ThesisLink) => {
   editingId.value = item.id
-  Object.assign(form, { title: item.title, url: item.url, publicationYear: item.publicationYear ? String(item.publicationYear) : '', summary: item.summary ?? '', published: Boolean(item.publishedAt) })
+  Object.assign(form, { title: item.title, url: item.url, publicationYear: item.publicationYear ? String(item.publicationYear) : '', summary: item.summary ?? '', published: Boolean(item.publishedAt), categoryIds: item.categories.map(({ id }) => id) })
   contributors.value = item.contributors.length
     ? item.contributors.map(({ personId, person }) => newContributor(person.name, personId))
     : [newContributor(item.author ?? '')]
@@ -117,6 +148,7 @@ const edit = (item: ThesisLink) => {
 const payload = (): ThesisInput => ({
   title: form.title.trim(), url: form.url.trim(),
   contributors: sortedContributors.value.map(({ personId, name, createNew }) => createNew ? { name: name.trim() } : { personId: personId! }),
+  categoryIds: [...form.categoryIds],
   publicationYear: Number(form.publicationYear),
   summary: form.summary.trim(),
   publishedAt: form.published ? new Date().toISOString() : null
@@ -184,6 +216,19 @@ const askPublish = (item: ThesisLink) => {
 <template>
   <main class="theses-admin">
     <header class="page-heading"><p class="eyebrow">Administración</p><h1>Tesis</h1><p>Agrega enlaces a tesis alojadas en el repositorio universitario. Aquí solo guardamos el enlace y sus datos, no los documentos.</p></header>
+    <section class="category-management" aria-labelledby="thesis-categories-title">
+      <div class="category-management__heading"><div><h2 id="thesis-categories-title">Categorías de tesis</h2><p>Crea categorías y activa o desactiva las que se ofrecen al público.</p></div></div>
+      <form class="category-create-form" @submit.prevent="createCategory">
+        <label for="new-thesis-category">Nueva categoría</label>
+        <div class="category-create-form__fields"><input id="new-thesis-category" v-model="categoryName" minlength="2" maxlength="80" required placeholder="Nombre de la categoría" /><button class="secondary" type="submit" :disabled="categorySaving">{{ categorySaving ? 'Guardando…' : 'Crear categoría' }}</button></div>
+      </form>
+      <ul class="category-management__list">
+        <li v-for="category in categories" :key="category.id" :class="{ 'category-management__item--inactive': !category.active }">
+          <span>{{ category.name }} <small v-if="!category.active">Inactiva</small></span>
+          <button class="secondary" type="button" @click="toggleCategoryStatus(category)">{{ category.active ? 'Desactivar' : 'Activar' }}</button>
+        </li>
+      </ul>
+    </section>
     <section class="form-card" aria-labelledby="thesis-form-title">
       <h2 id="thesis-form-title">{{ editingId ? 'Editar tesis' : 'Agregar tesis' }}</h2>
       <form novalidate @submit.prevent="askSave">
@@ -211,6 +256,13 @@ const askPublish = (item: ThesisLink) => {
           </ol>
           <button class="secondary add-coauthor" type="button" @click="addContributor">Agregar coautor</button>
         </fieldset>
+        <fieldset class="thesis-categories">
+          <legend>Categorías</legend>
+          <div v-if="categories.length" class="thesis-category-options">
+            <label v-for="category in categories" :key="category.id" :class="{ 'thesis-category-option--inactive': !category.active }"><input type="checkbox" :checked="form.categoryIds.includes(category.id)" :disabled="!category.active && !form.categoryIds.includes(category.id)" @change="toggleCategory(category.id, $event)" /> {{ category.name }}<span v-if="!category.active"> (inactiva)</span></label>
+          </div>
+          <p v-else>No hay categorías registradas.</p>
+        </fieldset>
         <label><span class="field-label">Año <span aria-hidden="true">*</span></span><input v-model="form.publicationYear" type="number" required aria-required="true" min="1900" max="9999" /></label>
         <label><span class="field-label">Resumen <span aria-hidden="true">*</span></span><textarea v-model="form.summary" required aria-required="true" minlength="1" rows="4" maxlength="12000" /></label>
         <label class="publish-check"><input v-model="form.published" type="checkbox" /> Publicar ahora</label>
@@ -224,7 +276,7 @@ const askPublish = (item: ThesisLink) => {
       <p v-else-if="!items.length" class="empty-state">Todavía no hay tesis. Agrega un enlace para comenzar.</p>
       <ul v-else class="thesis-list">
         <li v-for="item in items" :key="item.id" class="thesis-item">
-          <div class="thesis-copy"><span class="status" :class="item.publishedAt ? 'status--published' : 'status--draft'">{{ item.publishedAt ? 'Publicada' : 'Borrador' }}</span><h3>{{ item.title }}</h3><p>{{ [displayAuthors(item), item.publicationYear].filter(Boolean).join(' · ') || 'Autoría y año no especificados' }}</p><a :href="item.url" target="_blank" rel="noopener noreferrer">Abrir tesis en el repositorio</a></div>
+          <div class="thesis-copy"><span class="status" :class="item.publishedAt ? 'status--published' : 'status--draft'">{{ item.publishedAt ? 'Publicada' : 'Borrador' }}</span><h3>{{ item.title }}</h3><p>{{ [displayAuthors(item), item.publicationYear].filter(Boolean).join(' · ') || 'Autoría y año no especificados' }}</p><div v-if="item.categories.length" class="thesis-category-tags"><span v-for="category in item.categories" :key="category.id" :class="{ 'thesis-category-tag--inactive': !category.active }">{{ category.name }}</span></div><a :href="item.url" target="_blank" rel="noopener noreferrer">Abrir tesis en el repositorio</a></div>
           <div class="item-actions"><button v-if="!item.publishedAt" class="primary" type="button" @click="askPublish(item)">Publicar</button><button class="secondary" type="button" @click="edit(item)">Editar</button><button class="danger" type="button" @click="askDelete(item)">Eliminar</button></div>
         </li>
       </ul>
@@ -257,6 +309,27 @@ const askPublish = (item: ThesisLink) => {
   border-radius: 1rem;
   box-shadow: 0 8px 24px #17212b0a;
 }
+.category-management {
+  display: grid;
+  gap: .9rem;
+  min-width: 0;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid #dbe3e8;
+  border-radius: .75rem;
+}
+.category-management h2 { margin: 0; font-size: 1.25rem; }
+.category-management p { margin: .25rem 0 0; color: #5d6b78; }
+.category-create-form { display: grid; gap: .4rem; max-width: 38rem; }
+.category-create-form label { font-weight: 700; }
+.category-create-form__fields { display: flex; flex-wrap: wrap; gap: .6rem; }
+.category-create-form__fields input { flex: 1 1 14rem; min-width: 0; padding: .7rem .75rem; color: inherit; background: #fff; border: 1px solid #b9c6d0; border-radius: .55rem; font: inherit; }
+.category-management__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.category-management__list li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-width: 0; padding: .65rem .75rem; border: 1px solid #e0e7eb; border-radius: .55rem; }
+.category-management__list li span { min-width: 0; overflow-wrap: anywhere; font-weight: 650; }
+.category-management__list small { color: #7a4a00; font-weight: 600; }
+.category-management__item--inactive { background: #f7f8f8; }
+.category-management__list button { flex: 0 0 auto; padding: .5rem .65rem; }
 .form-card h2,
 .list-heading h2 { margin: 0 0 1rem; }
 .form-card form {
@@ -267,6 +340,7 @@ const askPublish = (item: ThesisLink) => {
 }
 .form-card label { display: grid; gap: .4rem; font-weight: 650; min-width: 0; }
 .field-label { display: block; font-weight: 650; }
+.field-label [aria-hidden="true"] { white-space: nowrap; }
 .form-card input:not([type="checkbox"]),
 .form-card textarea,
 .form-card select {
@@ -299,6 +373,13 @@ const askPublish = (item: ThesisLink) => {
 }
 .contributors-fieldset > * { min-width: 0; max-width: 100%; }
 .contributors-fieldset legend { padding: 0 .35rem; font-weight: 750; }
+.thesis-categories { display: grid; gap: .65rem; min-width: 0; margin: 0; padding: 1rem; border: 1px solid #dbe3e8; border-radius: .7rem; }
+.thesis-categories legend { padding: 0 .35rem; font-weight: 750; }
+.thesis-categories p { margin: 0; color: #5d6b78; }
+.thesis-category-options { display: flex; flex-wrap: wrap; gap: .5rem; }
+.thesis-category-options label { display: inline-flex !important; align-items: center; gap: .45rem !important; width: auto; padding: .5rem .7rem; border: 1px solid #dbe3e8; border-radius: 999px; background: #fff; }
+.thesis-category-options input { width: 1rem; height: 1rem; margin: 0; }
+.thesis-category-option--inactive { color: #697781; background: #f5f6f6 !important; }
 .contributor-editor { display: grid; gap: .75rem; min-width: 0; width: 100%; margin: 0; padding: 0; list-style: none; }
 .contributor-row {
   display: grid;
@@ -355,6 +436,9 @@ const askPublish = (item: ThesisLink) => {
 .thesis-copy h3 { margin: .45rem 0; }
 .thesis-copy p { margin: .2rem 0 .5rem; color: #5d6b78; }
 .thesis-copy a { color: #087b83; overflow-wrap: anywhere; }
+.thesis-category-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin: .55rem 0; }
+.thesis-category-tags span { padding: .22rem .55rem; color: #07585e; background: #e4f2f2; border-radius: 999px; font-size: .82rem; font-weight: 700; }
+.thesis-category-tags .thesis-category-tag--inactive { color: #66727b; background: #edf0f1; }
 .status { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 700; }
 .status--published { color: #12633e; background: #e4f5ed; }
 .status--draft { color: #7a4a00; background: #fff3d9; }

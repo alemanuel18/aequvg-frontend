@@ -8,6 +8,7 @@ export interface ThesisContributor {
   person: { id: number; name: string }
 }
 export interface ThesisAuthorOption { id: number; name: string }
+export interface ThesisCategory { id: number; name: string; active: boolean }
 export interface ThesisLink {
   id: number
   title: string
@@ -20,11 +21,13 @@ export interface ThesisLink {
   updatedAt: string
   publishedAt: string | null
   contributors: ThesisContributor[]
+  categories: ThesisCategory[]
   createdBy?: { id: number; name: string }
 }
 export interface ThesisInput {
   title: string
   contributors: Array<{ personId?: number; name?: string }>
+  categoryIds?: number[]
   author?: string
   publicationYear: number
   summary: string
@@ -36,10 +39,13 @@ export const useAdminThesesService = () => {
   const api = useApi()
   const session = useAdminSession()
   const csrf = () => session.csrfToken.value || useCookie<string | null>('aequvg_csrf').value || ''
-  const mutation = (method: 'POST' | 'PUT' | 'DELETE', body?: unknown) => ({ method, ...(body === undefined ? {} : { body }), credentials: 'include' as const, headers: { 'x-csrf-token': csrf() } })
+  const mutation = (method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', body?: unknown) => ({ method, ...(body === undefined ? {} : { body }), credentials: 'include' as const, headers: { 'x-csrf-token': csrf() } })
   return {
     list: (page = 1, pageSize = 100) => api<{ items: ThesisLink[]; pagination: { page: number; pageSize: number; total: number } }>(`/admin/theses?page=${page}&pageSize=${pageSize}`, { credentials: 'include' }),
     authors: (q = '', page = 1, pageSize = 100) => api<{ items: ThesisAuthorOption[]; pagination: { page: number; pageSize: number; total: number } }>(`/admin/thesis-authors?page=${page}&pageSize=${pageSize}${q ? `&q=${encodeURIComponent(q)}` : ''}`, { credentials: 'include' }),
+    categories: () => api<ThesisCategory[]>('/admin/theses/categories', { credentials: 'include' }),
+    createCategory: (name: string) => api<ThesisCategory>('/admin/theses/categories', mutation('POST', { name })),
+    setCategoryActive: (id: number, active: boolean) => api<ThesisCategory>(`/admin/theses/categories/${id}`, mutation('PATCH', { active })),
     create: (body: ThesisInput) => api<ThesisLink>('/admin/theses', mutation('POST', body)),
     update: (id: number, body: Partial<ThesisInput>) => api<ThesisLink>(`/admin/theses/${id}`, mutation('PUT', body)),
     remove: (id: number) => api<{ message: string }>(`/admin/theses/${id}`, mutation('DELETE'))

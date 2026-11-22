@@ -224,6 +224,7 @@ export interface AdminNewsImage {
 }
 
 export interface Pagination { page: number; pageSize: number; total: number }
+export interface ThesisCategory { id: number; name: string }
 export interface PublicThesis {
   id: number
   title: string
@@ -238,6 +239,7 @@ export interface PublicThesis {
     authorOrder: number
     person: { id: number; name: string }
   }>
+  categories: ThesisCategory[]
 }
 export interface PublicThesisList { items: PublicThesis[]; pagination: Pagination & { totalPages: number } }
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }

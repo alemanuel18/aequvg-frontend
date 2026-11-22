@@ -1,6 +1,6 @@
 # Estado de acuerdos y dependencias: apartado de tesis
 
-Actualizado: 21 de noviembre de 2026.
+Actualizado: 22 de noviembre de 2026.
 
 ## Acuerdos confirmados en el repositorio
 
@@ -27,6 +27,8 @@ Evidencia reproducible: `docker compose exec -e THESIS_DATABASE_TEST=true backen
 ## Pendientes del módulo fuera de S6-04
 
 - S6-06 implementa autoría estructurada en backend y frontend. Verificación en la rama `feature/thesis-authorship`: integración PostgreSQL 6/6 y E2E de tesis 2/2 aprobados; typecheck y suites generales también pasan. Se probó además el backfill en una base efímera con una tesis legado sintética: el texto quedó intacto y se vinculó como `PRINCIPAL`, orden 1. La base de desarrollo activa se auditó en solo lectura y no se modificó.
+
+- S6-07 implementa categorías múltiples para las tesis. El catálogo inicial se basa en materias y temas del repositorio de tesis UVG; la junta puede crear y desactivar categorías en `/administrador/tesis`. La vista pública muestra categorías y filtra tesis por una categoría activa. Las tesis anteriores quedan sin clasificación, pero siguen en los listados sin filtro. Ver [categorías de tesis](./thesis-categories.md). Evidencia: PostgreSQL 7/7, E2E de tesis 2/2, unitarias frontend 68/68 y typecheck de ambos repos correcto.
 
 - Para probar acceso externo restringido, obtener un ejemplo de Química con esa restricción y las credenciales UVG apropiadas; los 65 registros consultados reportaron `open.access`.
 - Registrar la revisión de una persona real de la junta. La integración usa cuentas temporales para comprobar permisos técnicos.
