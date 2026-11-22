@@ -38,7 +38,24 @@ const selectTheses = async (page: import('@playwright/test').Page) => {
   const button = page.getByRole('button', { name: 'Tesis', exact: true })
   await button.click()
   await expect(button).toHaveClass(/is-active/)
+  await expect(page.getByRole('navigation', { name: 'Filtrar tesis por categoría' })).toBeVisible()
 }
+
+test('muestra el filtro de categorías solo al seleccionar Tesis', async ({ page }) => {
+  await page.goto('/investigacion')
+  await page.waitForLoadState('networkidle')
+  const categoryFilter = page.getByRole('navigation', { name: 'Filtrar tesis por categoría' })
+  await expect(categoryFilter).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Tesis', exact: true }).click()
+  await expect(categoryFilter).toBeVisible()
+
+  await page.getByRole('button', { name: 'Todas', exact: true }).first().click()
+  await expect(categoryFilter).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Proyectos', exact: true }).click()
+  await expect(categoryFilter).toHaveCount(0)
+})
 
 test('administra una tesis y refleja cada cambio en la consulta pública', async ({ page }) => {
   const originalTitle = 'Evaluación de catalizadores para química sostenible'

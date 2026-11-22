@@ -22,7 +22,7 @@ const selectedType = ref<ProjectType | undefined>(
     ? route.query.type
     : undefined,
 );
-const selectedThesisCategory = ref(queryNumber(route.query.categoryId));
+const selectedThesisCategory = ref(route.query.type === 'TESIS' ? queryNumber(route.query.categoryId) : undefined);
 const currentPage = ref(queryNumber(route.query.page) || 1);
 const pageSize = 9;
 const requestError = ref<unknown>(null);
@@ -81,7 +81,7 @@ const submitSearch = async () => {
 };
 const setType = async (type?: ProjectType) => {
   selectedType.value = type;
-  if (type === 'PROYECTO') selectedThesisCategory.value = undefined
+  if (type !== 'TESIS') selectedThesisCategory.value = undefined
   currentPage.value = 1;
   await updateProjects();
 };
@@ -158,7 +158,7 @@ const thesisAuthorSummary = (thesis: PublicThesis) => {
           autocomplete="off"
         /><button class="research-filters__submit" type="submit">Buscar</button>
       </form>
-      <nav v-if="selectedType !== 'PROYECTO' && thesisCategories.length" class="thesis-category-filters" aria-label="Filtrar tesis por categoría">
+      <nav v-if="selectedType === 'TESIS' && thesisCategories.length" class="thesis-category-filters" aria-label="Filtrar tesis por categoría">
         <span>Categorías de tesis</span>
         <button type="button" :class="{ 'is-active': !selectedThesisCategory }" @click="setThesisCategory()">Todas</button>
         <button v-for="category in thesisCategories" :key="category.id" type="button" :class="{ 'is-active': selectedThesisCategory === category.id }" @click="setThesisCategory(category.id)">{{ category.name }}</button>
