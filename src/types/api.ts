@@ -232,6 +232,12 @@ export interface PublicThesis {
   summary: string | null
   url: string
   publishedAt: string
+  contributors: Array<{
+    personId: number
+    role: 'PRINCIPAL' | 'COAUTOR'
+    authorOrder: number
+    person: { id: number; name: string }
+  }>
 }
 export interface PublicThesisList { items: PublicThesis[]; pagination: Pagination & { totalPages: number } }
 export interface PublicNewsList { items: PublicNews[]; pagination: Pagination }

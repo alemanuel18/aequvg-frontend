@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { usePublicContentService } from "~/services/public-content";
-import type { ProjectType, PublicProjectList } from "~/types/api";
+import type { ProjectType, PublicProjectList, PublicThesis } from "~/types/api";
 
 useSeoMeta({
   title: "Investigación",
@@ -93,6 +93,12 @@ const formatDate = (value: string) =>
     month: "long",
     timeZone: "UTC",
   }).format(new Date(value));
+const thesisAuthorSummary = (thesis: PublicThesis) => {
+  const principal = thesis.contributors?.find(({ role }) => role === 'PRINCIPAL')
+  if (!principal) return thesis.author ? `Por ${thesis.author}` : 'Trabajo de graduación'
+  const coauthors = thesis.contributors.filter(({ role }) => role === 'COAUTOR').map(({ person }) => person.name)
+  return `Autor principal: ${principal.person.name}${coauthors.length ? ` · Coautores: ${coauthors.join(', ')}` : ''}`
+}
 </script>
 
 <template>
@@ -172,7 +178,7 @@ const formatDate = (value: string) =>
         <div class="research-grid">
           <template v-if="selectedType !== 'PROYECTO'">
           <ContentCard v-for="thesis in thesisResult.items" :key="`thesis-${thesis.id}`" eyebrow="Tesis de Química" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
-            <p v-if="thesis.author || thesis.publicationYear" class="research-card__meta">{{ thesis.author ? `Por ${thesis.author}` : 'Trabajo de graduación' }}{{ thesis.publicationYear ? ` · ${thesis.publicationYear}` : '' }}</p>
+            <p v-if="thesis.author || thesis.contributors?.length || thesis.publicationYear" class="research-card__meta">{{ thesisAuthorSummary(thesis) }}{{ thesis.publicationYear ? ` · ${thesis.publicationYear}` : '' }}</p>
             <NuxtLink class="card__link" :to="`/investigacion/tesis/${thesis.id}`" :aria-label="`Ver tesis: ${thesis.title}`">Ver tesis <span aria-hidden="true">→</span></NuxtLink>
           </ContentCard>
           </template>
