@@ -333,7 +333,7 @@ const askPublish = (item: ThesisLink) => {
 .category-create-form label { font-weight: 700; }
 .category-create-form__fields { display: flex; flex-wrap: wrap; gap: .6rem; }
 .category-create-form__fields input { flex: 1 1 14rem; min-width: 0; padding: .7rem .75rem; color: inherit; background: #fff; border: 1px solid #b9c6d0; border-radius: .55rem; font: inherit; }
-.category-management__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.category-management__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: .5rem; max-height: 14rem; overflow-y: auto; margin: 0; padding: 0 .25rem 0 0; list-style: none; }
 .category-management__list li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-width: 0; padding: .65rem .75rem; border: 1px solid #e0e7eb; border-radius: .55rem; }
 .category-management__list li span { min-width: 0; overflow-wrap: anywhere; font-weight: 650; }
 .category-management__list small { color: #7a4a00; font-weight: 600; }

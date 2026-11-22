@@ -71,6 +71,13 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
   await page.getByLabel('Nueva categoría').fill(addedCategoryName)
   await page.getByRole('button', { name: 'Crear categoría' }).click()
   await expect(page.getByText(`Se creó la categoría «${addedCategoryName}».`)).toBeVisible()
+  const categoryRows = page.locator('.category-management__list li')
+  const firstCategoryRow = await categoryRows.nth(0).boundingBox()
+  const secondCategoryRow = await categoryRows.nth(1).boundingBox()
+  expect(firstCategoryRow).not.toBeNull()
+  expect(secondCategoryRow).not.toBeNull()
+  expect(Math.abs(firstCategoryRow!.x - secondCategoryRow!.x)).toBeLessThan(2)
+  expect(secondCategoryRow!.y).toBeGreaterThan(firstCategoryRow!.y)
 
   await page.getByLabel('Título').fill(originalTitle)
   await page.getByLabel(/URL del repositorio/).fill(repositoryUrl)
