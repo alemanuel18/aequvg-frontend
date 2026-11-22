@@ -10,6 +10,7 @@ const service = useAdminThesesService()
 const toast = useToast()
 const items = ref<ThesisLink[]>([])
 const categories = ref<ThesisCategory[]>([])
+const categorySearch = ref('')
 const loading = ref(true)
 const saving = ref(false)
 const editingId = ref<number | null>(null)
@@ -98,6 +99,12 @@ const toggleCategory = (id: number, event: Event) => {
     ? [...new Set([...form.categoryIds, id])]
     : form.categoryIds.filter((categoryId) => categoryId !== id)
 }
+const filteredCategories = computed(() => {
+  const normalize = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('es')
+  const query = normalize(categorySearch.value.trim())
+  if (!query) return categories.value
+  return categories.value.filter(({ name }) => normalize(name).includes(query))
+})
 const createCategory = async () => {
   categorySaving.value = true
   try {
@@ -258,8 +265,10 @@ const askPublish = (item: ThesisLink) => {
         </fieldset>
         <fieldset class="thesis-categories">
           <legend>Categorías</legend>
-          <div v-if="categories.length" class="thesis-category-options">
-            <label v-for="category in categories" :key="category.id" :class="{ 'thesis-category-option--inactive': !category.active }"><input type="checkbox" :checked="form.categoryIds.includes(category.id)" :disabled="!category.active && !form.categoryIds.includes(category.id)" @change="toggleCategory(category.id, $event)" /> {{ category.name }}<span v-if="!category.active"> (inactiva)</span></label>
+          <label v-if="categories.length" class="thesis-category-search">Buscar categoría<input v-model="categorySearch" type="search" autocomplete="off" placeholder="Escribe para filtrar la lista" /></label>
+          <div v-if="categories.length" class="thesis-category-options" role="group" aria-label="Categorías disponibles">
+            <label v-for="category in filteredCategories" :key="category.id" :class="{ 'thesis-category-option--inactive': !category.active }"><input type="checkbox" :checked="form.categoryIds.includes(category.id)" :disabled="!category.active && !form.categoryIds.includes(category.id)" @change="toggleCategory(category.id, $event)" /> <span>{{ category.name }}<span v-if="!category.active"> (inactiva)</span></span></label>
+            <p v-if="!filteredCategories.length" class="thesis-category-empty">No hay categorías que coincidan con la búsqueda.</p>
           </div>
           <p v-else>No hay categorías registradas.</p>
         </fieldset>
@@ -339,7 +348,7 @@ const askPublish = (item: ThesisLink) => {
   min-width: 0;
 }
 .form-card label { display: grid; gap: .4rem; font-weight: 650; min-width: 0; }
-.field-label { display: block; font-weight: 650; }
+.field-label { display: flex; align-items: baseline; gap: .2rem; font-weight: 650; white-space: nowrap; }
 .field-label [aria-hidden="true"] { white-space: nowrap; }
 .form-card input:not([type="checkbox"]),
 .form-card textarea,
@@ -376,9 +385,12 @@ const askPublish = (item: ThesisLink) => {
 .thesis-categories { display: grid; gap: .65rem; min-width: 0; margin: 0; padding: 1rem; border: 1px solid #dbe3e8; border-radius: .7rem; }
 .thesis-categories legend { padding: 0 .35rem; font-weight: 750; }
 .thesis-categories p { margin: 0; color: #5d6b78; }
-.thesis-category-options { display: flex; flex-wrap: wrap; gap: .5rem; }
-.thesis-category-options label { display: inline-flex !important; align-items: center; gap: .45rem !important; width: auto; padding: .5rem .7rem; border: 1px solid #dbe3e8; border-radius: 999px; background: #fff; }
-.thesis-category-options input { width: 1rem; height: 1rem; margin: 0; }
+.thesis-category-search { display: grid; gap: .4rem; max-width: 32rem; }
+.thesis-category-options { display: grid; gap: .15rem; max-height: 13rem; overflow-y: auto; padding: .4rem; border: 1px solid #dbe3e8; border-radius: .55rem; background: #fff; }
+.thesis-category-options label { display: flex !important; align-items: center; gap: .55rem !important; width: 100%; padding: .5rem .6rem; border-radius: .4rem; }
+.thesis-category-options label:hover { background: #f2f7f6; }
+.thesis-category-options input { flex: 0 0 1rem; width: 1rem; height: 1rem; margin: 0; }
+.thesis-category-empty { padding: .5rem .6rem; }
 .thesis-category-option--inactive { color: #697781; background: #f5f6f6 !important; }
 .contributor-editor { display: grid; gap: .75rem; min-width: 0; width: 100%; margin: 0; padding: 0; list-style: none; }
 .contributor-row {
