@@ -183,7 +183,15 @@ const resolveMockContributors = (inputs: MockContributorInput[]) => {
     }
     result.push({ personId: person.id, role: index === 0 ? 'PRINCIPAL' : 'COAUTOR', authorOrder: index + 1, person: { ...person } })
   }
-  return result
+  const principal = result[0]!
+  const coauthors = result.slice(1).sort((a, b) =>
+    new Intl.Collator('es', { sensitivity: 'base' }).compare(a.person.name, b.person.name) || a.personId - b.personId
+  )
+  return [principal, ...coauthors].map((contributor, index) => ({
+    ...contributor,
+    role: index === 0 ? 'PRINCIPAL' as const : 'COAUTOR' as const,
+    authorOrder: index + 1
+  }))
 }
 
 let nextBoardMemberId = 103

@@ -24,7 +24,7 @@ Actualizado: 21 de noviembre de 2026. Las pruebas de navegador usan Chromium. La
 | Archivo universitario después de retirar el enlace | Repositorio UVG | Pasa para el ítem probado | Publiqué temporalmente el enlace al ítem 4914, lo retiré desde el panel y confirmé que la consulta pública local ya no lo lista. Inmediatamente después, una solicitud sin sesión al bitstream remoto respondió HTTP 200, `application/pdf`, 1,206,840 bytes. El PDF remoto siguió accesible. |
 | Validación de una junta real | Junta Directiva | Pendiente | La suite usa un rol temporal con `PAPERS_MANAGE`; esto comprueba la autorización técnica, no registra aprobación de una persona real de la junta. |
 | Campos obligatorios | Administrador | Matriz S6-04 aprobada | Título, autor principal, año, resumen y URL del repositorio son obligatorios en vista y API; identificador se retiró. |
-| Autoría ordenada | Administrador y público | S6-06 implementado; PostgreSQL 6/6, migración con legado y E2E 2/2 | La administración selecciona o crea autorías, conserva principal y orden de coautores al editar y muestra la lista en el detalle público. En una base efímera aparte, el backfill preservó el texto de una tesis legado sintética como principal de orden 1. |
+| Autoría alfabética | Administrador y público | PostgreSQL 6/6; E2E 2/2 | La administración selecciona o crea autores; mantiene al principal primero y ordena alfabéticamente los coautores, también en la vista pública. El E2E comprueba el orden al escribir los nombres alfabéticamente invertidos y confirma que no hay controles para cambiarlo manualmente. |
 | URL única normalizada | Administrador | Pasa en E2E y PostgreSQL | Se recortan espacios externos y se normalizan esquema y host; la ruta conserva su distinción. Dos altas simultáneas de variantes equivalentes producen una creación y un conflicto. |
 
 ## Evidencia reproducible
@@ -58,6 +58,6 @@ El registro independiente de cada hallazgo, clasificación, acción y repetició
 ## Pendientes para cerrar aceptación
 
 1. La junta debe confirmar el flujo y la matriz de permisos; la aprobación no se ha solicitado ni registrado.
-2. S6-04 define título, autor principal, año, resumen y URL HTTPS del repositorio como obligatorios en la interfaz y la API; el identificador se retiró del contrato. S6-06 estructura la autoría con una persona principal y coautores ordenados.
+2. S6-04 define título, autor principal, año, resumen y URL HTTPS del repositorio como obligatorios en la interfaz y la API; el identificador se retiró del contrato. S6-06 estructura la autoría con un autor principal y coautores ordenados alfabéticamente.
 3. No se encontró tesis de Química restringida: los 65 ítems consultados reportan `open.access`. Para probar ese caso hace falta que UVG identifique un ejemplo restringido y provea una cuenta autorizada si requiere autenticación.
 4. Validar con la junta la estimación propuesta de 2 puntos.

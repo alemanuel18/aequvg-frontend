@@ -6,7 +6,7 @@ Esta guía aplica a integrantes de junta con una cuenta administrativa autorizad
 
 1. Inicia sesión en `/administrador` y abre **Tesis** en el menú lateral.
 2. Completa título, URL HTTPS del repositorio, autor principal, año y resumen. Puedes seleccionar una persona existente o registrar una nueva.
-3. Agrega coautores en el orden aprobado. El autor principal ocupa el primer lugar; usa las flechas para cambiar el orden de coautoría. Los nombres iguales no se fusionan automáticamente: selecciona explícitamente un registro existente si corresponde.
+3. Agrega los coautores. El autor principal ocupa el primer lugar y los coautores aparecen automáticamente en orden alfabético.
 4. Deja **Publicar ahora** desmarcado para guardar un borrador, o márcalo para publicar de inmediato.
 5. Pulsa **Agregar enlace** o **Publicar tesis**, revisa el mensaje de confirmación y confirma la acción.
 
@@ -30,7 +30,7 @@ La URL externa puede exigir iniciar sesión en UVG o tener otra restricción. AE
 | --- | --- | --- |
 | Título | Sí | Entre 3 y 300 caracteres. |
 | URL del repositorio | Sí | Solo HTTPS; única entre tesis tras recortar espacios externos y normalizar esquema y host. Se conserva la ruta. |
-| Autoría | Sí | Un autor principal obligatorio y cero o más coautores ordenados. Los registros existentes se reutilizan por selección explícita; nombres iguales no se fusionan automáticamente. |
+| Autoría | Sí | Un autor principal obligatorio y cero o más coautores, mostrados alfabéticamente. Los registros existentes se reutilizan por selección explícita. |
 | Año | Sí | Entero entre 1900 y 9999. |
 | Resumen | Sí | Entre 1 y 12 000 caracteres después de quitar espacios externos. |
 

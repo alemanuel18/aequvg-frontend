@@ -12,7 +12,7 @@ El flujo que sí está implementado es administración manual de enlaces por una
 
 Título, autor principal, año, resumen y URL del repositorio son obligatorios tanto en la vista administrativa como en la API. El título requiere al menos 3 caracteres; cada nombre admite hasta 300 caracteres; el año debe estar entre 1900 y 9999; el resumen debe contener texto y no superar 12 000 caracteres. La URL debe usar HTTPS y ser única entre tesis después de recortar espacios externos y normalizar esquema y host, preservando la ruta. El identificador de repositorio se retiró del contrato y de la vista.
 
-La gestión estructurada de autor principal y coautores está implementada en S6-06: cada tesis tiene una persona principal y una lista ordenada de coautores. El módulo no permite slug personalizado ni cargar archivos; conserva el enlace al repositorio UVG.
+La gestión estructurada de autor principal y coautores está implementada en S6-06: cada tesis tiene un autor principal primero y los coautores aparecen en orden alfabético. El módulo no permite slug personalizado ni cargar archivos; conserva el enlace al repositorio UVG.
 
 ## Decisión de automatización
 
