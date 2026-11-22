@@ -63,6 +63,12 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
   await page.getByLabel('Nombre de Autor principal').fill('Andrea López')
   await page.getByRole('button', { name: 'Agregar coautor' }).click()
   await page.getByLabel('Nombre de Coautor 1').fill('Luis García')
+  for (const width of [967, 768, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    await expectNoHorizontalOverflow(page)
+    const rowSize = await page.locator('.contributor-row').first().evaluate((element) => ({ scroll: element.scrollWidth, client: element.clientWidth }))
+    expect(rowSize.scroll).toBeLessThanOrEqual(rowSize.client)
+  }
   await page.getByLabel('Año').fill('2026')
   await page.getByLabel('Resumen').fill('Estudio de catalizadores de origen natural para reducir residuos en procesos de síntesis.')
   await page.getByLabel('Publicar ahora').check()

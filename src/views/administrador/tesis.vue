@@ -213,4 +213,24 @@ const askPublish = (item: ThesisLink) => {
 
 <style scoped>
 .theses-admin{max-width:1000px;margin:0 auto;padding:clamp(1rem,3vw,2rem);display:grid;gap:1.5rem;color:#17212b}.page-heading h1{margin:.2rem 0;font-size:clamp(2rem,4vw,3rem)}.page-heading>p:last-child{max-width:65ch;color:#566575}.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:#087b83;font-size:.8rem}.form-card,.list-section{background:#fff;border:1px solid #dbe3e8;border-radius:1rem;padding:clamp(1rem,2.5vw,1.5rem);box-shadow:0 8px 24px #17212b0a}.form-card h2,.list-heading h2{margin:0 0 1rem}.form-card form{display:grid;gap:1rem}.form-card label{display:grid;gap:.4rem;font-weight:650}.form-card input:not([type=checkbox]),.form-card textarea,.form-card select{width:100%;border:1px solid #b9c6d0;border-radius:.55rem;padding:.75rem;font:inherit;color:inherit;background:white}.form-card input:focus,.form-card textarea:focus,.form-card select:focus{outline:3px solid #0a8c9633;border-color:#087b83}.field-row{display:grid;grid-template-columns:2fr 1fr;gap:1rem}.contributors-fieldset{min-width:0;margin:0;padding:1rem;border:1px solid #dbe3e8;border-radius:.7rem;display:grid;gap:.8rem}.contributors-fieldset legend{padding:0 .35rem;font-weight:750}.contributors-fieldset>p,.contributors-fieldset>small{margin:0;color:#566575}.author-search{max-width:35rem}.contributor-editor{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}.contributor-row{display:grid;grid-template-columns:minmax(8rem,.6fr) minmax(12rem,1fr) minmax(12rem,1fr) auto;align-items:end;gap:.75rem;padding:.8rem;border:1px solid #e0e7eb;border-radius:.65rem}.contributor-row>strong{padding-bottom:.7rem}.contributor-row label{min-width:0}.selected-author{display:grid;gap:.4rem;align-self:stretch}.contributor-actions{display:flex;flex-wrap:wrap;gap:.35rem}.contributor-actions button,.selected-author button{padding:.55rem .65rem}.add-coauthor{justify-self:start}.publish-check{display:flex!important;align-items:center;gap:.55rem!important}.form-actions,.item-actions,.list-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.form-actions{justify-content:flex-start}.primary,.secondary,.danger{border:0;border-radius:.55rem;padding:.7rem 1rem;font:inherit;font-weight:700;cursor:pointer}.primary{background:#087b83;color:#fff}.secondary{background:#edf2f5;color:#203040}.danger{background:#fff0ed;color:#a83220}.primary:disabled,.secondary:disabled,.danger:disabled{opacity:.55;cursor:not-allowed}.primary:focus-visible,.secondary:focus-visible,.danger:focus-visible{outline:3px solid #f2a900;outline-offset:2px}.form-error{color:#a32619;margin:0}.list-heading p{margin:0;color:#657482}.empty-state{padding:1.5rem;text-align:center;color:#596978}.thesis-list{list-style:none;padding:0;margin:0;display:grid;gap:.8rem}.thesis-item{display:flex;justify-content:space-between;gap:1rem;align-items:center;border:1px solid #e0e7eb;border-radius:.75rem;padding:1rem}.thesis-copy h3{margin:.45rem 0}.thesis-copy p{margin:.2rem 0 .5rem;color:#5d6b78}.thesis-copy a{color:#087b83;overflow-wrap:anywhere}.status{display:inline-block;border-radius:999px;padding:.2rem .6rem;font-size:.78rem;font-weight:700}.status--published{background:#e4f5ed;color:#12633e}.status--draft{background:#fff3d9;color:#7a4a00}@media(max-width:760px){.field-row{grid-template-columns:1fr}.contributor-row{grid-template-columns:1fr}.contributor-row>strong{padding-bottom:0}.thesis-item{align-items:flex-start;flex-direction:column}.item-actions{width:100%;justify-content:flex-start}.list-heading{align-items:flex-start}}
+.theses-admin{container-type:inline-size}
+.form-card,.list-section,.contributor-row>*{min-width:0}
+.contributor-row select{max-width:100%}
+.selected-author span,.thesis-copy{min-width:0;overflow-wrap:anywhere}
+@container (max-width: 760px){
+  .contributor-row{grid-template-columns:minmax(0,1fr)}
+  .contributor-row>strong{padding-bottom:0}
+  .field-row{grid-template-columns:1fr}
+  .form-actions,.list-heading{flex-wrap:wrap;justify-content:flex-start}
+  .thesis-item{align-items:flex-start;flex-direction:column}
+  .item-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+}
+@media(max-width:760px){
+  .contributor-row{grid-template-columns:minmax(0,1fr)}
+  .contributor-row>strong{padding-bottom:0}
+  .field-row{grid-template-columns:1fr}
+  .thesis-item{align-items:flex-start;flex-direction:column}
+  .item-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+  .list-heading{align-items:flex-start;flex-wrap:wrap}
+}
 </style>
