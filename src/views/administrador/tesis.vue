@@ -172,11 +172,11 @@ const askPublish = (item: ThesisLink) => {
               <strong>{{ contributorLabel(index) }}</strong>
               <label>Seleccionar persona existente
                 <select :value="contributor.personId ?? ''" @change="selectExistingAuthor(contributor, $event)">
-                  <option value="">Registrar una persona nueva</option>
+                  <option value="">Agregar autor nuevo</option>
                   <option v-for="person in authorOptions" :key="person.id" :value="person.id" :disabled="contributors.some((item, itemIndex) => itemIndex !== index && item.personId === person.id)">{{ person.name }} · registro #{{ person.id }}</option>
                 </select>
               </label>
-              <label v-if="!contributor.personId">Nombre completo <span aria-hidden="true">*</span><input v-model="contributor.name" required maxlength="300" :aria-label="`Nombre de ${contributorLabel(index)}`" /></label>
+              <label v-if="!contributor.personId"><span class="field-label">Nombre completo <span aria-hidden="true">*</span></span><input v-model="contributor.name" required maxlength="300" :aria-label="`Nombre de ${contributorLabel(index)}`" /></label>
               <div v-else class="selected-author"><span>Seleccionada: {{ contributor.name }} · registro #{{ contributor.personId }}</span><button class="secondary" type="button" @click="contributor.personId = null; contributor.name = ''">Usar un nombre nuevo</button></div>
               <div class="contributor-actions">
                 <button class="secondary" type="button" :disabled="index === 0" :aria-label="`Mover ${contributorLabel(index)} arriba`" @click="moveContributor(index, -1)">Subir</button>

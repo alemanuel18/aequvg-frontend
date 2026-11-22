@@ -61,6 +61,13 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
   await page.getByLabel('Título').fill(originalTitle)
   await page.getByLabel(/URL del repositorio/).fill(repositoryUrl)
   await page.getByLabel('Nombre de Autor principal').fill('Andrea López')
+  await expect(page.locator('.contributor-row select').first()).toContainText('Agregar autor nuevo')
+  const nameLabel = page.locator('.contributor-row .field-label').filter({ hasText: 'Nombre completo' })
+  const nameLabelBox = await nameLabel.boundingBox()
+  const nameRequiredMarkBox = await nameLabel.locator('[aria-hidden="true"]').boundingBox()
+  expect(nameLabelBox).not.toBeNull()
+  expect(nameRequiredMarkBox).not.toBeNull()
+  expect(Math.abs(nameLabelBox!.y - nameRequiredMarkBox!.y)).toBeLessThan(4)
   await page.getByRole('button', { name: 'Agregar coautor' }).click()
   await page.getByLabel('Nombre de Coautor 1').fill('Luis García')
   for (const width of [967, 768, 390]) {
