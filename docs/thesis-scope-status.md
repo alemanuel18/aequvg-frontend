@@ -16,7 +16,9 @@ La gestión estructurada de autor principal y coautores está implementada en S6
 
 ## Decisión de automatización
 
-La investigación encontró consultas públicas de lectura para la colección de Química, pero no confirmó con UVG las condiciones institucionales de uso. No hay modalidad automática elegida ni implementada. La administración manual sigue siendo la única modalidad disponible en la aplicación. Ver el [informe de investigación 50309](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-documentation/docs/thesis-repository-research.md).
+Según el extracto de WhatsApp que el responsable del proyecto compartió, el 22 de noviembre de 2026 la representante indicó que prefiere conservar el ingreso manual con intervención humana, por la sensibilidad de los trabajos y la información. Primero se explicó que el modo manual consiste en ingresar autores, resumen y enlace; después la respuesta fue «Me parece mejor hacer eso». No se adjuntó el original ni un acta firmada, así que la modalidad se registra como respuesta atribuida, con ese límite de verificación descrito en la [decisión y su procedencia](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-manual-decision-evidence/docs/thesis-automation-contract.md#evidencia-y-límites-de-verificación).
+
+Por esa decisión, no se eligió publicación automatizada ni se solicitará a UVG autorización para sondeos automáticos dentro del alcance actual. Si se reconsidera automatizar, habrá que registrar una nueva decisión y confirmar previamente las condiciones institucionales de uso de la API. Ver también el [informe de investigación 50309](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-manual-decision-evidence/docs/thesis-repository-research.md).
 
 ## Estado de S6-04
 
@@ -32,6 +34,6 @@ Evidencia reproducible: `docker compose exec -e THESIS_DATABASE_TEST=true backen
 
 - Para probar acceso externo restringido, obtener un ejemplo de Química con esa restricción y las credenciales UVG apropiadas; los 65 registros consultados reportaron `open.access`.
 - Registrar la revisión de una persona real de la junta. La integración usa cuentas temporales para comprobar permisos técnicos.
-- Si el cliente pide automatización, confirmar condiciones con el responsable del repositorio y planificar por separado solo la alternativa aceptada.
+- Si la Asociación reconsidera automatización, confirmar las condiciones con el responsable del repositorio y registrar una nueva decisión antes de planificar cambios.
 
 Referencias: [guía de estudiantes](./guides/thesis-students.md), [guía de junta](./guides/thesis-board.md), [matriz E2E](./thesis-e2e-permissions.md) y [registro de defectos y re pruebas](./thesis-defect-log.md).
