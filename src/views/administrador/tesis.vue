@@ -14,9 +14,9 @@ const saving = ref(false)
 const editingId = ref<number | null>(null)
 const formError = ref('')
 const form = reactive({ title: '', url: '', publicationYear: '', summary: '', published: false })
-type ContributorDraft = { key: number; personId: number | null; name: string }
+type ContributorDraft = { key: number; personId: number | null; name: string; createNew: boolean; search: string; options: Array<{ id: number; name: string }>; loading: boolean }
 let nextContributorKey = 1
-const newContributor = (): ContributorDraft => ({ key: nextContributorKey++, personId: null, name: '' })
+const newContributor = (name = '', personId: number | null = null): ContributorDraft => ({ key: nextContributorKey++, personId, name, createNew: !personId, search: '', options: [], loading: false })
 const contributors = ref<ContributorDraft[]>([newContributor()])
 const authorNameCollator = new Intl.Collator('es', { sensitivity: 'base' })
 const sortedContributors = computed(() => {
@@ -28,10 +28,7 @@ const sortedContributors = computed(() => {
   })
   return [principal, ...coauthors]
 })
-const authorSearch = ref('')
-const authorOptions = ref<Array<{ id: number; name: string }>>([])
-const authorsLoading = ref(false)
-let authorSearchTimer: ReturnType<typeof setTimeout> | undefined
+const authorSearchTimers = new Map<number, ReturnType<typeof setTimeout>>()
 const confirmation = reactive({ open: false, title: '', message: '', label: '', variant: 'primary' as 'primary' | 'danger', action: (async () => {}) as () => Promise<void> })
 const errorText = (error: unknown) => error instanceof PublicApiError ? error.message : 'Ocurrió un error inesperado.'
 
@@ -41,31 +38,37 @@ const load = async () => {
   catch (error) { toast.error(errorText(error)) }
   finally { loading.value = false }
 }
-onMounted(() => { void load(); void loadAuthorOptions() })
-onBeforeUnmount(() => { if (authorSearchTimer) clearTimeout(authorSearchTimer) })
+onMounted(() => { void load() })
+onBeforeUnmount(() => { for (const timer of authorSearchTimers.values()) clearTimeout(timer) })
 
-const loadAuthorOptions = async () => {
-  authorsLoading.value = true
+const loadAuthorOptions = async (contributor: ContributorDraft) => {
+  contributor.loading = true
   try {
-    const result = await service.authors(authorSearch.value.trim())
+    const result = await service.authors(contributor.search.trim())
     const options = [...result.items]
-    for (const contributor of contributors.value) {
-      if (contributor.personId && !options.some(({ id }) => id === contributor.personId)) {
-        options.push({ id: contributor.personId, name: contributor.name })
-      }
+    if (contributor.personId && !options.some(({ id }) => id === contributor.personId)) {
+      options.push({ id: contributor.personId, name: contributor.name })
     }
-    authorOptions.value = options
+    contributor.options = options
   } catch (error) { toast.error(errorText(error)) }
-  finally { authorsLoading.value = false }
+  finally { contributor.loading = false }
 }
-watch(authorSearch, () => {
-  if (authorSearchTimer) clearTimeout(authorSearchTimer)
-  authorSearchTimer = setTimeout(() => { void loadAuthorOptions() }, 250)
-})
+const searchAuthors = (contributor: ContributorDraft) => {
+  const timer = authorSearchTimers.get(contributor.key)
+  if (timer) clearTimeout(timer)
+  authorSearchTimers.set(contributor.key, setTimeout(() => { void loadAuthorOptions(contributor) }, 250))
+}
+const toggleCreateAuthor = (contributor: ContributorDraft, event: Event) => {
+  contributor.createNew = (event.target as HTMLInputElement).checked
+  contributor.personId = null
+  contributor.name = ''
+  contributor.search = ''
+  if (!contributor.createNew) void loadAuthorOptions(contributor)
+}
 const selectExistingAuthor = (contributor: ContributorDraft, event: Event) => {
   const value = (event.target as HTMLSelectElement).value
   const personId = Number(value)
-  const person = authorOptions.value.find(({ id }) => id === personId)
+  const person = contributor.options.find(({ id }) => id === personId)
   contributor.personId = person?.id ?? null
   contributor.name = person?.name ?? ''
 }
@@ -92,15 +95,15 @@ const edit = (item: ThesisLink) => {
   editingId.value = item.id
   Object.assign(form, { title: item.title, url: item.url, publicationYear: item.publicationYear ? String(item.publicationYear) : '', summary: item.summary ?? '', published: Boolean(item.publishedAt) })
   contributors.value = item.contributors.length
-    ? item.contributors.map(({ personId, person }) => ({ key: nextContributorKey++, personId, name: person.name }))
-    : [{ key: nextContributorKey++, personId: null, name: item.author ?? '' }]
-  void loadAuthorOptions()
+    ? item.contributors.map(({ personId, person }) => newContributor(person.name, personId))
+    : [newContributor(item.author ?? '')]
+  for (const contributor of contributors.value) if (!contributor.createNew) void loadAuthorOptions(contributor)
   formError.value = ''
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 const payload = (): ThesisInput => ({
   title: form.title.trim(), url: form.url.trim(),
-  contributors: sortedContributors.value.map(({ personId, name }) => personId ? { personId } : { name: name.trim() }),
+  contributors: sortedContributors.value.map(({ personId, name, createNew }) => createNew ? { name: name.trim() } : { personId: personId! }),
   publicationYear: Number(form.publicationYear),
   summary: form.summary.trim(),
   publishedAt: form.published ? new Date().toISOString() : null
@@ -108,7 +111,7 @@ const payload = (): ThesisInput => ({
 const askSave = () => {
   formError.value = ''
   if (form.title.trim().length < 3) { formError.value = 'Escribe un título de al menos 3 caracteres.'; return }
-  if (!contributors.value.length || contributors.value.some(({ personId, name }) => !personId && !name.trim())) { formError.value = 'Agrega el nombre o selecciona un registro para cada autor.'; return }
+  if (!contributors.value.length || contributors.value.some(({ personId, name, createNew }) => createNew ? !name.trim() : !personId)) { formError.value = 'Escribe el nombre de cada autor nuevo y selecciona los autores registrados.'; return }
   const selectedIds = contributors.value.flatMap(({ personId }) => personId ? [personId] : [])
   if (new Set(selectedIds).size !== selectedIds.length) { formError.value = 'La misma persona no puede aparecer dos veces en una tesis.'; return }
   let parsed: URL
@@ -175,18 +178,20 @@ const askPublish = (item: ThesisLink) => {
         <label><span class="field-label">URL del repositorio <span aria-hidden="true">*</span></span><input v-model="form.url" type="text" inputmode="url" autocomplete="url" required aria-required="true" maxlength="2048" placeholder="https://repositorio.uvg.edu.gt/handle/..." /></label>
         <fieldset class="contributors-fieldset">
           <legend>Autoría <span aria-hidden="true">*</span></legend>
-          <label class="author-search">Buscar persona registrada<input v-model="authorSearch" type="search" placeholder="Escribe un nombre para buscar" /><small v-if="authorsLoading">Buscando personas…</small></label>
           <ol class="contributor-editor">
             <li v-for="(contributor, index) in sortedContributors" :key="contributor.key" class="contributor-row" :class="{ 'contributor-row--removable': contributors.length > 1 }">
               <strong>{{ contributorLabel(index) }}</strong>
-              <label>Autor registrado
-                <select :value="contributor.personId ?? ''" @change="selectExistingAuthor(contributor, $event)">
-                  <option value="">Ingresar autor nuevo</option>
-                  <option v-for="person in authorOptions" :key="person.id" :value="person.id" :disabled="contributors.some((item) => item.key !== contributor.key && item.personId === person.id)">{{ person.name }} · registro #{{ person.id }}</option>
-                </select>
-              </label>
-              <label v-if="!contributor.personId"><span class="field-label">Nombre completo <span aria-hidden="true">*</span></span><input v-model="contributor.name" required maxlength="300" :aria-label="`Nombre de ${contributorLabel(index)}`" /></label>
-              <div v-else class="selected-author"><span>Seleccionada: {{ contributor.name }} · registro #{{ contributor.personId }}</span><button class="secondary" type="button" @click="contributor.personId = null; contributor.name = ''">Usar un nombre nuevo</button></div>
+              <label class="create-author-check"><input type="checkbox" :checked="contributor.createNew" @change="toggleCreateAuthor(contributor, $event)" /> Crear autor nuevo</label>
+              <label v-if="contributor.createNew"><span class="field-label">Nombre completo <span aria-hidden="true">*</span></span><input v-model="contributor.name" required maxlength="300" :aria-label="`Nombre de ${contributorLabel(index)}`" /></label>
+              <div v-else class="registered-author-fields">
+                <label>Buscar autor registrado<input v-model="contributor.search" type="search" placeholder="Escribe para buscar" @input="searchAuthors(contributor)" /><small v-if="contributor.loading">Buscando…</small></label>
+                <label>Seleccionar autor
+                  <select :value="contributor.personId ?? ''" @change="selectExistingAuthor(contributor, $event)">
+                    <option value="">Selecciona un autor</option>
+                    <option v-for="person in contributor.options" :key="person.id" :value="person.id" :disabled="contributors.some((item) => item.key !== contributor.key && item.personId === person.id)">{{ person.name }}</option>
+                  </select>
+                </label>
+              </div>
               <div v-if="contributors.length > 1" class="contributor-actions">
                 <button v-if="contributors.length > 1" class="danger" type="button" :aria-label="`Quitar ${contributorLabel(index)}`" @click="removeContributor(contributor.key)">Quitar</button>
               </div>
@@ -282,11 +287,10 @@ const askPublish = (item: ThesisLink) => {
 }
 .contributors-fieldset > * { min-width: 0; max-width: 100%; }
 .contributors-fieldset legend { padding: 0 .35rem; font-weight: 750; }
-.author-search { width: 100%; max-width: 35rem; }
 .contributor-editor { display: grid; gap: .75rem; min-width: 0; width: 100%; margin: 0; padding: 0; list-style: none; }
 .contributor-row {
   display: grid;
-  grid-template-columns: minmax(8rem, .6fr) minmax(12rem, 1fr) minmax(12rem, 1fr);
+  grid-template-columns: minmax(8rem, .6fr) minmax(12rem, .8fr) minmax(12rem, 1fr);
   align-items: end;
   gap: .75rem;
   min-width: 0;
@@ -297,16 +301,17 @@ const askPublish = (item: ThesisLink) => {
   border: 1px solid #e0e7eb;
   border-radius: .65rem;
 }
-.contributor-row--removable { grid-template-columns: minmax(8rem, .6fr) minmax(12rem, 1fr) minmax(12rem, 1fr) auto; }
+.contributor-row--removable { grid-template-columns: minmax(8rem, .6fr) minmax(12rem, .8fr) minmax(12rem, 1fr) auto; }
 .contributor-row > strong { padding-bottom: .7rem; }
 .contributor-row label { min-width: 0; }
 .contributor-row select { min-width: 0; max-width: 100%; }
-.selected-author { display: grid; gap: .4rem; align-self: stretch; min-width: 0; }
-.selected-author span,
+.create-author-check { display: flex !important; align-items: center; gap: .5rem !important; padding-bottom: .8rem; }
+.create-author-check input { width: 1.1rem; height: 1.1rem; margin: 0; }
+.registered-author-fields { display: grid; grid-column: span 2; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; min-width: 0; }
+.registered-author-fields label { min-width: 0; }
 .thesis-copy { min-width: 0; overflow-wrap: anywhere; }
 .contributor-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
-.contributor-actions button,
-.selected-author button { padding: .55rem .65rem; }
+.contributor-actions button { padding: .55rem .65rem; }
 .add-coauthor { justify-self: start; }
 .publish-check { display: flex !important; align-items: center; gap: .55rem !important; }
 .form-actions,
@@ -340,6 +345,8 @@ const askPublish = (item: ThesisLink) => {
   .contributor-row,
   .contributor-row--removable { grid-template-columns: minmax(0, 1fr); }
   .contributor-row > strong { padding-bottom: 0; }
+  .create-author-check { padding-bottom: 0; }
+  .registered-author-fields { grid-column: auto; grid-template-columns: minmax(0, 1fr); }
   .field-row { grid-template-columns: minmax(0, 1fr); }
   .form-actions,
   .list-heading { flex-wrap: wrap; justify-content: flex-start; }
@@ -350,6 +357,8 @@ const askPublish = (item: ThesisLink) => {
   .contributor-row,
   .contributor-row--removable { grid-template-columns: minmax(0, 1fr); }
   .contributor-row > strong { padding-bottom: 0; }
+  .create-author-check { padding-bottom: 0; }
+  .registered-author-fields { grid-column: auto; grid-template-columns: minmax(0, 1fr); }
   .field-row { grid-template-columns: minmax(0, 1fr); }
   .thesis-item { align-items: flex-start; flex-direction: column; }
   .item-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
