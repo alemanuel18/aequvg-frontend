@@ -60,9 +60,9 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
 
   await page.getByLabel('Título').fill(originalTitle)
   await page.getByLabel(/URL del repositorio/).fill(repositoryUrl)
-  await page.getByLabel('Nombre de Autora principal').fill('Andrea López')
-  await page.getByRole('button', { name: 'Agregar coautora' }).click()
-  await page.getByLabel('Nombre de Coautora 1').fill('Luis García')
+  await page.getByLabel('Nombre de Autor principal').fill('Andrea López')
+  await page.getByRole('button', { name: 'Agregar coautor' }).click()
+  await page.getByLabel('Nombre de Coautor 1').fill('Luis García')
   await page.getByLabel('Año').fill('2026')
   await page.getByLabel('Resumen').fill('Estudio de catalizadores de origen natural para reducir residuos en procesos de síntesis.')
   await page.getByLabel('Publicar ahora').check()
@@ -135,7 +135,7 @@ test('muestra errores claros por URL insegura, duplicado y fallo de guardado', a
   await page.goto('/administrador/tesis')
 
   await page.getByLabel('Título').fill('Intento con URL insegura')
-  await page.getByLabel('Autor').fill('Autora de prueba')
+  await page.getByLabel('Autor').fill('Autor de prueba')
   await page.getByLabel('Año').fill('2026')
   await page.getByLabel('Resumen').fill('Resumen breve de prueba.')
   const urlField = page.getByLabel(/URL del repositorio/)
@@ -168,7 +168,7 @@ test('bloquea el alta si falta título, autor, año o resumen aunque se proporci
 
   const urlField = page.getByLabel(/URL del repositorio/)
   const titleField = page.getByLabel('Título')
-  const authorField = page.getByLabel('Nombre de Autora principal')
+  const authorField = page.getByLabel('Nombre de Autor principal')
   const yearField = page.getByLabel('Año')
   const summaryField = page.getByLabel('Resumen')
   await urlField.fill('https://repositorio.uvg.edu.gt/handle/123456789/4914')

@@ -67,7 +67,7 @@ const moveContributor = (index: number, direction: -1 | 1) => {
   const [item] = contributors.value.splice(index, 1)
   if (item) contributors.value.splice(target, 0, item)
 }
-const contributorLabel = (index: number) => index === 0 ? 'Autora principal' : `Coautora ${index}`
+const contributorLabel = (index: number) => index === 0 ? 'Autor principal' : `Coautor ${index}`
 const displayAuthors = (item: ThesisLink) => {
   if (!item.contributors.length) return item.author ?? 'Autoría no especificada'
   return item.contributors.map(({ person }) => person.name).join(' · ')
@@ -99,7 +99,7 @@ const payload = (): ThesisInput => ({
 const askSave = () => {
   formError.value = ''
   if (form.title.trim().length < 3) { formError.value = 'Escribe un título de al menos 3 caracteres.'; return }
-  if (!contributors.value.length || contributors.value.some(({ personId, name }) => !personId && !name.trim())) { formError.value = 'Agrega el nombre o selecciona un registro para cada persona autora.'; return }
+  if (!contributors.value.length || contributors.value.some(({ personId, name }) => !personId && !name.trim())) { formError.value = 'Agrega el nombre o selecciona un registro para cada autor.'; return }
   const selectedIds = contributors.value.flatMap(({ personId }) => personId ? [personId] : [])
   if (new Set(selectedIds).size !== selectedIds.length) { formError.value = 'La misma persona no puede aparecer dos veces en una tesis.'; return }
   let parsed: URL
@@ -166,7 +166,7 @@ const askPublish = (item: ThesisLink) => {
         <label>URL del repositorio <span aria-hidden="true">*</span><input v-model="form.url" type="text" inputmode="url" autocomplete="url" required aria-required="true" maxlength="2048" placeholder="https://repositorio.uvg.edu.gt/handle/..." /><small>Debe usar HTTPS y ser única entre las tesis registradas.</small></label>
         <fieldset class="contributors-fieldset">
           <legend>Autoría <span aria-hidden="true">*</span></legend>
-          <p>La primera persona será la autora principal. Las demás aparecerán como coautoras en el orden indicado.</p>
+          <p>El primer nombre será el del autor principal. Los coautores aparecerán después, en el orden indicado.</p>
           <label class="author-search">Buscar persona registrada<input v-model="authorSearch" type="search" placeholder="Escribe un nombre para buscar" /><small v-if="authorsLoading">Buscando personas…</small></label>
           <ol class="contributor-editor">
             <li v-for="(contributor, index) in contributors" :key="contributor.key" class="contributor-row">
@@ -187,7 +187,7 @@ const askPublish = (item: ThesisLink) => {
             </li>
           </ol>
           <small>Los nombres iguales pueden ser personas distintas. Selecciona el registro correspondiente; no se fusionan automáticamente.</small>
-          <button class="secondary add-coauthor" type="button" @click="addContributor">Agregar coautora</button>
+          <button class="secondary add-coauthor" type="button" @click="addContributor">Agregar coautor</button>
         </fieldset>
         <label>Año <span aria-hidden="true">*</span><input v-model="form.publicationYear" type="number" required aria-required="true" min="1900" max="9999" /></label>
         <label>Resumen <span aria-hidden="true">*</span><textarea v-model="form.summary" required aria-required="true" minlength="1" rows="4" maxlength="12000" /></label>

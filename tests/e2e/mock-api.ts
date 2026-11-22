@@ -375,7 +375,7 @@ Bun.serve({
         if (body.author !== undefined && body.contributors !== undefined) return json({ error: { code: 'THESIS_AUTHOR_FIELDS_CONFLICT', message: 'Envía contributors o author, no ambos.' } }, 422)
         const contributorInputs = body.contributors ?? (body.author ? [{ name: body.author }] : [])
         const contributors = resolveMockContributors(contributorInputs)
-        if (!contributors?.length) return json({ error: { code: 'THESIS_CONTRIBUTORS_REQUIRED', message: 'Agrega una autora principal y ordena las coautoras.' } }, 422)
+        if (!contributors?.length) return json({ error: { code: 'THESIS_CONTRIBUTORS_REQUIRED', message: 'Agrega un autor principal y ordena los coautores.' } }, 422)
         if (!Number.isInteger(body.publicationYear) || Number(body.publicationYear) < 1900 || Number(body.publicationYear) > 9999) return json({ error: { code: 'THESIS_PUBLICATION_YEAR_REQUIRED', message: 'Ingresa un año de publicación válido (1900–9999).' } }, 422)
         if (!body.summary?.trim()) return json({ error: { code: 'THESIS_SUMMARY_REQUIRED', message: 'Escribe el resumen de la tesis.' } }, 422)
         const now = new Date().toISOString()
@@ -401,12 +401,12 @@ Bun.serve({
         let contributors = theses[index]!.contributors
         if (body.contributors !== undefined) {
           const resolved = resolveMockContributors(body.contributors)
-          if (!resolved?.length) return json({ error: { code: 'INVALID_THESIS_CONTRIBUTORS', message: 'Revisa la lista de personas autoras.' } }, 422)
+          if (!resolved?.length) return json({ error: { code: 'INVALID_THESIS_CONTRIBUTORS', message: 'Revisa la lista de autores.' } }, 422)
           contributors = resolved
         } else if (body.author !== undefined) {
           const existingCoauthors = contributors.filter(({ role }) => role === 'COAUTOR').map(({ personId }) => ({ personId }))
           const resolved = resolveMockContributors([{ name: body.author }, ...existingCoauthors])
-          if (!resolved?.length) return json({ error: { code: 'INVALID_THESIS_CONTRIBUTORS', message: 'Revisa la lista de personas autoras.' } }, 422)
+          if (!resolved?.length) return json({ error: { code: 'INVALID_THESIS_CONTRIBUTORS', message: 'Revisa la lista de autores.' } }, 422)
           contributors = resolved
         }
         if (body.publicationYear !== undefined && (!Number.isInteger(body.publicationYear) || body.publicationYear < 1900 || body.publicationYear > 9999)) return json({ error: { code: 'THESIS_PUBLICATION_YEAR_REQUIRED', message: 'Ingresa un año de publicación válido (1900–9999).' } }, 422)
