@@ -179,9 +179,9 @@ const askPublish = (item: ThesisLink) => {
           <ol class="contributor-editor">
             <li v-for="(contributor, index) in sortedContributors" :key="contributor.key" class="contributor-row" :class="{ 'contributor-row--removable': contributors.length > 1 }">
               <strong>{{ contributorLabel(index) }}</strong>
-              <label>Seleccionar persona existente
+              <label>Autor registrado
                 <select :value="contributor.personId ?? ''" @change="selectExistingAuthor(contributor, $event)">
-                  <option value="">Agregar autor nuevo</option>
+                  <option value="">Ingresar autor nuevo</option>
                   <option v-for="person in authorOptions" :key="person.id" :value="person.id" :disabled="contributors.some((item) => item.key !== contributor.key && item.personId === person.id)">{{ person.name }} · registro #{{ person.id }}</option>
                 </select>
               </label>
