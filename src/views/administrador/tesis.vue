@@ -13,7 +13,7 @@ const loading = ref(true)
 const saving = ref(false)
 const editingId = ref<number | null>(null)
 const formError = ref('')
-const form = reactive({ title: '', url: '', author: '', publicationYear: '', summary: '', sourceIdentifier: '', published: false })
+const form = reactive({ title: '', url: '', author: '', publicationYear: '', summary: '', published: false })
 const confirmation = reactive({ open: false, title: '', message: '', label: '', variant: 'primary' as 'primary' | 'danger', action: (async () => {}) as () => Promise<void> })
 const errorText = (error: unknown) => error instanceof PublicApiError ? error.message : 'Ocurrió un error inesperado.'
 
@@ -27,32 +27,33 @@ onMounted(load)
 
 const resetForm = () => {
   editingId.value = null
-  Object.assign(form, { title: '', url: '', author: '', publicationYear: '', summary: '', sourceIdentifier: '', published: false })
+  Object.assign(form, { title: '', url: '', author: '', publicationYear: '', summary: '', published: false })
   formError.value = ''
 }
 const edit = (item: ThesisLink) => {
   editingId.value = item.id
-  Object.assign(form, { title: item.title, url: item.url, author: item.author ?? '', publicationYear: item.publicationYear ? String(item.publicationYear) : '', summary: item.summary ?? '', sourceIdentifier: item.sourceIdentifier ?? '', published: Boolean(item.publishedAt) })
+  Object.assign(form, { title: item.title, url: item.url, author: item.author ?? '', publicationYear: item.publicationYear ? String(item.publicationYear) : '', summary: item.summary ?? '', published: Boolean(item.publishedAt) })
   formError.value = ''
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 const payload = (): ThesisInput => ({
   title: form.title.trim(), url: form.url.trim(),
-  author: form.author.trim() || null,
-  publicationYear: form.publicationYear ? Number(form.publicationYear) : null,
-  summary: form.summary.trim() || null,
-  sourceIdentifier: form.sourceIdentifier.trim() || null,
+  author: form.author.trim(),
+  publicationYear: Number(form.publicationYear),
+  summary: form.summary.trim(),
   publishedAt: form.published ? new Date().toISOString() : null
 })
 const askSave = () => {
   formError.value = ''
-  let parsed: URL
-  try { parsed = new URL(form.url.trim()) }
-  catch { formError.value = 'Ingresa una dirección web válida.'; return }
-  if (!['http:', 'https:'].includes(parsed.protocol)) { formError.value = 'El enlace debe comenzar con http:// o https://.'; return }
   if (form.title.trim().length < 3) { formError.value = 'Escribe un título de al menos 3 caracteres.'; return }
   if (!form.author.trim()) { formError.value = 'Escribe el autor de la tesis.'; return }
-  if (form.publicationYear && (!Number.isInteger(Number(form.publicationYear)) || Number(form.publicationYear) < 1900 || Number(form.publicationYear) > 9999)) { formError.value = 'Revisa el año de publicación.'; return }
+  let parsed: URL
+  try { parsed = new URL(form.url.trim()) }
+  catch { formError.value = 'La URL del repositorio debe comenzar con https://.'; return }
+  if (parsed.protocol !== 'https:' || !parsed.hostname) { formError.value = 'La URL del repositorio debe comenzar con https://.'; return }
+  form.url = parsed.toString()
+  if (!form.publicationYear || !Number.isInteger(Number(form.publicationYear)) || Number(form.publicationYear) < 1900 || Number(form.publicationYear) > 9999) { formError.value = 'Ingresa un año de publicación válido (1900–9999).'; return }
+  if (!form.summary.trim()) { formError.value = 'Escribe el resumen de la tesis.'; return }
   confirmation.title = editingId.value ? 'Guardar cambios' : form.published ? 'Publicar tesis' : 'Agregar tesis'
   confirmation.message = editingId.value ? 'Se actualizarán los datos de esta tesis.' : form.published ? 'La tesis aparecerá como publicada.' : 'La tesis se guardará como borrador.'
   confirmation.label = editingId.value ? 'Guardar' : form.published ? 'Publicar' : 'Agregar'
@@ -105,12 +106,11 @@ const askPublish = (item: ThesisLink) => {
     <header class="page-heading"><p class="eyebrow">Administración</p><h1>Tesis</h1><p>Agrega enlaces a tesis alojadas en el repositorio universitario. Aquí solo guardamos el enlace y sus datos, no los documentos.</p></header>
     <section class="form-card" aria-labelledby="thesis-form-title">
       <h2 id="thesis-form-title">{{ editingId ? 'Editar tesis' : 'Agregar tesis' }}</h2>
-      <form @submit.prevent="askSave">
-        <label>Título<input v-model="form.title" required minlength="3" maxlength="300" /></label>
-        <label>Enlace a la tesis<input v-model="form.url" type="url" required maxlength="2048" placeholder="https://repositorio.uvg.edu.gt/handle/..." /></label>
-        <div class="field-row"><label>Autor<input v-model="form.author" required maxlength="300" /></label><label>Año (opcional)<input v-model="form.publicationYear" type="number" min="1900" max="9999" /></label></div>
-        <label>Resumen (opcional)<textarea v-model="form.summary" rows="4" maxlength="12000" /></label>
-        <label>Identificador del repositorio (opcional)<input v-model="form.sourceIdentifier" maxlength="255" placeholder="Handle u otro identificador" /></label>
+      <form novalidate @submit.prevent="askSave">
+        <label>Título <span aria-hidden="true">*</span><input v-model="form.title" required aria-required="true" minlength="3" maxlength="300" /></label>
+        <label>URL del repositorio <span aria-hidden="true">*</span><input v-model="form.url" type="text" inputmode="url" autocomplete="url" required aria-required="true" maxlength="2048" placeholder="https://repositorio.uvg.edu.gt/handle/..." /><small>Debe usar HTTPS y ser única entre las tesis registradas.</small></label>
+        <div class="field-row"><label>Autor <span aria-hidden="true">*</span><input v-model="form.author" required aria-required="true" maxlength="300" /></label><label>Año <span aria-hidden="true">*</span><input v-model="form.publicationYear" type="number" required aria-required="true" min="1900" max="9999" /></label></div>
+        <label>Resumen <span aria-hidden="true">*</span><textarea v-model="form.summary" required aria-required="true" minlength="1" rows="4" maxlength="12000" /></label>
         <label class="publish-check"><input v-model="form.published" type="checkbox" /> Publicar ahora</label>
         <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
         <div class="form-actions"><button class="primary" type="submit">{{ editingId ? 'Guardar cambios' : form.published ? 'Publicar tesis' : 'Agregar enlace' }}</button><button v-if="editingId" class="secondary" type="button" @click="resetForm">Cancelar edición</button></div>

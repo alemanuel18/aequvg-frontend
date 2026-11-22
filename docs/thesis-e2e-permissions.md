@@ -1,6 +1,6 @@
 # Matriz de pruebas: tesis, extremo a extremo y permisos
 
-Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chromium. Las pruebas de API con PostgreSQL se ejecutan contra el Docker local y limpian los registros temporales que crean.
+Actualizado: 21 de noviembre de 2026. Las pruebas de navegador usan Chromium. La suite backend general deja omitidas las integraciones que requieren base de datos si no se habilitan sus variables; para S6-04 se ejecutó además la integración de tesis con PostgreSQL activando `THESIS_DATABASE_TEST=true`.
 
 ## Resultados
 
@@ -12,8 +12,8 @@ Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chrom
 | Escrituras directas sin sesión | Visitante | Pasa | GET administrativo y PUT/DELETE devuelven 401; POST devuelve 401. |
 | Escrituras directas desde estudiante | Estudiante autenticado | Pasa | POST, PUT y DELETE administrativos devuelven 401; la lectura pública devuelve 200. |
 | Escrituras directas sin permiso | Cuenta administrativa sin `PAPERS_MANAGE` | Pasa | GET, POST, PUT y DELETE devuelven 403; el registro original permanece sin cambios. |
-| URL vacía, mal formada o insegura | Administrador autorizado | Pasa | API devuelve 422 para vacío, mal formado y `ftp://`; la interfaz exige URL y muestra el error para protocolo no permitido. |
-| URL duplicada e identificador de origen duplicado | Administrador autorizado | Pasa | API devuelve 409 `THESIS_LINK_EXISTS`; Playwright confirma mensaje claro y que no aparece una segunda fila. |
+| URL vacía, mal formada, HTTP o insegura | Administrador autorizado | Pasa | API devuelve 422 para vacío, mal formado, `http://` y `ftp://`; solo admite `https://`. |
+| URL duplicada normalizada, incluidas altas simultáneas | Administrador autorizado | Pasa en PostgreSQL | La integración envía dos altas concurrentes con variantes equivalentes de esquema, host y espacios; una devuelve 201 y la otra 409 `THESIS_LINK_EXISTS`. También cubre duplicados secuenciales y edición hacia una URL ya usada. |
 | Fallo al guardar | Administrador | Pasa en interfaz | Playwright simula un 503 y confirma mensaje de error y ausencia de registro. La respuesta 503 es simulada; no se fuerza una caída real de PostgreSQL. |
 | Listado sin resultados | Visitante | Pasa | API devuelve lista vacía para una búsqueda sin coincidencias; Playwright muestra el estado vacío. |
 | Persistencia de cambios | Administrador autorizado | Pasa en PostgreSQL local | La prueba vuelve a consultar el detalle después de editar y verifica la fila directamente después de eliminar. Los datos temporales se limpian en `afterAll`. |
@@ -23,13 +23,15 @@ Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chrom
 | Enlace universitario restringido | Repositorio UVG | No fue posible cubrirlo con un registro de Química | Consulté en modo de solo lectura el estado de acceso de los 65 registros de la colección; los 65 reportan `open.access`. No encontré un enlace restringido que se pueda usar como caso de prueba en esa colección. |
 | Archivo universitario después de retirar el enlace | Repositorio UVG | Pasa para el ítem probado | Publiqué temporalmente el enlace al ítem 4914, lo retiré desde el panel y confirmé que la consulta pública local ya no lo lista. Inmediatamente después, una solicitud sin sesión al bitstream remoto respondió HTTP 200, `application/pdf`, 1,206,840 bytes. El PDF remoto siguió accesible. |
 | Validación de una junta real | Junta Directiva | Pendiente | La suite usa un rol temporal con `PAPERS_MANAGE`; esto comprueba la autorización técnica, no registra aprobación de una persona real de la junta. |
-| Intentar alta pegando únicamente la URL | Administrador | Probado; no permite publicar | El E2E deja solo la URL y confirma que el navegador bloquea el envío porque título y autor son obligatorios. Esto respeta la decisión previa de mantener ambos campos, pero no cumple una lectura literal de “solo el enlace”. |
+| Campos obligatorios | Administrador | Matriz S6-04 aprobada | Título, autor principal, año, resumen y URL del repositorio son obligatorios en vista y API; identificador se retiró y la autoría estructurada se difiere a otro Scrum. |
+| URL única normalizada | Administrador | Pasa en E2E y PostgreSQL | Se recortan espacios externos y se normalizan esquema y host; la ruta conserva su distinción. Dos altas simultáneas de variantes equivalentes producen una creación y un conflicto. |
 
 ## Evidencia reproducible
 
-- Frontend: `PLAYWRIGHT_FRONTEND_PORT=3003 PLAYWRIGHT_API_PORT=3004 bun run test:e2e -- tests/e2e/thesis-flow.spec.ts` — repetición más reciente: 4 pruebas aprobadas, incluida alta con solo URL (bloqueada por campos requeridos).
-- Backend: `docker compose exec -e THESIS_DATABASE_TEST=true backend bun run vitest run tests/integration/thesis.api.database.test.ts` — 3 pruebas aprobadas contra PostgreSQL local.
-- Tipos del backend: `bun run typecheck` — aprobado.
+- Frontend E2E: `PLAYWRIGHT_FRONTEND_PORT=3003 PLAYWRIGHT_API_PORT=3004 bun run test:e2e -- tests/e2e/thesis-flow.spec.ts` — 4/4 aprobadas.
+- Integración PostgreSQL de tesis: `docker compose exec -e THESIS_DATABASE_TEST=true backend bun run vitest run tests/integration/thesis.api.database.test.ts` — 1 archivo, 4/4 pruebas aprobadas. Incluye la concurrencia de dos altas con URLs canónicamente equivalentes (201 y 409).
+- Backend: `bun run test` — 311 pruebas aprobadas y 158 omitidas; las integraciones que requieren base de datos se omiten en esta suite general si no se activan sus variables. La integración PostgreSQL de tesis se ejecutó por separado con el comando anterior.
+- Tipos: `bun run typecheck` en frontend y backend — aprobados.
 - Consulta posterior de solo lectura en PostgreSQL: cero tesis, administradores, roles o estudiantes temporales con el prefijo `thesis-test-`.
 - Prueba remota sin sesión: el ítem [123456789/4914](https://repositorio.uvg.edu.gt/handle/123456789/4914), “Validación de un kit de campo para la determinación de fosfatos en pisos hechos de estuco del sitio arqueológico La Corona utilizando el método de Murphy y Riley”, devuelve `open.access`. El bitstream `78d85cfa-c6ff-4e21-a28a-b8ff22042127` respondió HTTP 200 y 1,206,840 bytes después de retirar el enlace local. No se hizo ninguna petición de escritura al repositorio.
 - Revisión de acceso restringido: la colección [Tesis - Química](https://repositorio.uvg.edu.gt/handle/123456789/3316) enumera 65 ítems. Las 65 consultas a `GET /server/api/core/items/{uuid}/accessStatus` respondieron `open.access`; no apareció un registro restringido para probar.
@@ -45,7 +47,7 @@ Fecha de ejecución: 8 de noviembre de 2026. Las pruebas de navegador usan Chrom
 | QA-TH-03 | Un guion manual de edición se interrumpió al intentar reasignar una variable declarada como constante. | Error del guion de prueba. Se limpió el registro temporal desde el panel y se corrigió el guion para permitir cambiar el título. | Se repitió alta, publicación, consulta, edición y retiro, incluida la vista móvil; el flujo terminó correctamente. La suite E2E actual pasó 4/4. |
 | QA-TH-04 | El lector web mostró 403 al abrir la colección UVG. | Resultado específico del lector web; no se clasificó como defecto del repositorio porque el acceso directo desde el entorno local y la API de DSpace respondieron correctamente. | Consulta HTTPS directa repetida: HTTP 200. También se confirmó el acceso `open.access` al ítem 123456789/4914 y a su PDF sin sesión. |
 | QA-TH-05 | La integración PostgreSQL no pudo ejecutarse con `docker compose exec` porque los servicios de ese proyecto estaban detenidos. Al intentar iniciarlos, el contenedor de base de datos no pudo enlazar el puerto 5432, ocupado por el stack local ya activo. | Incidencia de entorno, no defecto de la aplicación. Se ejecutó la misma prueba dentro del contenedor backend activo, conectado a la base local en uso. | Repetición completada: 1 archivo y 3/3 pruebas aprobadas contra PostgreSQL. El hook `afterAll` elimina las tesis y cuentas temporales. |
-| QA-TH-06 | El criterio de publicar solo con URL no se podía verificar con la matriz existente. | Brecha de cobertura y discrepancia de aceptación, no defecto confirmado: el acuerdo previo mantiene título y autor obligatorios. | Se agregó una prueba E2E que llena solo la URL, intenta enviar y verifica las validaciones nativas. | Repetición: la suite pasó 4/4; el formulario bloqueó el alta por título y autor vacíos. Por tanto, el criterio literal no pasa bajo el formulario acordado. |
+| QA-TH-06 | La vista exigía autor y la API lo aceptaba vacío; además, las variantes de una misma URL podían almacenarse como distintas. | Discrepancia de contrato S6-04. | La API requiere autor; normaliza la URL y serializa la comprobación y el alta dentro de una transacción para evitar carreras. Vista y API muestran reglas y mensajes alineados. | En una corrida previa, la integración DB no se ejecutó porque faltaba `THESIS_DATABASE_TEST`. Se repitió después con la variable activada: 4/4 pruebas aprobadas, incluida la carrera de dos altas (201/409). Backend typecheck y suite también aprobaron. |
 | QA-TH-07 | La matriz pedía un ejemplo universitario con acceso restringido, pero no había uno identificado. | Caso externo no disponible en la colección Química, no defecto del producto. | Se consultó el estado de acceso de los 65 ítems de la colección en modo de solo lectura. | Los 65 reportan `open.access`; no se pudo repetir como usuario restringido ni identificar una tesis embargada. |
 
 No se encontraron defectos funcionales abiertos en los casos repetidos. La cobertura no demuestra autorización de una junta real ni acceso a documentos con embargo; esos pendientes siguen indicados arriba.
@@ -55,6 +57,6 @@ El registro independiente de cada hallazgo, clasificación, acción y repetició
 ## Pendientes para cerrar aceptación
 
 1. La junta debe confirmar el flujo y la matriz de permisos; la aprobación no se ha solicitado ni registrado.
-2. El envío con solo URL fue probado y bloqueado porque título y autor son obligatorios. Para aceptar ese criterio literalmente, habría que cambiar el requisito previamente acordado y permitir que falten esos metadatos.
+2. S6-04 define título, autor principal, año, resumen y URL HTTPS del repositorio como obligatorios en la interfaz y la API; el identificador se retiró del contrato.
 3. No se encontró tesis de Química restringida: los 65 ítems consultados reportan `open.access`. Para probar ese caso hace falta que UVG identifique un ejemplo restringido y provea una cuenta autorizada si requiere autenticación.
 4. Validar con la junta la estimación propuesta de 2 puntos.

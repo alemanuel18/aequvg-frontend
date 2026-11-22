@@ -226,7 +226,6 @@ export interface AdminNewsImage {
 export interface Pagination { page: number; pageSize: number; total: number }
 export interface PublicThesis {
   id: number
-  sourceIdentifier: string | null
   title: string
   author: string | null
   publicationYear: number | null

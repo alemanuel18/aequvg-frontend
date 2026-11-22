@@ -5,8 +5,7 @@ Esta guía aplica a integrantes de junta con una cuenta administrativa autorizad
 ## Agregar y publicar
 
 1. Inicia sesión en `/administrador` y abre **Tesis** en el menú lateral.
-2. Completa título, enlace al registro de la tesis en UVG y autoría.
-3. Si están disponibles, agrega año, resumen e identificador del repositorio. El año, resumen e identificador son opcionales.
+2. Completa título, URL HTTPS del repositorio, autor, año y resumen.
 4. Deja **Publicar ahora** desmarcado para guardar un borrador, o márcalo para publicar de inmediato.
 5. Pulsa **Agregar enlace** o **Publicar tesis**, revisa el mensaje de confirmación y confirma la acción.
 
@@ -18,15 +17,23 @@ Un borrador aparece en **Enlaces registrados** con el botón **Publicar**. Al co
 
 - Pulsa **Editar** junto al registro. Cambia los datos necesarios y elige **Guardar cambios**; confirma para guardar.
 - Pulsa **Eliminar** para retirar el enlace de AEQUVG y confirma la acción. La tesis y su archivo siguen en el repositorio universitario; la aplicación no envía una petición para borrarlos.
-- Los mensajes de confirmación, éxito y error aparecen en la pantalla. URL mal formada o con protocolo distinto de HTTP/HTTPS se rechaza; URL o identificador repetidos producen un aviso de duplicado.
+- Los mensajes de confirmación, éxito y error aparecen en la pantalla. La URL debe usar HTTPS y se normaliza al guardar; una URL normalizada ya registrada produce un aviso de duplicado.
 
 ![Formulario de edición con los datos actuales del enlace.](./images/tesis-editar.png)
 
 La URL externa puede exigir iniciar sesión en UVG o tener otra restricción. AEQUVG no elude esos controles ni descarga el documento.
 
-## Campos obligatorios: discrepancia pendiente
+## Matriz de campos acordada (S6-04, vinculada a SCRUM-300)
 
-La aceptación de documentación de esta tarea pide describir **URL como único campo obligatorio**. El formulario vigente, sin embargo, requiere **título, URL y autor**; la API exige título y URL y permite omitir autor. La prueba E2E intentó guardar solo la URL y confirmó que la pantalla lo bloquea. Se conserva el formulario actual conforme a la decisión previa de mantener título y autor obligatorios; no se debe indicar al equipo que URL por sí sola basta hasta que el alcance se alinee y el producto se actualice.
+| Campo | Obligatorio | Regla |
+| --- | --- | --- |
+| Título | Sí | Entre 3 y 300 caracteres. |
+| URL del repositorio | Sí | Solo HTTPS; única entre tesis tras recortar espacios externos y normalizar esquema y host. Se conserva la ruta. |
+| Autor principal | Sí | Texto simple de hasta 300 caracteres. La gestión estructurada de autor principal y coautores se deja para otro Scrum. |
+| Año | Sí | Entero entre 1900 y 9999. |
+| Resumen | Sí | Entre 1 y 12 000 caracteres después de quitar espacios externos. |
+
+La vista y la API aplican la misma matriz. El identificador de repositorio se retiró del contrato y de la interfaz. No hay slug manual ni carga de documentos en este módulo.
 
 El proceso actual es manual: la junta pega el enlace y administra la publicación. La detección automática o la importación para aprobación fueron investigadas, pero no están implementadas ni activadas. No hay confirmación del cliente sobre una modalidad automática en los registros disponibles.
 

@@ -3,7 +3,6 @@ import { useAdminSession } from '~/composables/use-admin-session'
 
 export interface ThesisLink {
   id: number
-  sourceIdentifier: string | null
   title: string
   author: string | null
   publicationYear: number | null
@@ -16,11 +15,10 @@ export interface ThesisLink {
   createdBy?: { id: number; name: string }
 }
 export interface ThesisInput {
-  sourceIdentifier?: string | null
   title: string
-  author?: string | null
-  publicationYear?: number | null
-  summary?: string | null
+  author: string
+  publicationYear: number
+  summary: string
   url: string
   publishedAt?: string | null
 }
