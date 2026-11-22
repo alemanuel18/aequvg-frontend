@@ -67,7 +67,6 @@ const toggleCreateAuthor = (contributor: ContributorDraft, event: Event) => {
   contributor.name = ''
   contributor.search = ''
   contributor.searchOpen = false
-  if (!contributor.createNew) void loadAuthorOptions(contributor)
 }
 const updateAuthorSearch = (contributor: ContributorDraft, event: Event) => {
   contributor.search = (event.target as HTMLInputElement).value
