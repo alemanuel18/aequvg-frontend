@@ -22,6 +22,7 @@ const selectedType = ref<ProjectType | undefined>(
     ? route.query.type
     : undefined,
 );
+const selectedThesisCategory = ref(route.query.type === 'TESIS' ? queryNumber(route.query.categoryId) : undefined);
 const currentPage = ref(queryNumber(route.query.page) || 1);
 const pageSize = 9;
 const requestError = ref<unknown>(null);
@@ -43,11 +44,13 @@ const {
     pagination: { page: 1, pageSize, total: 0, totalPages: 0 },
   }),
 });
+const { data: thesisCategories } = await useAsyncData('public-thesis-categories', () => service.thesisCategories(), { default: () => [] })
+const loadTheses = () => service.theses(currentPage.value, pageSize, appliedSearch.value || undefined, selectedThesisCategory.value)
 const {
   data: thesisResult,
   status: thesisStatus,
   error: thesisError,
-} = await useAsyncData("public-theses", () => service.theses(currentPage.value, pageSize, appliedSearch.value || undefined), {
+} = await useAsyncData("public-theses", loadTheses, {
   default: () => ({ items: [], pagination: { page: 1, pageSize, total: 0, totalPages: 0 } }),
 });
 const totalPages = computed(() =>
@@ -61,9 +64,9 @@ const totalResults = computed(() => selectedType.value === 'TESIS'
 const updateProjects = async () => {
   requestError.value = null;
   try {
-    if (selectedType.value === 'TESIS') thesisResult.value = await service.theses(currentPage.value, pageSize, appliedSearch.value || undefined);
+    if (selectedType.value === 'TESIS') thesisResult.value = await loadTheses();
     else if (selectedType.value === undefined) {
-      const [projects, theses] = await Promise.all([loadProjects(), service.theses(currentPage.value, pageSize, appliedSearch.value || undefined)])
+      const [projects, theses] = await Promise.all([loadProjects(), loadTheses()])
       result.value = projects
       thesisResult.value = theses
     } else result.value = await loadProjects();
@@ -78,9 +81,15 @@ const submitSearch = async () => {
 };
 const setType = async (type?: ProjectType) => {
   selectedType.value = type;
+  if (type !== 'TESIS') selectedThesisCategory.value = undefined
   currentPage.value = 1;
   await updateProjects();
 };
+const setThesisCategory = async (id?: number) => {
+  selectedThesisCategory.value = id
+  currentPage.value = 1
+  await updateProjects()
+}
 const goToPage = async (page: number) => {
   currentPage.value = page;
   await updateProjects();
@@ -149,6 +158,11 @@ const thesisAuthorSummary = (thesis: PublicThesis) => {
           autocomplete="off"
         /><button class="research-filters__submit" type="submit">Buscar</button>
       </form>
+      <nav v-if="selectedType === 'TESIS' && thesisCategories.length" class="thesis-category-filters" aria-label="Filtrar tesis por categoría">
+        <span>Categorías de tesis</span>
+        <button type="button" :class="{ 'is-active': !selectedThesisCategory }" @click="setThesisCategory()">Todas</button>
+        <button v-for="category in thesisCategories" :key="category.id" type="button" :class="{ 'is-active': selectedThesisCategory === category.id }" @click="setThesisCategory(category.id)">{{ category.name }}</button>
+      </nav>
       <StatePanel
         v-if="status === 'pending' || (selectedType !== 'PROYECTO' && thesisStatus === 'pending')"
         title="Cargando investigaciones"
@@ -179,6 +193,7 @@ const thesisAuthorSummary = (thesis: PublicThesis) => {
           <template v-if="selectedType !== 'PROYECTO'">
           <ContentCard v-for="thesis in thesisResult.items" :key="`thesis-${thesis.id}`" eyebrow="Tesis de Química" :title="thesis.title" :body="thesis.summary || 'Consulta esta tesis en el repositorio universitario.'">
             <p v-if="thesis.author || thesis.contributors?.length || thesis.publicationYear" class="research-card__meta">{{ thesisAuthorSummary(thesis) }}{{ thesis.publicationYear ? ` · ${thesis.publicationYear}` : '' }}</p>
+            <div v-if="thesis.categories.length" class="research-category-tags"><span v-for="category in thesis.categories" :key="category.id">{{ category.name }}</span></div>
             <NuxtLink class="card__link" :to="`/investigacion/tesis/${thesis.id}`" :aria-label="`Ver tesis: ${thesis.title}`">Ver tesis <span aria-hidden="true">→</span></NuxtLink>
           </ContentCard>
           </template>
@@ -276,6 +291,10 @@ const thesisAuthorSummary = (thesis: PublicThesis) => {
   cursor: pointer;
   font-weight: 800;
 }
+.thesis-category-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: -1rem 0 1.5rem; }
+.thesis-category-filters span { margin-right: .2rem; color: var(--color-muted); font-size: .92rem; font-weight: 750; }
+.thesis-category-filters button { padding: .45rem .75rem; color: var(--color-ink); background: #fff; border: 1px solid var(--color-border); border-radius: 999px; cursor: pointer; font: inherit; font-size: .9rem; }
+.thesis-category-filters button.is-active { color: #fff; background: var(--color-primary); border-color: var(--color-primary); }
 .pagination button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -294,6 +313,8 @@ const thesisAuthorSummary = (thesis: PublicThesis) => {
   color: var(--color-muted);
   font-size: 0.88rem;
 }
+.research-category-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0; }
+.research-category-tags span { padding: .22rem .55rem; color: #07585e; background: #e4f2f2; border-radius: 999px; font-size: .8rem; font-weight: 750; }
 .card__link {
   color: var(--color-primary);
   text-decoration: none;

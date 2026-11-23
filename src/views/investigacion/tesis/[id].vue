@@ -20,6 +20,7 @@ const errorMessage = computed(() => error.value instanceof PublicApiError ? erro
       <StatePanel v-else-if="error" role="alert" title="No encontramos esta tesis" :message="errorMessage"><AppButton to="/investigacion" variant="secondary">Volver a investigación</AppButton><button type="button" @click="refresh()">Reintentar</button></StatePanel>
       <article v-else-if="thesis" class="thesis-detail">
         <div class="thesis-detail__meta"><EyebrowBadge :text="thesis.publicationYear ? String(thesis.publicationYear) : 'Tesis de Química'" /><time :datetime="thesis.publishedAt">Publicada en {{ new Intl.DateTimeFormat('es-GT', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(thesis.publishedAt)) }}</time></div>
+        <div v-if="thesis.categories.length" class="thesis-detail__categories" aria-label="Categorías de la tesis"><span v-for="category in thesis.categories" :key="category.id">{{ category.name }}</span></div>
         <section v-if="thesis.contributors?.length || thesis.author" class="thesis-detail__authors" aria-labelledby="thesis-authors-title">
           <h2 id="thesis-authors-title">Autoría</h2>
           <ol v-if="thesis.contributors?.length">
@@ -40,4 +41,5 @@ const errorMessage = computed(() => error.value instanceof PublicApiError ? erro
 
 <style scoped>
 .thesis-detail{display:grid;gap:1.4rem;max-width:52rem;margin-inline:auto}.thesis-detail__meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;color:var(--color-muted);font-size:.92rem}.thesis-detail__authors h2{margin:0 0 .65rem;font-size:1rem}.thesis-detail__authors ol{display:grid;gap:.5rem;margin:0;padding:0;list-style:none}.thesis-detail__authors li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;padding:.65rem .8rem;border:1px solid var(--color-border);border-radius:var(--radius-sm)}.thesis-detail__authors strong{color:var(--color-primary);font-size:.88rem}.thesis-detail__summary{white-space:pre-line;color:var(--color-ink);font-size:1.06rem;line-height:1.7}.thesis-detail__link{justify-self:start;padding:.7rem 1rem;color:var(--color-primary);border:1px solid var(--color-primary);border-radius:var(--radius-sm);font-weight:800;text-decoration:none}.thesis-detail__link:hover{color:white;background:var(--color-primary)}.thesis-detail__access-note{margin:-.8rem 0 0;color:var(--color-muted);font-size:.92rem}
+.thesis-detail__categories{display:flex;flex-wrap:wrap;gap:.5rem}.thesis-detail__categories span{padding:.3rem .7rem;color:#07585e;background:#e4f2f2;border-radius:999px;font-size:.88rem;font-weight:750}
 </style>

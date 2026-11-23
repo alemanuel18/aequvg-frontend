@@ -143,8 +143,20 @@ type MockThesis = {
   updatedAt: string
   publishedAt: string | null
   contributors: Array<{ personId: number; role: 'PRINCIPAL' | 'COAUTOR'; authorOrder: number; person: { id: number; name: string } }>
+  categories: Array<{ id: number; name: string; active: boolean }>
 }
 type MockAuthor = { id: number; name: string }
+type MockThesisCategory = { id: number; name: string; active: boolean }
+const initialThesisCategories = (): MockThesisCategory[] => [
+  { id: 1, name: 'Química analítica', active: true },
+  { id: 2, name: 'Química ambiental', active: true },
+  { id: 3, name: 'Química computacional', active: true },
+  { id: 4, name: 'Síntesis y productos naturales', active: true },
+  { id: 5, name: 'Química farmacéutica', active: true },
+  { id: 6, name: 'Procesos industriales', active: true }
+]
+let thesisCategories = initialThesisCategories()
+let nextThesisCategoryId = 7
 let mockAuthors: MockAuthor[] = [{ id: 1, name: 'Estudiante de prueba' }]
 let nextMockAuthorId = 2
 const initialTheses = (): MockThesis[] => [{
@@ -158,7 +170,8 @@ const initialTheses = (): MockThesis[] => [{
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   publishedAt: '2026-01-01T00:00:00.000Z',
-  contributors: [{ personId: 1, role: 'PRINCIPAL', authorOrder: 1, person: { id: 1, name: 'Estudiante de prueba' } }]
+  contributors: [{ personId: 1, role: 'PRINCIPAL', authorOrder: 1, person: { id: 1, name: 'Estudiante de prueba' } }],
+  categories: []
 }]
 let theses = initialTheses()
 let nextThesisId = 2
@@ -359,6 +372,33 @@ Bun.serve({
       studentSessionActive = false
       return new Response(null, { status: 204, headers: { 'access-control-allow-origin': allowedOrigin, 'access-control-allow-credentials': 'true', 'set-cookie': 'aequvg_student_session=; Max-Age=0; Path=/' } })
     }
+    if (url.pathname === '/api/v1/theses/categories' && request.method === 'GET') return json(thesisCategories.filter(({ active }) => active).map(({ id, name }) => ({ id, name })))
+    if (url.pathname === '/api/v1/admin/theses/categories' || url.pathname.match(/^\/api\/v1\/admin\/theses\/categories\/\d+$/)) {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (!activeUser.permissions.includes('PAPERS_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para gestionar tesis.' } }, 403)
+      if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
+      if (request.method === 'GET') return json(thesisCategories)
+      if (request.method === 'POST' && url.pathname === '/api/v1/admin/theses/categories') {
+        const body = await request.json() as { name?: string }
+        const name = body.name?.trim().replace(/\s+/g, ' ') || ''
+        if (name.length < 2 || name.length > 80) return json({ error: { code: 'INVALID_THESIS_CATEGORY_NAME', message: 'El nombre debe tener entre 2 y 80 caracteres.' } }, 422)
+        if (thesisCategories.some(category => category.name.toLowerCase() === name.toLowerCase())) return json({ error: { code: 'THESIS_CATEGORY_EXISTS', message: 'Ya existe una categoría con ese nombre.' } }, 409)
+        const created = { id: nextThesisCategoryId++, name, active: true }
+        thesisCategories.push(created)
+        return json(created, 201)
+      }
+      const id = Number(url.pathname.split('/').at(-1))
+      const category = thesisCategories.find(item => item.id === id)
+      if (!category) return json({ error: { code: 'THESIS_CATEGORY_NOT_FOUND', message: 'La categoría no existe.' } }, 404)
+      if (request.method === 'PATCH') {
+        const body = await request.json() as { active?: boolean }
+        if (typeof body.active !== 'boolean') return json({ error: { code: 'VALIDATION_ERROR', message: 'Indica si la categoría debe estar activa.' } }, 422)
+        const updated = { ...category, active: body.active }
+        thesisCategories = thesisCategories.map(item => item.id === id ? updated : item)
+        theses = theses.map(thesis => ({ ...thesis, categories: thesis.categories.map(item => item.id === id ? updated : item) }))
+        return json(updated)
+      }
+    }
     if (url.pathname === '/api/v1/admin/thesis-authors') {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (!activeUser.permissions.includes('PAPERS_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para gestionar tesis.' } }, 403)
@@ -372,7 +412,7 @@ Bun.serve({
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
       if (request.method === 'GET') return json({ items: [...theses].sort((a, b) => b.id - a.id), pagination: { page: 1, pageSize: 100, total: theses.length } })
       if (request.method === 'POST') {
-        const body = await request.json() as Partial<Omit<MockThesis, 'contributors'>> & { contributors?: MockContributorInput[] }
+        const body = await request.json() as Partial<Omit<MockThesis, 'contributors' | 'categories'>> & { contributors?: MockContributorInput[]; categoryIds?: number[] }
         if (body.url?.includes('/fallo-guardado')) return json({ error: { code: 'THESIS_SAVE_FAILED', message: 'Fallo simulado al guardar.' } }, 503)
         let parsedUrl: URL
         try { parsedUrl = new URL(body.url?.trim() || '') } catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'La URL del repositorio debe comenzar con https://.' } }, 422) }
@@ -384,10 +424,13 @@ Bun.serve({
         const contributorInputs = body.contributors ?? (body.author ? [{ name: body.author }] : [])
         const contributors = resolveMockContributors(contributorInputs)
         if (!contributors?.length) return json({ error: { code: 'THESIS_CONTRIBUTORS_REQUIRED', message: 'Agrega un autor principal y ordena los coautores.' } }, 422)
+        const categoryIds = body.categoryIds ?? []
+        const selectedCategories = categoryIds.map(id => thesisCategories.find(category => category.id === id && category.active))
+        if (new Set(categoryIds).size !== categoryIds.length || selectedCategories.some(category => !category)) return json({ error: { code: 'INVALID_THESIS_CATEGORY', message: 'Una o más categorías no existen o están inactivas.' } }, 422)
         if (!Number.isInteger(body.publicationYear) || Number(body.publicationYear) < 1900 || Number(body.publicationYear) > 9999) return json({ error: { code: 'THESIS_PUBLICATION_YEAR_REQUIRED', message: 'Ingresa un año de publicación válido (1900–9999).' } }, 422)
         if (!body.summary?.trim()) return json({ error: { code: 'THESIS_SUMMARY_REQUIRED', message: 'Escribe el resumen de la tesis.' } }, 422)
         const now = new Date().toISOString()
-        const created: MockThesis = { id: nextThesisId++, title: body.title.trim(), author: contributors[0]!.person.name, contributors, publicationYear: Number(body.publicationYear), summary: body.summary.trim(), url: normalizedUrl, createdById: 1, createdAt: now, updatedAt: now, publishedAt: body.publishedAt ?? null }
+        const created: MockThesis = { id: nextThesisId++, title: body.title.trim(), author: contributors[0]!.person.name, contributors, categories: selectedCategories as MockThesisCategory[], publicationYear: Number(body.publicationYear), summary: body.summary.trim(), url: normalizedUrl, createdById: 1, createdAt: now, updatedAt: now, publishedAt: body.publishedAt ?? null }
         theses.unshift(created)
         return json(created, 201)
       }
@@ -395,7 +438,7 @@ Bun.serve({
       const index = theses.findIndex(thesis => thesis.id === id)
       if (index < 0) return json({ error: { code: 'THESIS_NOT_FOUND', message: 'La tesis no existe.' } }, 404)
       if (request.method === 'PUT') {
-        const body = await request.json() as Partial<Omit<MockThesis, 'contributors'>> & { contributors?: MockContributorInput[] }
+        const body = await request.json() as Partial<Omit<MockThesis, 'contributors' | 'categories'>> & { contributors?: MockContributorInput[]; categoryIds?: number[] }
         if (body.url !== undefined) {
           try {
             const parsedUrl = new URL(body.url.trim())
@@ -419,10 +462,16 @@ Bun.serve({
         }
         if (body.publicationYear !== undefined && (!Number.isInteger(body.publicationYear) || body.publicationYear < 1900 || body.publicationYear > 9999)) return json({ error: { code: 'THESIS_PUBLICATION_YEAR_REQUIRED', message: 'Ingresa un año de publicación válido (1900–9999).' } }, 422)
         if (body.summary !== undefined && !body.summary?.trim()) return json({ error: { code: 'THESIS_SUMMARY_REQUIRED', message: 'Escribe el resumen de la tesis.' } }, 422)
+        let categories = theses[index]!.categories
+        if (body.categoryIds !== undefined) {
+          const selectedCategories = body.categoryIds.map(id => thesisCategories.find(category => category.id === id && (category.active || theses[index]!.categories.some(existing => existing.id === id))))
+          if (new Set(body.categoryIds).size !== body.categoryIds.length || selectedCategories.some(category => !category)) return json({ error: { code: 'INVALID_THESIS_CATEGORY', message: 'Una o más categorías no existen o están inactivas.' } }, 422)
+          categories = selectedCategories as MockThesisCategory[]
+        }
         if (body.title !== undefined) body.title = body.title.trim()
         const author = contributors[0]?.person.name ?? theses[index]!.author
-        const { contributors: _contributors, ...metadata } = body
-        theses[index] = { ...theses[index]!, ...metadata, id, author, contributors, updatedAt: new Date().toISOString() }
+        const { contributors: _contributors, categoryIds: _categoryIds, ...metadata } = body
+        theses[index] = { ...theses[index]!, ...metadata, id, author, contributors, categories, updatedAt: new Date().toISOString() }
         return json(theses[index])
       }
       if (request.method === 'DELETE') {
@@ -532,6 +581,8 @@ Bun.serve({
       nextBlogPostId = 73
       nextAdminEventId = 14
       theses = initialTheses()
+      thesisCategories = initialThesisCategories()
+      nextThesisCategoryId = 7
       nextThesisId = 2
       mockAuthors = [{ id: 1, name: 'Estudiante de prueba' }]
       nextMockAuthorId = 2
@@ -906,18 +957,19 @@ Bun.serve({
     if (url.pathname.startsWith('/api/v1/projects/')) return json({ error: { code: 'PROJECT_NOT_FOUND', message: 'El proyecto solicitado no existe.' } }, 404)
     if (url.pathname === '/api/v1/theses') {
       const q = url.searchParams.get('q')?.toLowerCase() || ''
+      const categoryId = Number(url.searchParams.get('categoryId')) || undefined
       if (q === 'sin-resultados') return json({ items: [], pagination: { page: 1, pageSize: 9, total: 0, totalPages: 0 } })
       if (q === 'error-prueba') return json({ error: { code: 'REQUEST_FAILED', message: 'Error simulado.' } }, 503)
-      const visible = theses.filter(thesis => thesis.publishedAt && (!q || `${thesis.title} ${thesis.author || ''} ${thesis.summary || ''}`.toLowerCase().includes(q)))
+      const visible = theses.filter(thesis => thesis.publishedAt && (!categoryId || thesis.categories.some(category => category.id === categoryId && category.active)) && (!q || `${thesis.title} ${thesis.author || ''} ${thesis.summary || ''} ${thesis.categories.map(({ name }) => name).join(' ')}`.toLowerCase().includes(q)))
       const page = Number(url.searchParams.get('page') || 1)
       const pageSize = Number(url.searchParams.get('pageSize') || 9)
-      const items = visible.slice((page - 1) * pageSize, page * pageSize)
+      const items = visible.slice((page - 1) * pageSize, page * pageSize).map(thesis => ({ ...thesis, categories: thesis.categories.filter(({ active }) => active).map(({ id, name }) => ({ id, name })) }))
       return json({ items, pagination: { page, pageSize, total: visible.length, totalPages: Math.ceil(visible.length / pageSize) } })
     }
     const thesisDetailMatch = url.pathname.match(/^\/api\/v1\/theses\/(\d+)$/)
     if (thesisDetailMatch) {
       const thesis = theses.find(item => item.id === Number(thesisDetailMatch[1]) && item.publishedAt)
-      return thesis ? json(thesis) : json({ error: { code: 'THESIS_NOT_FOUND', message: 'La tesis no existe o no está publicada.' } }, 404)
+      return thesis ? json({ ...thesis, categories: thesis.categories.filter(({ active }) => active).map(({ id, name }) => ({ id, name })) }) : json({ error: { code: 'THESIS_NOT_FOUND', message: 'La tesis no existe o no está publicada.' } }, 404)
     }
     return json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } }, 404)
   }
