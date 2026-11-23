@@ -221,8 +221,12 @@ const askPublish = (item: ThesisLink) => {
 </script>
 
 <template>
-  <main class="theses-admin">
-    <header class="page-heading"><p class="eyebrow">Administración</p><h1>Tesis</h1><p>Agrega enlaces a tesis alojadas en el repositorio universitario. Aquí solo guardamos el enlace y sus datos, no los documentos.</p></header>
+  <div class="theses-admin">
+    <AdminPageHeader
+      eyebrow="Administración"
+      title="Tesis"
+      description="Agrega enlaces a tesis alojadas en el repositorio universitario. Aquí solo guardamos el enlace y sus datos, no los documentos."
+    />
     <section class="category-management" aria-labelledby="thesis-categories-title">
       <div class="category-management__heading"><div><h2 id="thesis-categories-title">Categorías de tesis</h2><p>Crea categorías y activa o desactiva las que se ofrecen al público.</p></div></div>
       <form class="category-create-form" @submit.prevent="createCategory">
@@ -239,17 +243,17 @@ const askPublish = (item: ThesisLink) => {
     <section class="form-card" aria-labelledby="thesis-form-title">
       <h2 id="thesis-form-title">{{ editingId ? 'Editar tesis' : 'Agregar tesis' }}</h2>
       <form novalidate @submit.prevent="askSave">
-        <label><span class="field-label">Título <span aria-hidden="true">*</span></span><input v-model="form.title" required aria-required="true" minlength="3" maxlength="300" /></label>
-        <label><span class="field-label">URL del repositorio <span aria-hidden="true">*</span></span><input v-model="form.url" type="text" inputmode="url" autocomplete="url" required aria-required="true" maxlength="2048" placeholder="https://repositorio.uvg.edu.gt/handle/..." /></label>
+        <label><span class="field-label">Título <span class="required-indicator" aria-hidden="true">*</span></span><input v-model="form.title" required aria-required="true" minlength="3" maxlength="300" /></label>
+        <label><span class="field-label">URL del repositorio <span class="required-indicator" aria-hidden="true">*</span></span><input v-model="form.url" type="text" inputmode="url" autocomplete="url" required aria-required="true" maxlength="2048" placeholder="https://repositorio.uvg.edu.gt/handle/..." /></label>
         <fieldset class="contributors-fieldset">
-          <legend>Autoría <span aria-hidden="true">*</span></legend>
+          <legend>Autoría <span class="required-indicator" aria-hidden="true">*</span></legend>
           <ol class="contributor-editor">
             <li v-for="(contributor, index) in sortedContributors" :key="contributor.key" class="contributor-row" :class="{ 'contributor-row--removable': contributors.length > 1 }">
               <strong>{{ contributorLabel(index) }}</strong>
               <label class="create-author-check"><input type="checkbox" :checked="contributor.createNew" @change="toggleCreateAuthor(contributor, $event)" /> Crear autor nuevo</label>
-              <label v-if="contributor.createNew"><span class="field-label">Nombre completo <span aria-hidden="true">*</span></span><input v-model="contributor.name" required maxlength="300" :aria-label="`Nombre de ${contributorLabel(index)}`" /></label>
+              <label v-if="contributor.createNew"><span class="field-label">Nombre completo <span class="required-indicator" aria-hidden="true">*</span></span><input v-model="contributor.name" required maxlength="300" :aria-label="`Nombre de ${contributorLabel(index)}`" /></label>
               <div v-else class="registered-author-picker">
-                <label><span class="field-label">Buscar o seleccionar autor <span aria-hidden="true">*</span></span><input :value="contributor.search" type="search" autocomplete="off" placeholder="Escribe para buscar o elige un autor" :aria-label="`Buscar o seleccionar autor para ${contributorLabel(index)}`" role="combobox" aria-autocomplete="list" :aria-expanded="contributor.searchOpen" @input="updateAuthorSearch(contributor, $event)" @focus="openAuthorSearch(contributor)" @blur="contributor.searchOpen = false" @keydown.esc="contributor.searchOpen = false" /></label>
+                <label><span class="field-label">Buscar o seleccionar autor <span class="required-indicator" aria-hidden="true">*</span></span><input :value="contributor.search" type="search" autocomplete="off" placeholder="Escribe para buscar o elige un autor" :aria-label="`Buscar o seleccionar autor para ${contributorLabel(index)}`" role="combobox" aria-autocomplete="list" :aria-expanded="contributor.searchOpen" @input="updateAuthorSearch(contributor, $event)" @focus="openAuthorSearch(contributor)" @blur="contributor.searchOpen = false" @keydown.esc="contributor.searchOpen = false" /></label>
                 <small v-if="contributor.loading">Buscando…</small>
                 <ul v-if="contributor.searchOpen && contributor.options.length" class="author-results" role="listbox">
                   <li v-for="person in contributor.options" :key="person.id" role="option" :aria-selected="contributor.personId === person.id" :aria-disabled="contributors.some((item) => item.key !== contributor.key && item.personId === person.id)" @mousedown.prevent="!contributors.some((item) => item.key !== contributor.key && item.personId === person.id) && chooseExistingAuthor(contributor, person)">{{ person.name }}</li>
@@ -272,10 +276,10 @@ const askPublish = (item: ThesisLink) => {
           </div>
           <p v-else>No hay categorías registradas.</p>
         </fieldset>
-        <label><span class="field-label">Año <span aria-hidden="true">*</span></span><input v-model="form.publicationYear" type="number" required aria-required="true" min="1900" max="9999" /></label>
-        <label><span class="field-label">Resumen <span aria-hidden="true">*</span></span><textarea v-model="form.summary" required aria-required="true" minlength="1" rows="4" maxlength="12000" /></label>
+        <label><span class="field-label">Año <span class="required-indicator" aria-hidden="true">*</span></span><input v-model="form.publicationYear" type="number" required aria-required="true" min="1900" max="9999" /></label>
+        <label><span class="field-label">Resumen <span class="required-indicator" aria-hidden="true">*</span></span><textarea v-model="form.summary" required aria-required="true" minlength="1" rows="4" maxlength="12000" /></label>
         <label class="publish-check"><input v-model="form.published" type="checkbox" /> Publicar ahora</label>
-        <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
+        <p v-if="formError" class="form-error field-error" role="alert">{{ formError }}</p>
         <div class="form-actions"><button class="primary" type="submit">{{ editingId ? 'Guardar cambios' : form.published ? 'Publicar tesis' : 'Agregar enlace' }}</button><button v-if="editingId" class="secondary" type="button" @click="resetForm">Cancelar edición</button></div>
       </form>
     </section>
@@ -291,188 +295,502 @@ const askPublish = (item: ThesisLink) => {
       </ul>
     </section>
     <AppConfirmModal :open="confirmation.open" :title="confirmation.title" :message="confirmation.message" :confirm-label="confirmation.label" :variant="confirmation.variant" :loading="saving" @confirm="confirmation.action" @cancel="confirmation.open = false" />
-  </main>
+  </div>
 </template>
 
 <style scoped>
 .theses-admin {
-  max-width: 1000px;
+  width: 100%;
   min-width: 0;
-  margin: 0 auto;
-  padding: clamp(1rem, 3vw, 2rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
-  color: #17212b;
+  color: var(--color-ink);
   container-type: inline-size;
 }
-.page-heading h1 { margin: .2rem 0; font-size: clamp(2rem, 4vw, 3rem); }
-.page-heading > p:last-child { max-width: 65ch; color: #566575; }
-.eyebrow { text-transform: uppercase; letter-spacing: .12em; font-weight: 700; color: #087b83; font-size: .8rem; }
 .form-card,
-.list-section {
+.list-section,
+.category-management {
   min-width: 0;
-  padding: clamp(1rem, 2.5vw, 1.5rem);
-  background: #fff;
-  border: 1px solid #dbe3e8;
-  border-radius: 1rem;
-  box-shadow: 0 8px 24px #17212b0a;
+  padding: clamp(1rem, 2.5vw, 1.6rem);
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 .category-management {
   display: grid;
-  gap: .9rem;
-  min-width: 0;
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #dbe3e8;
-  border-radius: .75rem;
+  gap: 0.9rem;
 }
-.category-management h2 { margin: 0; font-size: 1.25rem; }
-.category-management p { margin: .25rem 0 0; color: #5d6b78; }
-.category-create-form { display: grid; gap: .4rem; max-width: 38rem; }
-.category-create-form label { font-weight: 700; }
-.category-create-form__fields { display: flex; flex-wrap: wrap; gap: .6rem; }
-.category-create-form__fields input { flex: 1 1 14rem; min-width: 0; padding: .7rem .75rem; color: inherit; background: #fff; border: 1px solid #b9c6d0; border-radius: .55rem; font: inherit; }
-.category-management__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: .5rem; max-height: 14rem; overflow-y: auto; margin: 0; padding: 0 .25rem 0 0; list-style: none; }
-.category-management__list li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-width: 0; padding: .65rem .75rem; border: 1px solid #e0e7eb; border-radius: .55rem; }
-.category-management__list li span { min-width: 0; overflow-wrap: anywhere; font-weight: 650; }
-.category-management__list small { color: #7a4a00; font-weight: 600; }
-.category-management__item--inactive { background: #f7f8f8; }
-.category-management__list button { flex: 0 0 auto; padding: .5rem .65rem; }
+.category-management h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.category-management p {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+}
+.category-create-form {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 38rem;
+}
+.category-create-form label {
+  font-weight: 700;
+}
+.category-create-form__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.category-create-form__fields input {
+  flex: 1 1 14rem;
+  min-width: 0;
+  min-height: 2.85rem;
+  padding: 0.65rem 0.75rem;
+  color: var(--color-ink);
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+.category-management__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 0.25rem 0 0;
+  list-style: none;
+}
+.category-management__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+}
+.category-management__list li span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 650;
+}
+.category-management__list small {
+  color: var(--color-warning);
+  font-weight: 700;
+}
+.category-management__item--inactive {
+  background: var(--admin-soft);
+}
+.category-management__list button {
+  flex: 0 0 auto;
+}
 .form-card h2,
-.list-heading h2 { margin: 0 0 1rem; }
+.list-heading h2 {
+  margin: 0 0 1rem;
+}
 .form-card form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   min-width: 0;
 }
-.form-card label { display: grid; gap: .4rem; font-weight: 650; min-width: 0; }
-.field-label { display: flex; align-items: baseline; gap: .2rem; font-weight: 650; white-space: nowrap; }
-.field-label [aria-hidden="true"] { white-space: nowrap; }
+.form-card label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 650;
+  min-width: 0;
+}
+.field-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.field-label [aria-hidden="true"] {
+  white-space: nowrap;
+}
 .form-card input:not([type="checkbox"]),
 .form-card textarea,
 .form-card select {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  padding: .75rem;
-  color: inherit;
+  min-height: 2.85rem;
+  padding: 0.65rem 0.75rem;
+  color: var(--color-ink);
   font: inherit;
-  background: #fff;
-  border: 1px solid #b9c6d0;
-  border-radius: .55rem;
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
 }
-.form-card input:focus,
-.form-card textarea:focus,
-.form-card select:focus { outline: 3px solid #0a8c9633; border-color: #087b83; }
-.field-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+.field-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
 .contributors-fieldset {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: .8rem;
+  gap: 0.8rem;
   min-inline-size: 0;
   width: 100%;
   max-width: 100%;
   margin: 0;
   padding: 1rem;
   box-sizing: border-box;
-  border: 1px solid #dbe3e8;
-  border-radius: .7rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
 }
-.contributors-fieldset > * { min-width: 0; max-width: 100%; }
-.contributors-fieldset legend { padding: 0 .35rem; font-weight: 750; }
-.thesis-categories { display: grid; gap: .65rem; min-width: 0; margin: 0; padding: 1rem; border: 1px solid #dbe3e8; border-radius: .7rem; }
-.thesis-categories legend { padding: 0 .35rem; font-weight: 750; }
-.thesis-categories p { margin: 0; color: #5d6b78; }
-.thesis-category-search { display: grid; gap: .4rem; max-width: 32rem; }
-.thesis-category-options { display: grid; gap: .15rem; max-height: 13rem; overflow-y: auto; padding: .4rem; border: 1px solid #dbe3e8; border-radius: .55rem; background: #fff; }
-.thesis-category-options label { display: flex !important; align-items: center; gap: .55rem !important; width: 100%; padding: .5rem .6rem; border-radius: .4rem; }
-.thesis-category-options label:hover { background: #f2f7f6; }
-.thesis-category-options input { flex: 0 0 1rem; width: 1rem; height: 1rem; margin: 0; }
-.thesis-category-empty { padding: .5rem .6rem; }
-.thesis-category-option--inactive { color: #697781; background: #f5f6f6 !important; }
-.contributor-editor { display: grid; gap: .75rem; min-width: 0; width: 100%; margin: 0; padding: 0; list-style: none; }
+.contributors-fieldset > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.contributors-fieldset legend,
+.thesis-categories legend {
+  padding: 0 0.35rem;
+  font-weight: 750;
+}
+.thesis-categories {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+}
+.thesis-categories p {
+  margin: 0;
+  color: var(--color-muted);
+}
+.thesis-category-search {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 32rem;
+}
+.thesis-category-options {
+  display: grid;
+  gap: 0.15rem;
+  max-height: 13rem;
+  overflow-y: auto;
+  padding: 0.4rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  background: white;
+}
+.thesis-category-options label {
+  display: flex !important;
+  align-items: center;
+  gap: 0.55rem !important;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+.thesis-category-options label:hover {
+  background: var(--admin-soft);
+}
+.thesis-category-options input {
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  min-height: 1.1rem;
+  margin: 0;
+}
+.thesis-category-empty {
+  padding: 0.5rem 0.6rem;
+}
+.thesis-category-option--inactive {
+  color: var(--color-muted);
+  background: var(--admin-soft) !important;
+}
+.contributor-editor {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 .contributor-row {
   display: grid;
-  grid-template-columns: minmax(8rem, .6fr) minmax(12rem, .8fr) minmax(12rem, 1fr);
+  grid-template-columns: minmax(8rem, 0.6fr) minmax(12rem, 0.8fr) minmax(12rem, 1fr);
   align-items: end;
-  gap: .75rem;
+  gap: 0.75rem;
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  padding: .8rem;
+  padding: 0.8rem;
   box-sizing: border-box;
-  border: 1px solid #e0e7eb;
-  border-radius: .65rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
 }
-.contributor-row--removable { grid-template-columns: minmax(8rem, .6fr) minmax(12rem, .8fr) minmax(12rem, 1fr) auto; }
-.contributor-row > strong { padding-bottom: .7rem; }
-.contributor-row label { min-width: 0; }
-.contributor-row select { min-width: 0; max-width: 100%; }
-.contributor-row:focus-within { position: relative; z-index: 2; }
-.create-author-check { display: flex !important; align-items: center; gap: .5rem !important; padding-bottom: .8rem; }
-.create-author-check input { width: 1.1rem; height: 1.1rem; margin: 0; }
-.registered-author-picker { position: relative; min-width: 0; }
-.author-results { position: absolute; z-index: 5; top: calc(100% + .25rem); left: 0; right: 0; max-height: 14rem; overflow-y: auto; margin: 0; padding: .25rem; list-style: none; background: #fff; border: 1px solid #b9c6d0; border-radius: .55rem; box-shadow: 0 8px 20px #17212b1a; }
-.author-results li { padding: .55rem .65rem; border-radius: .35rem; cursor: pointer; }
+.contributor-row--removable {
+  grid-template-columns: minmax(8rem, 0.6fr) minmax(12rem, 0.8fr) minmax(12rem, 1fr) auto;
+}
+.contributor-row > strong {
+  padding-bottom: 0.7rem;
+}
+.contributor-row label {
+  min-width: 0;
+}
+.contributor-row select {
+  min-width: 0;
+  max-width: 100%;
+}
+.contributor-row:focus-within {
+  position: relative;
+  z-index: 2;
+}
+.create-author-check {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem !important;
+  min-height: 2.85rem;
+}
+.create-author-check input,
+.publish-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  min-height: 1.15rem;
+  margin: 0;
+}
+.registered-author-picker {
+  position: relative;
+  min-width: 0;
+}
+.author-results {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+.author-results li {
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
 .author-results li:hover,
-.author-results li[aria-selected="true"] { background: #edf5f5; }
-.author-results li[aria-disabled="true"] { color: #8a969f; cursor: not-allowed; }
-.thesis-copy { min-width: 0; overflow-wrap: anywhere; }
-.contributor-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
-.contributor-actions button { padding: .55rem .65rem; }
-.add-coauthor { justify-self: start; }
-.publish-check { display: flex !important; align-items: center; gap: .55rem !important; }
+.author-results li[aria-selected="true"] {
+  background: var(--admin-soft);
+}
+.author-results li[aria-disabled="true"] {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+.thesis-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.contributor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.add-coauthor {
+  justify-self: start;
+}
+.publish-check {
+  display: flex !important;
+  align-items: center;
+  gap: 0.55rem !important;
+  min-height: 2.75rem;
+}
 .form-actions,
 .item-actions,
-.list-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-.form-actions { justify-content: flex-start; }
+.list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.form-actions {
+  justify-content: flex-start;
+}
 .primary,
 .secondary,
-.danger { padding: .7rem 1rem; border: 0; border-radius: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
-.primary { color: #fff; background: #087b83; }
-.secondary { color: #203040; background: #edf2f5; }
-.danger { color: #a83220; background: #fff0ed; }
+.danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.85rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+.primary {
+  color: white;
+  background: var(--admin-primary);
+}
+.primary:hover:not(:disabled) {
+  background: var(--admin-primary-dark);
+}
+.secondary {
+  color: var(--color-ink);
+  background: var(--admin-soft);
+  border-color: var(--admin-border);
+}
+.danger {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 8%, white);
+  border-color: color-mix(in srgb, var(--color-danger) 28%, white);
+}
 .primary:disabled,
 .secondary:disabled,
-.danger:disabled { opacity: .55; cursor: not-allowed; }
-.primary:focus-visible,
-.secondary:focus-visible,
-.danger:focus-visible { outline: 3px solid #f2a900; outline-offset: 2px; }
-.form-error { margin: 0; color: #a32619; }
-.list-heading p { margin: 0; color: #657482; }
-.empty-state { padding: 1.5rem; color: #596978; text-align: center; }
-.thesis-list { display: grid; gap: .8rem; margin: 0; padding: 0; list-style: none; }
-.thesis-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; border: 1px solid #e0e7eb; border-radius: .75rem; }
-.thesis-copy h3 { margin: .45rem 0; }
-.thesis-copy p { margin: .2rem 0 .5rem; color: #5d6b78; }
-.thesis-copy a { color: #087b83; overflow-wrap: anywhere; }
-.thesis-category-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin: .55rem 0; }
-.thesis-category-tags span { padding: .22rem .55rem; color: #07585e; background: #e4f2f2; border-radius: 999px; font-size: .82rem; font-weight: 700; }
-.thesis-category-tags .thesis-category-tag--inactive { color: #66727b; background: #edf0f1; }
-.status { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 700; }
-.status--published { color: #12633e; background: #e4f5ed; }
-.status--draft { color: #7a4a00; background: #fff3d9; }
+.danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.form-error {
+  margin: 0;
+}
+.list-heading p {
+  margin: 0;
+  color: var(--color-muted);
+}
+.empty-state {
+  padding: 1.5rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+.thesis-list {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.thesis-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+}
+.thesis-copy h3 {
+  margin: 0.45rem 0;
+}
+.thesis-copy p {
+  margin: 0.2rem 0 0.5rem;
+  color: var(--color-muted);
+}
+.thesis-copy a {
+  color: var(--admin-primary-dark);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.thesis-category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.55rem 0;
+}
+.thesis-category-tags span {
+  padding: 0.22rem 0.6rem;
+  color: var(--admin-primary-dark);
+  background: var(--admin-soft);
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.thesis-category-tags .thesis-category-tag--inactive {
+  color: var(--color-muted);
+  background: var(--color-soft);
+  border-color: var(--color-border);
+}
+.status {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+.status--published {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 14%, white);
+}
+.status--draft {
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 14%, white);
+}
 @container (max-width: 760px) {
   .contributor-row,
-  .contributor-row--removable { grid-template-columns: minmax(0, 1fr); }
-  .contributor-row > strong { padding-bottom: 0; }
-  .create-author-check { padding-bottom: 0; }
-  .field-row { grid-template-columns: minmax(0, 1fr); }
+  .contributor-row--removable {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .contributor-row > strong {
+    padding-bottom: 0;
+  }
+  .create-author-check {
+    padding-bottom: 0;
+  }
+  .field-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .form-actions,
-  .list-heading { flex-wrap: wrap; justify-content: flex-start; }
-  .thesis-item { align-items: flex-start; flex-direction: column; }
-  .item-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
+  .list-heading {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .thesis-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .item-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
 }
 @media (max-width: 760px) {
   .contributor-row,
-  .contributor-row--removable { grid-template-columns: minmax(0, 1fr); }
-  .contributor-row > strong { padding-bottom: 0; }
-  .create-author-check { padding-bottom: 0; }
-  .field-row { grid-template-columns: minmax(0, 1fr); }
-  .thesis-item { align-items: flex-start; flex-direction: column; }
-  .item-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
-  .list-heading { align-items: flex-start; flex-wrap: wrap; }
+  .contributor-row--removable {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .contributor-row > strong {
+    padding-bottom: 0;
+  }
+  .create-author-check {
+    padding-bottom: 0;
+  }
+  .field-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .thesis-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .item-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .list-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
 }
 </style>

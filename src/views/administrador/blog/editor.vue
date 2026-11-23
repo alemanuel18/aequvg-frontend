@@ -167,5 +167,173 @@ watch(editingId, () => { if (import.meta.client) void loadPost() })
 </template>
 
 <style scoped>
-.blog-editor-page{width:100%;min-width:0}.editor-card{padding:clamp(1.1rem,2.5vw,2.25rem);background:white;border:1px solid var(--color-border);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}.editor-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding-bottom:1.25rem;margin-bottom:1.5rem;border-bottom:1px solid var(--color-border)}.editor-heading h2{margin:.35rem 0;font-size:1.5rem}.editor-heading p,.entry-form small{color:var(--color-muted)}.eyebrow{font-size:.82rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--color-primary)}.entry-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem}.entry-form label{display:grid;align-content:start;gap:.45rem;font-weight:700}.entry-form label:nth-of-type(3),.entry-form label:nth-of-type(4),.entry-form label:nth-of-type(5){grid-column:1/-1}.entry-form input,.entry-form textarea,.entry-form select{width:100%;min-width:0;padding:.7rem .8rem;border:1px solid var(--color-border);border-radius:.5rem;background:white;color:var(--color-ink);font:inherit}.entry-form textarea{resize:vertical;line-height:1.6}.entry-form small{font-weight:400}.slug-controls{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}.auto-slug-button{padding:.25rem .45rem;border:0;background:transparent;color:var(--color-primary);font:inherit;font-size:.85rem;font-weight:750;text-decoration:underline;cursor:pointer}.cover-upload{display:grid;gap:.4rem}.file-input{padding:.4rem!important;background:var(--color-soft)!important}.cover-preview{display:block;width:min(100%,42rem);max-height:22rem;object-fit:contain;object-position:left center;border:1px solid var(--color-border);border-radius:.5rem;background:#f4f7f5}.autosave-note{grid-column:1/-1;margin:0;color:var(--color-muted);font-size:.9rem}.form-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.65rem;padding-top:.5rem}.primary-button,.secondary-button{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.65rem 1rem;border:1px solid transparent;border-radius:.5rem;font:inherit;font-weight:750;text-decoration:none;cursor:pointer}.primary-button{background:var(--color-primary);color:white}.secondary-button{background:white;color:var(--color-ink);border-color:var(--color-border)}.primary-button:disabled{opacity:.6;cursor:wait}@media(max-width:650px){.entry-form{grid-template-columns:1fr}.entry-form label:nth-of-type(3),.entry-form label:nth-of-type(4),.entry-form label:nth-of-type(5),.form-actions,.autosave-note{grid-column:auto}.editor-heading{display:grid}}
+.blog-editor-page {
+  display: grid;
+  gap: 1.5rem;
+  width: 100%;
+  min-width: 0;
+}
+.editor-card {
+  padding: clamp(1.1rem, 2.5vw, 2.25rem);
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.editor-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+.editor-heading h2 {
+  margin: 0.35rem 0;
+  font-size: 1.5rem;
+}
+.editor-heading p,
+.entry-form small {
+  color: var(--color-muted);
+}
+.eyebrow {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-primary);
+}
+.entry-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+.entry-form label {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  font-weight: 700;
+}
+.entry-form label:nth-of-type(3),
+.entry-form label:nth-of-type(4),
+.entry-form label:nth-of-type(5) {
+  grid-column: 1 / -1;
+}
+.entry-form input,
+.entry-form textarea,
+.entry-form select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.85rem;
+  padding: 0.68rem 0.8rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--color-ink);
+  font: inherit;
+}
+.entry-form textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+.entry-form small {
+  font-weight: 400;
+}
+.slug-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.auto-slug-button {
+  min-height: 2.75rem;
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--admin-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 750;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.cover-upload {
+  display: grid;
+  gap: 0.4rem;
+}
+.file-input {
+  padding: 0.45rem !important;
+  background: var(--admin-soft) !important;
+}
+.cover-preview {
+  display: block;
+  width: min(100%, 42rem);
+  max-height: 22rem;
+  object-fit: contain;
+  object-position: left center;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  background: var(--admin-soft);
+}
+.autosave-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding-top: 0.5rem;
+}
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.85rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+.primary-button {
+  background: var(--admin-primary);
+  color: white;
+}
+.primary-button:hover {
+  background: var(--admin-primary-dark);
+}
+.secondary-button {
+  background: white;
+  color: var(--color-ink);
+  border-color: var(--admin-border);
+}
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+@media (max-width: 650px) {
+  .entry-form {
+    grid-template-columns: 1fr;
+  }
+  .entry-form label:nth-of-type(3),
+  .entry-form label:nth-of-type(4),
+  .entry-form label:nth-of-type(5),
+  .form-actions,
+  .autosave-note {
+    grid-column: auto;
+  }
+  .editor-heading {
+    display: grid;
+  }
+}
 </style>

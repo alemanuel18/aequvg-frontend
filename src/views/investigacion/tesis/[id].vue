@@ -32,7 +32,7 @@ const errorMessage = computed(() => error.value instanceof PublicApiError ? erro
           <p v-else>{{ thesis.author }}</p>
         </section>
         <div v-if="thesis.summary" class="thesis-detail__summary">{{ thesis.summary }}</div>
-        <a class="thesis-detail__link" :href="thesis.url" target="_blank" rel="noopener noreferrer">Consultar tesis en el repositorio UVG <span aria-hidden="true">↗</span></a>
+        <AppButton class="thesis-detail__link" :href="thesis.url" target="_blank" rel="noopener noreferrer" variant="secondary">Consultar tesis en el repositorio UVG <span aria-hidden="true">↗</span></AppButton>
         <p class="thesis-detail__access-note">La disponibilidad del documento y cualquier requisito de acceso dependen del repositorio de origen.</p>
       </article>
     </AppSection>
@@ -40,6 +40,6 @@ const errorMessage = computed(() => error.value instanceof PublicApiError ? erro
 </template>
 
 <style scoped>
-.thesis-detail{display:grid;gap:1.4rem;max-width:52rem;margin-inline:auto}.thesis-detail__meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;color:var(--color-muted);font-size:.92rem}.thesis-detail__authors h2{margin:0 0 .65rem;font-size:1rem}.thesis-detail__authors ol{display:grid;gap:.5rem;margin:0;padding:0;list-style:none}.thesis-detail__authors li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;padding:.65rem .8rem;border:1px solid var(--color-border);border-radius:var(--radius-sm)}.thesis-detail__authors strong{color:var(--color-primary);font-size:.88rem}.thesis-detail__summary{white-space:pre-line;color:var(--color-ink);font-size:1.06rem;line-height:1.7}.thesis-detail__link{justify-self:start;padding:.7rem 1rem;color:var(--color-primary);border:1px solid var(--color-primary);border-radius:var(--radius-sm);font-weight:800;text-decoration:none}.thesis-detail__link:hover{color:white;background:var(--color-primary)}.thesis-detail__access-note{margin:-.8rem 0 0;color:var(--color-muted);font-size:.92rem}
-.thesis-detail__categories{display:flex;flex-wrap:wrap;gap:.5rem}.thesis-detail__categories span{padding:.3rem .7rem;color:#07585e;background:#e4f2f2;border-radius:999px;font-size:.88rem;font-weight:750}
+.thesis-detail{display:grid;gap:1.4rem;max-width:var(--container-reading);margin-inline:auto}.thesis-detail__meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;color:var(--color-muted);font-size:.92rem}.thesis-detail__authors h2{margin:0 0 .65rem;font-size:1rem}.thesis-detail__authors ol{display:grid;gap:.5rem;margin:0;padding:0;list-style:none}.thesis-detail__authors li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;padding:.65rem .8rem;border:1px solid var(--color-border);border-radius:var(--radius-sm)}.thesis-detail__authors strong{color:var(--color-primary);font-size:.88rem}.thesis-detail__summary{white-space:pre-line;color:var(--color-ink);font-size:1.06rem;line-height:1.7}.thesis-detail__link{justify-self:start}.thesis-detail__access-note{margin:-.8rem 0 0;color:var(--color-muted);font-size:.92rem}
+.thesis-detail__categories{display:flex;flex-wrap:wrap;gap:.5rem}.thesis-detail__categories span{padding:.3rem .7rem;color:var(--color-primary-dark);background:var(--color-soft);border:1px solid var(--color-border);border-radius:999px;font-size:.88rem;font-weight:750}
 </style>
