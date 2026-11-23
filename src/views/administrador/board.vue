@@ -301,11 +301,13 @@ const executeConfirmation = async () => {
           @submit.prevent="requestSave"
         >
           <div class="field">
-            <label for="board-first-names">Nombres</label
+            <label for="board-first-names">Nombres <span class="required-indicator" aria-hidden="true">*</span></label
             ><input
               id="board-first-names"
               ref="firstInput"
               v-model="form.firstNames"
+              required
+              minlength="2"
               autocomplete="given-name"
               :aria-invalid="!!errors.firstNames"
               :aria-describedby="errors.firstNames ? 'board-first-names-error' : undefined"
@@ -318,12 +320,12 @@ const executeConfirmation = async () => {
             >
           </div>
           <div class="field">
-            <label for="board-last-names">Apellidos</label>
-            <input id="board-last-names" v-model="form.lastNames" autocomplete="family-name" :aria-invalid="!!errors.lastNames" :aria-describedby="errors.lastNames ? 'board-last-names-error' : undefined" />
+            <label for="board-last-names">Apellidos <span class="required-indicator" aria-hidden="true">*</span></label>
+            <input id="board-last-names" v-model="form.lastNames" required minlength="2" autocomplete="family-name" :aria-invalid="!!errors.lastNames" :aria-describedby="errors.lastNames ? 'board-last-names-error' : undefined" />
             <span v-if="errors.lastNames" id="board-last-names-error" class="field-error" role="alert">{{ errors.lastNames }}</span>
           </div>
           <div class="field">
-            <label for="board-position">Cargo</label
+            <label for="board-position">Cargo <span class="required-indicator" aria-hidden="true">*</span></label
             ><select
               id="board-position"
               v-model="form.position"

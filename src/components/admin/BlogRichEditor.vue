@@ -137,7 +137,7 @@ onMounted(() => { if (editor.value) editor.value.innerHTML = renderHtml(props.mo
       <button type="button" :disabled="uploading" @mousedown.prevent="rememberSelection" @click="imageInput?.click()">{{ uploading ? 'Subiendo…' : '＋ Imagen' }}</button>
       <input ref="imageInput" class="sr-only" type="file" accept="image/jpeg,image/png,image/gif,image/webp" aria-label="Subir e insertar imagen" @change="insertUploadedImage">
     </div>
-    <div ref="editor" class="editable" contenteditable="true" role="textbox" aria-label="Contenido de la entrada" aria-multiline="true" @mouseup="rememberSelection" @keyup="rememberSelection" @input="onInput"></div>
+    <div ref="editor" class="editable" contenteditable="true" role="textbox" aria-label="Contenido de la entrada" aria-multiline="true" aria-required="true" @mouseup="rememberSelection" @keyup="rememberSelection" @input="onInput"></div>
     <p class="editor-hint">Selecciona texto y aplica formato. Las imágenes se cargarán en el contenido de la entrada.</p>
   </section>
 </template>

@@ -332,6 +332,10 @@ test('administra integrantes de la Junta Directiva con confirmación y persisten
   await page.getByRole('button', { name: 'Iniciar sesión' }).click()
   await page.goto('/administrador/junta-directiva')
   await expect(page.getByRole('heading', { name: 'Junta Directiva', level: 1 })).toBeVisible()
+  for (const id of ['board-first-names', 'board-last-names', 'board-position']) {
+    await expect(page.locator(`label[for="${id}"] .required-indicator`)).toHaveText('*')
+    await expect(page.locator(`#${id}`)).toHaveAttribute('required', '')
+  }
   await page.getByRole('button', { name: 'Agregar integrante' }).click()
   await expect(page.getByText('Ingresa los nombres.')).toBeVisible()
   await expect(page.getByLabel('Nombres')).toBeFocused()
