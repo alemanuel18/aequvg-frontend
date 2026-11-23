@@ -19,9 +19,19 @@ const loginAsStudent = async (page: import('@playwright/test').Page) => {
 const expectNoHorizontalOverflow = async (page: import('@playwright/test').Page) => {
   const dimensions = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
-    client: document.documentElement.clientWidth
+    client: document.documentElement.clientWidth,
+    overflowing: [...document.querySelectorAll<HTMLElement>('*')]
+      .map((element) => ({ element: element.tagName.toLowerCase(), className: String(element.className), right: Math.ceil(element.getBoundingClientRect().right), width: Math.ceil(element.getBoundingClientRect().width) }))
+      .filter(({ right }) => right > document.documentElement.clientWidth + 1)
+      .slice(0, 8),
+    layout: ['.admin-content', '.theses-admin', '.form-card', 'form', '.contributors-fieldset', '.contributor-editor', '.contributor-row'].map((selector) => {
+      const element = document.querySelector<HTMLElement>(selector)
+      if (!element) return { selector, missing: true }
+      const style = getComputedStyle(element)
+      return { selector, width: Math.ceil(element.getBoundingClientRect().width), scroll: element.scrollWidth, client: element.clientWidth, columns: style.gridTemplateColumns, containerType: style.containerType }
+    })
   }))
-  expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client)
+  expect(dimensions.scroll, JSON.stringify({ overflowing: dimensions.overflowing, layout: dimensions.layout })).toBeLessThanOrEqual(dimensions.client)
 }
 
 const selectTheses = async (page: import('@playwright/test').Page) => {
@@ -60,7 +70,32 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
 
   await page.getByLabel('Título').fill(originalTitle)
   await page.getByLabel(/URL del repositorio/).fill(repositoryUrl)
-  await page.getByLabel('Autor').fill('Andrea López')
+  await page.getByLabel('Nombre de Autor principal').fill('Andrea López')
+  await expect(page.locator('.contributor-row select').first()).toContainText('Ingresar autor nuevo')
+  const nameLabel = page.locator('.contributor-row .field-label').filter({ hasText: 'Nombre completo' })
+  const nameLabelBox = await nameLabel.boundingBox()
+  const nameRequiredMarkBox = await nameLabel.locator('[aria-hidden="true"]').boundingBox()
+  expect(nameLabelBox).not.toBeNull()
+  expect(nameRequiredMarkBox).not.toBeNull()
+  expect(Math.abs(nameLabelBox!.y - nameRequiredMarkBox!.y)).toBeLessThan(4)
+  await page.getByRole('button', { name: 'Agregar coautor' }).click()
+  await page.getByLabel('Nombre de Coautor 1').fill('Luis García')
+  await page.getByRole('button', { name: 'Agregar coautor' }).click()
+  await page.getByLabel('Nombre de Coautor 2').fill('Carlos Pérez')
+  await expect(page.locator('.contributor-row strong')).toHaveText(['Autor principal', 'Coautor 1', 'Coautor 2'])
+  await expect(page.locator('.contributor-row input[aria-label="Nombre de Coautor 1"]')).toHaveValue('Carlos Pérez')
+  await expect(page.locator('.contributor-row input[aria-label="Nombre de Coautor 2"]')).toHaveValue('Luis García')
+  await expect(page.getByRole('button', { name: /Mover/ })).toHaveCount(0)
+  await page.setViewportSize({ width: 1920, height: 1080 })
+  for (const width of [967, 768, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.waitForTimeout(250)
+    await expectNoHorizontalOverflow(page)
+    const rowSize = await page.locator('.contributor-row').first().evaluate((element) => ({ scroll: element.scrollWidth, client: element.clientWidth }))
+    expect(rowSize.scroll).toBeLessThanOrEqual(rowSize.client)
+    const fieldsetRight = await page.locator('.contributors-fieldset').evaluate((element) => Math.ceil(element.getBoundingClientRect().right))
+    expect(fieldsetRight).toBeLessThanOrEqual(width)
+  }
   await page.getByLabel('Año').fill('2026')
   await page.getByLabel('Resumen').fill('Estudio de catalizadores de origen natural para reducir residuos en procesos de síntesis.')
   await page.getByLabel('Publicar ahora').check()
@@ -77,6 +112,14 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
   await page.getByRole('link', { name: `Ver tesis: ${originalTitle}` }).click()
   await expect(page.getByRole('heading', { name: originalTitle })).toBeVisible()
   await expect(page.getByRole('link', { name: /Consultar tesis en el repositorio UVG/ })).toHaveAttribute('href', repositoryUrl)
+  const publicAuthors = page.locator('.thesis-detail__authors li')
+  await expect(publicAuthors).toHaveCount(3)
+  await expect(publicAuthors.nth(0)).toContainText('Andrea López')
+  await expect(publicAuthors.nth(0)).toContainText('Autor principal')
+  await expect(publicAuthors.nth(1)).toContainText('Carlos Pérez')
+  await expect(publicAuthors.nth(1)).toContainText('Coautor')
+  await expect(publicAuthors.nth(2)).toContainText('Luis García')
+  await expect(publicAuthors.nth(2)).toContainText('Coautor')
 
   await page.setViewportSize({ width: 320, height: 720 })
   await expectNoHorizontalOverflow(page)
@@ -97,6 +140,12 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
   await selectTheses(page)
   await expect(page.getByRole('heading', { name: updatedTitle })).toBeVisible()
   await expect(page.getByText('Resumen actualizado para verificar que la edición se refleja en la vista pública.')).toBeVisible()
+  await page.getByRole('link', { name: `Ver tesis: ${updatedTitle}` }).click()
+  await expect(page.getByRole('heading', { name: updatedTitle })).toBeVisible()
+  await expect(page.locator('.thesis-detail__authors li')).toHaveCount(3)
+  await expect(page.locator('.thesis-detail__authors li').nth(0)).toContainText('Andrea López')
+  await expect(page.locator('.thesis-detail__authors li').nth(1)).toContainText('Carlos Pérez')
+  await expect(page.locator('.thesis-detail__authors li').nth(2)).toContainText('Luis García')
 
   await page.goto('/administrador/tesis')
   await updatedAdminItem.getByRole('button', { name: 'Eliminar' }).click()
@@ -122,7 +171,7 @@ test('muestra errores claros por URL insegura, duplicado y fallo de guardado', a
   await page.goto('/administrador/tesis')
 
   await page.getByLabel('Título').fill('Intento con URL insegura')
-  await page.getByLabel('Autor').fill('Autora de prueba')
+  await page.getByLabel('Autor').fill('Autor de prueba')
   await page.getByLabel('Año').fill('2026')
   await page.getByLabel('Resumen').fill('Resumen breve de prueba.')
   const urlField = page.getByLabel(/URL del repositorio/)
@@ -155,7 +204,7 @@ test('bloquea el alta si falta título, autor, año o resumen aunque se proporci
 
   const urlField = page.getByLabel(/URL del repositorio/)
   const titleField = page.getByLabel('Título')
-  const authorField = page.getByLabel('Autor')
+  const authorField = page.getByLabel('Nombre de Autor principal')
   const yearField = page.getByLabel('Año')
   const summaryField = page.getByLabel('Resumen')
   await urlField.fill('https://repositorio.uvg.edu.gt/handle/123456789/4914')

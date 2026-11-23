@@ -10,9 +10,9 @@ El flujo que sí está implementado es administración manual de enlaces por una
 
 ## Matriz aprobada para S6-04 (vinculada a SCRUM-300)
 
-Título, autor principal en texto simple, año, resumen y URL del repositorio son obligatorios tanto en la vista administrativa como en la API. El título requiere al menos 3 caracteres; el autor, hasta 300; el año debe estar entre 1900 y 9999; el resumen debe contener texto y no superar 12 000 caracteres. La URL debe usar HTTPS y ser única entre tesis después de recortar espacios externos y normalizar esquema y host, preservando la ruta. El identificador de repositorio se retiró del contrato y de la vista.
+Título, autor principal, año, resumen y URL del repositorio son obligatorios tanto en la vista administrativa como en la API. El título requiere al menos 3 caracteres; cada nombre admite hasta 300 caracteres; el año debe estar entre 1900 y 9999; el resumen debe contener texto y no superar 12 000 caracteres. La URL debe usar HTTPS y ser única entre tesis después de recortar espacios externos y normalizar esquema y host, preservando la ruta. El identificador de repositorio se retiró del contrato y de la vista.
 
-La gestión estructurada de autor principal y coautores queda para otro Scrum. El módulo no permite slug personalizado ni cargar archivos; conserva el enlace al repositorio UVG.
+La gestión estructurada de autor principal y coautores está implementada en S6-06: cada tesis tiene un autor principal primero y los coautores aparecen en orden alfabético. El módulo no permite slug personalizado ni cargar archivos; conserva el enlace al repositorio UVG.
 
 ## Decisión de automatización
 
@@ -25,6 +25,8 @@ S6-04 está implementado y sus criterios técnicos están verificados: el alta y
 Evidencia reproducible: `docker compose exec -e THESIS_DATABASE_TEST=true backend bun run vitest run tests/integration/thesis.api.database.test.ts` — 1 archivo, 4/4 pruebas aprobadas. La matriz E2E y el registro detallado están en [thesis-e2e-permissions.md](./thesis-e2e-permissions.md) y [thesis-defect-log.md](./thesis-defect-log.md).
 
 ## Pendientes del módulo fuera de S6-04
+
+- S6-06 implementa autoría estructurada en backend y frontend. Verificación en la rama `feature/thesis-authorship`: integración PostgreSQL 6/6 y E2E de tesis 2/2 aprobados; typecheck y suites generales también pasan. Se probó además el backfill en una base efímera con una tesis legado sintética: el texto quedó intacto y se vinculó como `PRINCIPAL`, orden 1. La base de desarrollo activa se auditó en solo lectura y no se modificó.
 
 - Para probar acceso externo restringido, obtener un ejemplo de Química con esa restricción y las credenciales UVG apropiadas; los 65 registros consultados reportaron `open.access`.
 - Registrar la revisión de una persona real de la junta. La integración usa cuentas temporales para comprobar permisos técnicos.

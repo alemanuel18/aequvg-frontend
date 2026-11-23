@@ -24,6 +24,7 @@ No se encontraron defectos funcionales abiertos en los casos repetidos. La prueb
 - La junta no ha validado personalmente los permisos ni el flujo.
 - No se encontró un documento con embargo o acceso restringido entre los 65 registros de Química consultados.
 - S6-04 aplica título, autor principal, año, resumen y URL HTTPS del repositorio como obligatorios; retiró el identificador del contrato. El motor de unicidad conserva la ruta y normaliza espacios externos, esquema y host.
+- S6-06 agrega autoría principal y coautores alfabéticos, selección explícita de registros reutilizables, migración de legado como autor principal y visualización en administración y catálogo público. El orden lo deriva la aplicación; no se puede editar manualmente. La integración PostgreSQL (6/6), E2E (2/2), typecheck y suite frontend (68/68) aprobaron.
 - Falta registrar la validación de una persona real de la junta; el rol temporal solo prueba la autorización técnica.
 
 La matriz completa de roles y criterios está en [thesis-e2e-permissions.md](thesis-e2e-permissions.md).

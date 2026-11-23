@@ -142,7 +142,11 @@ type MockThesis = {
   createdAt: string
   updatedAt: string
   publishedAt: string | null
+  contributors: Array<{ personId: number; role: 'PRINCIPAL' | 'COAUTOR'; authorOrder: number; person: { id: number; name: string } }>
 }
+type MockAuthor = { id: number; name: string }
+let mockAuthors: MockAuthor[] = [{ id: 1, name: 'Estudiante de prueba' }]
+let nextMockAuthorId = 2
 const initialTheses = (): MockThesis[] => [{
   id: 1,
   title: 'Tesis de ejemplo',
@@ -153,10 +157,42 @@ const initialTheses = (): MockThesis[] => [{
   createdById: 1,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  publishedAt: '2026-01-01T00:00:00.000Z'
+  publishedAt: '2026-01-01T00:00:00.000Z',
+  contributors: [{ personId: 1, role: 'PRINCIPAL', authorOrder: 1, person: { id: 1, name: 'Estudiante de prueba' } }]
 }]
 let theses = initialTheses()
 let nextThesisId = 2
+type MockContributorInput = { personId?: number; name?: string }
+const resolveMockContributors = (inputs: MockContributorInput[]) => {
+  if (!inputs.length || inputs.length > 50) return null
+  const selectedIds = new Set<number>()
+  const result: MockThesis['contributors'] = []
+  for (const [index, input] of inputs.entries()) {
+    if ((input.personId === undefined) === (input.name === undefined)) return null
+    let person: MockAuthor | undefined
+    if (input.personId !== undefined) {
+      if (selectedIds.has(input.personId)) return null
+      selectedIds.add(input.personId)
+      person = mockAuthors.find(({ id }) => id === input.personId)
+      if (!person) return null
+    } else {
+      const name = input.name?.trim() || ''
+      if (!name || name.length > 300) return null
+      person = { id: nextMockAuthorId++, name }
+      mockAuthors.push(person)
+    }
+    result.push({ personId: person.id, role: index === 0 ? 'PRINCIPAL' : 'COAUTOR', authorOrder: index + 1, person: { ...person } })
+  }
+  const principal = result[0]!
+  const coauthors = result.slice(1).sort((a, b) =>
+    new Intl.Collator('es', { sensitivity: 'base' }).compare(a.person.name, b.person.name) || a.personId - b.personId
+  )
+  return [principal, ...coauthors].map((contributor, index) => ({
+    ...contributor,
+    role: index === 0 ? 'PRINCIPAL' as const : 'COAUTOR' as const,
+    authorOrder: index + 1
+  }))
+}
 
 let nextBoardMemberId = 103
 let boardMembers = [
@@ -323,13 +359,20 @@ Bun.serve({
       studentSessionActive = false
       return new Response(null, { status: 204, headers: { 'access-control-allow-origin': allowedOrigin, 'access-control-allow-credentials': 'true', 'set-cookie': 'aequvg_student_session=; Max-Age=0; Path=/' } })
     }
+    if (url.pathname === '/api/v1/admin/thesis-authors') {
+      if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
+      if (!activeUser.permissions.includes('PAPERS_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para gestionar tesis.' } }, 403)
+      const q = url.searchParams.get('q')?.trim().toLowerCase() || ''
+      const items = mockAuthors.filter(({ name }) => !q || name.toLowerCase().includes(q)).slice(0, 100)
+      return json({ items, pagination: { page: 1, pageSize: 100, total: items.length } })
+    }
     if (url.pathname === '/api/v1/admin/theses' || url.pathname.match(/^\/api\/v1\/admin\/theses\/\d+$/)) {
       if (!adminSessionActive || !request.headers.get('cookie')?.includes('aequvg_session=session-e2e')) return json({ error: { code: 'UNAUTHORIZED', message: 'Se requiere una sesión administrativa.' } }, 401)
       if (!activeUser.permissions.includes('PAPERS_MANAGE')) return json({ error: { code: 'FORBIDDEN', message: 'No tienes permiso para gestionar tesis.' } }, 403)
       if (request.method !== 'GET' && request.headers.get('x-csrf-token') !== 'csrf-e2e') return json({ error: { code: 'CSRF_TOKEN_INVALID', message: 'El token de protección CSRF no es válido.' } }, 403)
       if (request.method === 'GET') return json({ items: [...theses].sort((a, b) => b.id - a.id), pagination: { page: 1, pageSize: 100, total: theses.length } })
       if (request.method === 'POST') {
-        const body = await request.json() as Partial<MockThesis>
+        const body = await request.json() as Partial<Omit<MockThesis, 'contributors'>> & { contributors?: MockContributorInput[] }
         if (body.url?.includes('/fallo-guardado')) return json({ error: { code: 'THESIS_SAVE_FAILED', message: 'Fallo simulado al guardar.' } }, 503)
         let parsedUrl: URL
         try { parsedUrl = new URL(body.url?.trim() || '') } catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'La URL del repositorio debe comenzar con https://.' } }, 422) }
@@ -337,11 +380,14 @@ Bun.serve({
         const normalizedUrl = parsedUrl.toString()
         if (theses.some(thesis => new URL(thesis.url).toString() === normalizedUrl)) return json({ error: { code: 'THESIS_LINK_EXISTS', message: 'Ya existe una tesis con esa URL del repositorio.' } }, 409)
         if (!body.title?.trim() || body.title.trim().length < 3) return json({ error: { code: 'THESIS_TITLE_REQUIRED', message: 'Escribe un título de al menos 3 caracteres.' } }, 422)
-        if (!body.author?.trim()) return json({ error: { code: 'THESIS_AUTHOR_REQUIRED', message: 'Escribe el autor de la tesis.' } }, 422)
+        if (body.author !== undefined && body.contributors !== undefined) return json({ error: { code: 'THESIS_AUTHOR_FIELDS_CONFLICT', message: 'Envía contributors o author, no ambos.' } }, 422)
+        const contributorInputs = body.contributors ?? (body.author ? [{ name: body.author }] : [])
+        const contributors = resolveMockContributors(contributorInputs)
+        if (!contributors?.length) return json({ error: { code: 'THESIS_CONTRIBUTORS_REQUIRED', message: 'Agrega un autor principal y ordena los coautores.' } }, 422)
         if (!Number.isInteger(body.publicationYear) || Number(body.publicationYear) < 1900 || Number(body.publicationYear) > 9999) return json({ error: { code: 'THESIS_PUBLICATION_YEAR_REQUIRED', message: 'Ingresa un año de publicación válido (1900–9999).' } }, 422)
         if (!body.summary?.trim()) return json({ error: { code: 'THESIS_SUMMARY_REQUIRED', message: 'Escribe el resumen de la tesis.' } }, 422)
         const now = new Date().toISOString()
-        const created: MockThesis = { id: nextThesisId++, title: body.title.trim(), author: body.author.trim(), publicationYear: Number(body.publicationYear), summary: body.summary.trim(), url: normalizedUrl, createdById: 1, createdAt: now, updatedAt: now, publishedAt: body.publishedAt ?? null }
+        const created: MockThesis = { id: nextThesisId++, title: body.title.trim(), author: contributors[0]!.person.name, contributors, publicationYear: Number(body.publicationYear), summary: body.summary.trim(), url: normalizedUrl, createdById: 1, createdAt: now, updatedAt: now, publishedAt: body.publishedAt ?? null }
         theses.unshift(created)
         return json(created, 201)
       }
@@ -349,7 +395,7 @@ Bun.serve({
       const index = theses.findIndex(thesis => thesis.id === id)
       if (index < 0) return json({ error: { code: 'THESIS_NOT_FOUND', message: 'La tesis no existe.' } }, 404)
       if (request.method === 'PUT') {
-        const body = await request.json() as Partial<MockThesis>
+        const body = await request.json() as Partial<Omit<MockThesis, 'contributors'>> & { contributors?: MockContributorInput[] }
         if (body.url !== undefined) {
           try {
             const parsedUrl = new URL(body.url.trim())
@@ -359,12 +405,24 @@ Bun.serve({
           if (theses.some((thesis, thesisIndex) => thesisIndex !== index && new URL(thesis.url).toString() === body.url)) return json({ error: { code: 'THESIS_LINK_EXISTS', message: 'Ya existe una tesis con esa URL del repositorio.' } }, 409)
         }
         if (body.title !== undefined && body.title.trim().length < 3) return json({ error: { code: 'THESIS_TITLE_REQUIRED', message: 'Escribe un título de al menos 3 caracteres.' } }, 422)
-        if (body.author !== undefined && !body.author.trim()) return json({ error: { code: 'THESIS_AUTHOR_REQUIRED', message: 'Escribe el autor de la tesis.' } }, 422)
+        if (body.author !== undefined && body.contributors !== undefined) return json({ error: { code: 'THESIS_AUTHOR_FIELDS_CONFLICT', message: 'Envía contributors o author, no ambos.' } }, 422)
+        let contributors = theses[index]!.contributors
+        if (body.contributors !== undefined) {
+          const resolved = resolveMockContributors(body.contributors)
+          if (!resolved?.length) return json({ error: { code: 'INVALID_THESIS_CONTRIBUTORS', message: 'Revisa la lista de autores.' } }, 422)
+          contributors = resolved
+        } else if (body.author !== undefined) {
+          const existingCoauthors = contributors.filter(({ role }) => role === 'COAUTOR').map(({ personId }) => ({ personId }))
+          const resolved = resolveMockContributors([{ name: body.author }, ...existingCoauthors])
+          if (!resolved?.length) return json({ error: { code: 'INVALID_THESIS_CONTRIBUTORS', message: 'Revisa la lista de autores.' } }, 422)
+          contributors = resolved
+        }
         if (body.publicationYear !== undefined && (!Number.isInteger(body.publicationYear) || body.publicationYear < 1900 || body.publicationYear > 9999)) return json({ error: { code: 'THESIS_PUBLICATION_YEAR_REQUIRED', message: 'Ingresa un año de publicación válido (1900–9999).' } }, 422)
         if (body.summary !== undefined && !body.summary?.trim()) return json({ error: { code: 'THESIS_SUMMARY_REQUIRED', message: 'Escribe el resumen de la tesis.' } }, 422)
         if (body.title !== undefined) body.title = body.title.trim()
-        if (body.author !== undefined) body.author = body.author.trim()
-        theses[index] = { ...theses[index]!, ...body, id, updatedAt: new Date().toISOString() }
+        const author = contributors[0]?.person.name ?? theses[index]!.author
+        const { contributors: _contributors, ...metadata } = body
+        theses[index] = { ...theses[index]!, ...metadata, id, author, contributors, updatedAt: new Date().toISOString() }
         return json(theses[index])
       }
       if (request.method === 'DELETE') {
@@ -475,6 +533,8 @@ Bun.serve({
       nextAdminEventId = 14
       theses = initialTheses()
       nextThesisId = 2
+      mockAuthors = [{ id: 1, name: 'Estudiante de prueba' }]
+      nextMockAuthorId = 2
       activeUser = body.email === 'editor@uvg.edu.gt' ? limitedUser : adminUser
       const response = json({ user: activeUser, csrfToken: 'csrf-e2e', expiresAt: '2030-01-01T00:00:00.000Z' })
       response.headers.append('set-cookie', 'aequvg_session=session-e2e; Path=/; HttpOnly; SameSite=Lax')
