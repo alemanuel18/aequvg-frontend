@@ -143,5 +143,92 @@ onMounted(() => { if (editor.value) editor.value.innerHTML = renderHtml(props.mo
 </template>
 
 <style scoped>
-.rich-editor{min-width:0;border:1px solid var(--color-border);border-radius:.5rem;overflow:hidden}.toolbar{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;padding:.5rem;background:var(--color-soft);border-bottom:1px solid var(--color-border)}.toolbar button,.format-picker select{min-height:2.25rem;padding:.4rem .6rem;border:1px solid var(--color-border);border-radius:.35rem;background:white;color:var(--color-ink);font:inherit;cursor:pointer}.toolbar button:disabled{opacity:.55;cursor:wait}.format-picker{display:flex;align-items:center;gap:.4rem;padding-inline:.25rem;font-size:.82rem;font-weight:650}.toolbar-divider{width:1px;height:1.5rem;margin-inline:.25rem;background:var(--color-border)}.editable{min-height:20rem;padding:1rem;outline:none;line-height:1.65;overflow-wrap:anywhere}.editable:focus{box-shadow:inset 0 0 0 2px var(--color-primary)}.editable :deep(img){display:block;max-width:100%;max-height:34rem;object-fit:contain;margin:1rem 0}.editable :deep(h1){font-size:2rem}.editable :deep(h2){font-size:1.65rem}.editable :deep(h3){font-size:1.35rem}.editor-hint{margin:0;padding:.5rem .8rem;border-top:1px solid var(--color-border);font-size:.82rem;color:var(--color-muted)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.rich-editor {
+  min-width: 0;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding: 0.55rem;
+  background: var(--admin-soft);
+  border-bottom: 1px solid var(--admin-border);
+}
+.toolbar button,
+.format-picker select {
+  min-height: 2.75rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+}
+.toolbar button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.format-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-inline: 0.25rem;
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+.toolbar-divider {
+  width: 1px;
+  height: 1.5rem;
+  margin-inline: 0.25rem;
+  background: var(--admin-border);
+}
+.editable {
+  min-height: 20rem;
+  padding: 1rem;
+  outline: none;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.editable:focus {
+  box-shadow: inset 0 0 0 2px var(--admin-primary);
+}
+.editable :deep(img) {
+  display: block;
+  max-width: 100%;
+  max-height: 34rem;
+  object-fit: contain;
+  margin: 1rem 0;
+}
+.editable :deep(h1) {
+  font-size: 2rem;
+}
+.editable :deep(h2) {
+  font-size: 1.65rem;
+}
+.editable :deep(h3) {
+  font-size: 1.35rem;
+}
+.editor-hint {
+  margin: 0;
+  padding: 0.5rem 0.8rem;
+  border-top: 1px solid var(--admin-border);
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 </style>

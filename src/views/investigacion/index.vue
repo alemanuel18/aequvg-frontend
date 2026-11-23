@@ -314,7 +314,7 @@ const thesisAuthorSummary = (thesis: PublicThesis) => {
   font-size: 0.88rem;
 }
 .research-category-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0; }
-.research-category-tags span { padding: .22rem .55rem; color: #07585e; background: #e4f2f2; border-radius: 999px; font-size: .8rem; font-weight: 750; }
+.research-category-tags span { padding: .22rem .55rem; color: var(--color-primary-dark); background: var(--color-soft); border: 1px solid var(--color-border); border-radius: 999px; font-size: .8rem; font-weight: 750; }
 .card__link {
   color: var(--color-primary);
   text-decoration: none;

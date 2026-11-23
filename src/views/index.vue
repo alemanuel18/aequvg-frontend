@@ -342,7 +342,12 @@ const featuredNews = computed(() => featured.value?.news?.slice(0, 3) ?? []);
 }
 
 .acs-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding-block: 0.35rem;
   color: white;
   font-weight: 800;
   text-underline-offset: 0.2em;

@@ -155,4 +155,143 @@ test.describe("regresión visual transversal", () => {
     await expect(page.getByText("La imagen se cargó y quedó seleccionada.")).toBeVisible();
     await expect(page.getByText("Seleccionada: nueva.png")).toBeVisible();
   });
+
+  test.describe("SCRUM-328 · matriz responsive de ACS y Tesis", () => {
+    const viewports = [
+      { width: 320, height: 568 },
+      { width: 360, height: 800 },
+      { width: 390, height: 844 },
+      { width: 430, height: 932 },
+      { width: 768, height: 1024 },
+      { width: 1024, height: 768 },
+      { width: 1366, height: 768 },
+      { width: 1920, height: 1080 },
+    ] as const;
+
+    const acsAndThesisPublicRoutes = [
+      { path: "/", title: null, backHref: null },
+      { path: "/blog", title: "Blog ACS", backHref: null },
+      {
+        path: "/blog/experiencias-asoquimica-acs",
+        title: "Experiencias de AsoQuímica en ACS",
+        backHref: "/blog",
+      },
+      { path: "/investigacion", title: "Investigación", backHref: null },
+      {
+        path: "/investigacion/tesis/1",
+        title: "Tesis de ejemplo",
+        backHref: "/investigacion",
+      },
+    ] as const;
+
+    test("mantiene vistas públicas de ACS y Tesis sin overflow y con jerarquía válida en todos los breakpoints", async ({
+      page,
+    }) => {
+      for (const route of acsAndThesisPublicRoutes) {
+        await page.goto(route.path);
+        await expect(page.locator("body")).toBeVisible();
+
+        for (const viewport of viewports) {
+          await page.setViewportSize(viewport);
+          const metrics = await page.evaluate(() => ({
+            scroll: document.documentElement.scrollWidth,
+            client: document.documentElement.clientWidth,
+            h1Count: document.querySelectorAll("h1").length,
+          }));
+          expect(
+            metrics.scroll,
+            `${route.path} en ${viewport.width}x${viewport.height} genera overflow horizontal`,
+          ).toBeLessThanOrEqual(metrics.client);
+          expect(
+            metrics.h1Count,
+            `${route.path} en ${viewport.width}x${viewport.height} debe tener exactamente 1 h1`,
+          ).toBe(1);
+        }
+
+        if (route.title) {
+          await expect(page.locator("h1")).toHaveText(route.title);
+        }
+        if (route.backHref) {
+          const backLink = page.locator(".detail-back-link");
+          await expect(backLink).toBeVisible();
+          await expect(backLink).toHaveAttribute("href", route.backHref);
+          const backBox = await backLink.boundingBox();
+          expect(backBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+        }
+      }
+
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/");
+      const acsContactBox = await page.locator(".acs-contact").boundingBox();
+      expect(acsContactBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+      await page.goto("/investigacion/tesis/1");
+      const repoLink = page.getByRole("link", {
+        name: /Consultar tesis en el repositorio UVG/,
+      });
+      await expect(repoLink).toHaveAttribute("target", "_blank");
+      await expect(repoLink).toHaveAttribute("rel", /noopener noreferrer/);
+      const repoBox = await repoLink.boundingBox();
+      expect(repoBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    });
+
+    test("mantiene vistas administrativas de ACS y Tesis estables en móvil y escritorio", async ({
+      page,
+    }) => {
+      await loginAsAdmin(page);
+
+      const consoleErrors: string[] = [];
+      const pageErrors: string[] = [];
+      page.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+
+      for (const route of [
+        "/administrador/blog",
+        "/administrador/blog/editor",
+        "/administrador/tesis",
+      ]) {
+        await page.goto(route);
+        await expect(page.locator("main#admin-content")).toBeVisible();
+
+        for (const viewport of viewports) {
+          await page.setViewportSize(viewport);
+          const metrics = await page.evaluate(() => ({
+            scroll: document.documentElement.scrollWidth,
+            client: document.documentElement.clientWidth,
+            mainCount: document.querySelectorAll("main").length,
+            h1Count: document.querySelectorAll("h1").length,
+          }));
+          expect(
+            metrics.scroll,
+            `${route} en ${viewport.width}x${viewport.height} genera overflow horizontal`,
+          ).toBeLessThanOrEqual(metrics.client);
+          expect(
+            metrics.mainCount,
+            `${route} debe tener exactamente 1 landmark main`,
+          ).toBe(1);
+          expect(
+            metrics.h1Count,
+            `${route} debe tener exactamente 1 h1`,
+          ).toBe(1);
+        }
+      }
+
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/administrador/blog/editor");
+      const boldBox = await page
+        .getByRole("button", { name: "Negrita" })
+        .boundingBox();
+      expect(boldBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+      const sidebar = page.locator("#admin-sidebar");
+      expect(
+        await sidebar.evaluate((el) => el.contains(document.activeElement)),
+      ).toBe(false);
+
+      expect(pageErrors, pageErrors.join("\n")).toEqual([]);
+      expect(consoleErrors, consoleErrors.join("\n")).toEqual([]);
+    });
+  });
 });
