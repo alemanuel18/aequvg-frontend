@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { PublicApiError } from '~/services/api'
 import { useAdminStudentUsersApi, type ManagedAccountType } from '~/services/admin-student-users'
-import type { ManagedStudentAccount, ManagedStudentAccountDetail, StudentAccountStatus } from '~/types/api'
+import type { ManagedStudentAccount, ManagedStudentAccountDetail, ModerationPolicySummary, StudentAccountStatus } from '~/types/api'
 
 const api = useAdminStudentUsersApi()
 const toast = useToast()
 const accounts = ref<ManagedStudentAccount[]>([])
 const detail = ref<ManagedStudentAccountDetail | null>(null)
+const moderationPolicy = ref<ModerationPolicySummary | null>(null)
+const moderationPolicyError = ref('')
 const loading = ref(true)
 const detailLoading = ref(false)
 const saving = ref(false)
@@ -30,6 +32,9 @@ const confirmTitle = ref('Confirmar acción sobre la cuenta')
 const confirmMessage = ref('')
 const confirmLabel = ref('Confirmar')
 const confirmVariant = ref<'primary' | 'danger' | 'warning'>('warning')
+const reviewingIncidentId = ref<number | null>(null)
+const incidentReviewReason = ref('')
+const reviewingIncident = ref(false)
 
 const statusLabel = (status: StudentAccountStatus) => ({
   ACTIVO: 'Activa', BLOQUEADO_TEMPORAL: 'Bloqueada temporalmente', BLOQUEADO_PERMANENTE: 'Bloqueada permanentemente', ELIMINADO: 'Eliminada'
@@ -114,7 +119,53 @@ const executeAction = async () => {
 }
 const changePage = (next: number) => { if (next < 1 || next > totalPages.value || loading.value) return; page.value = next; void load() }
 const accountType = (account: ManagedStudentAccount) => account.isStudent ? 'Estudiante' : 'Interesado'
-onMounted(load)
+const loadModerationPolicy = async () => {
+  try { moderationPolicy.value = await api.moderationPolicy(); moderationPolicyError.value = '' }
+  catch (error) { moderationPolicyError.value = error instanceof PublicApiError ? error.message : 'No se pudo cargar la política de moderación.' }
+}
+const windowHours = computed(() => moderationPolicy.value?.recurrenceWindowHours ?? 0)
+const windowLabel = computed(() => {
+  const hours = windowHours.value
+  if (!hours) return ''
+  if (hours === 8760) return '12 meses'
+  if (hours % 720 === 0) return `${hours / 720} ${hours / 720 === 1 ? 'mes' : 'meses'}`
+  if (hours % 24 === 0) return `${hours / 24} ${hours / 24 === 1 ? 'día' : 'días'}`
+  return `${hours} horas`
+})
+const currentViolations = computed(() => {
+  if (!detail.value || !windowHours.value) return []
+  const cutoff = Date.now() - windowHours.value * 60 * 60 * 1000
+  return detail.value.moderationIncidents.filter(incident => incident.countsTowardReincidence && new Date(incident.createdAt).getTime() >= cutoff)
+})
+const recentIncidents = computed(() => {
+  if (!detail.value || !windowHours.value) return []
+  const cutoff = Date.now() - windowHours.value * 60 * 60 * 1000
+  return detail.value.moderationIncidents.filter(incident => new Date(incident.createdAt).getTime() >= cutoff)
+})
+const strikeCards = computed(() => {
+  if (!moderationPolicy.value) return []
+  const steps = moderationPolicy.value.sanctions
+  const cards: Array<{ after: number; action: 'TEMPORARY' | 'PERMANENT' | 'WARNING'; label: string }> = steps.map(step => ({ ...step, label: step.action === 'TEMPORARY' ? `Bloqueo temporal · ${step.durationHours % 24 === 0 ? `${step.durationHours / 24} días` : `${step.durationHours} horas`}` : 'Bloqueo permanente' }))
+  if (!steps.some(step => step.after === 1)) cards.unshift({ after: 1, action: 'WARNING' as const, label: 'Advertencia' })
+  return cards.sort((a, b) => a.after - b.after)
+})
+const incidentSourceLabel = (source: string) => ({
+  COMMENT_CREATE: 'Comentario nuevo', COMMENT_EDIT: 'Edición de comentario', PROFILE_NAME_UPDATE: 'Cambio de nombre'
+})[source] ?? 'Contenido'
+const sanctionLabel = (sanction: string) => ({ NONE: 'Advertencia', TEMPORARY: 'Bloqueo temporal', PERMANENT: 'Bloqueo permanente' })[sanction] ?? 'Registrada'
+const excludeIncident = async (incidentId: number) => {
+  if (!detail.value || incidentReviewReason.value.trim().length < 5 || reviewingIncident.value) return
+  reviewingIncident.value = true
+  try {
+    await api.excludeModerationIncident(detail.value.id, incidentId, incidentReviewReason.value.trim())
+    toast.success('La falta se excluyó del contador y quedó registrada en el historial.')
+    detail.value = await api.detail(detail.value.id)
+    reviewingIncidentId.value = null
+    incidentReviewReason.value = ''
+  } catch (error) { toast.error(error instanceof PublicApiError ? error.message : 'No se pudo revisar la falta.') }
+  finally { reviewingIncident.value = false }
+}
+onMounted(() => { void load(); void loadModerationPolicy() })
 </script>
 
 <template>
@@ -142,6 +193,16 @@ onMounted(load)
       <div class="heading"><div><h3 id="account-detail-title">{{ detail.name }}</h3><p class="hint">{{ detail.email }} · {{ accountType(detail) }} · {{ statusLabel(detail.status) }}</p></div><button class="secondary" type="button" @click="detail = null; selectedAction = null">Cerrar detalle</button></div>
       <p v-if="detail.blockedUntil" class="consequence">Bloqueo temporal hasta {{ new Date(detail.blockedUntil).toLocaleString() }}.</p>
       <p v-if="detail.reviewChannel" class="consequence">Canal para revisión: {{ detail.reviewChannel }}</p>
+      <section class="strike-summary" aria-labelledby="strike-summary-title">
+        <StatePanel v-if="moderationPolicyError" title="No se pudo cargar la política vigente" :message="moderationPolicyError" />
+        <template v-else-if="moderationPolicy">
+          <div class="strike-heading"><div><h4 id="strike-summary-title">Tarjetas de moderación</h4><p>{{ currentViolations.length }} falta{{ currentViolations.length === 1 ? '' : 's' }} en los últimos {{ windowLabel }} · Política {{ moderationPolicy.version }}</p></div><span class="strike-counter">{{ currentViolations.length }} falta{{ currentViolations.length === 1 ? '' : 's' }}</span></div>
+          <ol class="strike-cards" aria-label="Umbrales de sanción vigentes">
+            <li v-for="step in strikeCards" :key="step.after" :class="{ reached: currentViolations.length >= step.after, permanent: step.action === 'PERMANENT' && currentViolations.length >= step.after }"><span class="card-number">{{ step.after }}</span><strong>{{ step.label }}</strong><small>{{ currentViolations.length >= step.after ? 'Umbral alcanzado' : `Al llegar a ${step.after} falta${step.after === 1 ? '' : 's'}` }}</small></li>
+          </ol>
+          <div class="incident-list"><h5>Incidentes en la ventana</h5><StatePanel v-if="!recentIncidents.length" title="Sin incidentes en la ventana" :message="`No hay incidentes de moderación en los últimos ${windowLabel}.`" /><ol v-else><li v-for="incident in recentIncidents" :key="incident.id" :class="{ excluded: !incident.countsTowardReincidence }"><div><strong>{{ incidentSourceLabel(incident.source) }} · {{ sanctionLabel(incident.sanction) }}</strong><span>{{ new Date(incident.createdAt).toLocaleString() }} · {{ incident.countsTowardReincidence ? `Falta ${incident.occurrenceNumber}` : 'Excluida del contador' }}</span><small v-if="incident.reviewedAt">Revisada {{ new Date(incident.reviewedAt).toLocaleString() }} por {{ incident.reviewedBy?.name ?? 'administración' }}: {{ incident.reviewReason }}</small></div><button v-if="incident.countsTowardReincidence && reviewingIncidentId !== incident.id" class="secondary small-button" type="button" @click="reviewingIncidentId = incident.id; incidentReviewReason = ''">Excluir falso positivo</button><form v-if="reviewingIncidentId === incident.id" class="incident-review-form" @submit.prevent="excludeIncident(incident.id)"><label>Motivo de exclusión<textarea v-model="incidentReviewReason" minlength="5" maxlength="1000" rows="2" required /></label><div class="actions"><button class="action" type="submit" :disabled="reviewingIncident || incidentReviewReason.trim().length < 5">{{ reviewingIncident ? 'Guardando…' : 'Confirmar exclusión' }}</button><button class="secondary" type="button" :disabled="reviewingIncident" @click="reviewingIncidentId = null">Cancelar</button></div></form></li></ol></div>
+        </template>
+      </section>
       <div class="actions" aria-label="Acciones de cuenta">
         <button v-if="detail.status === 'ACTIVO'" class="secondary" type="button" @click="beginAction('BLOQUEADO_TEMPORAL')">Bloqueo temporal</button>
         <button v-if="detail.status === 'ACTIVO'" class="secondary" type="button" @click="beginAction('BLOQUEADO_PERMANENTE')">Bloqueo permanente</button>
@@ -163,5 +224,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-.card{padding:clamp(1rem,3vw,1.5rem);background:#fff;border:1px solid var(--admin-border);border-radius:1rem;box-shadow:0 8px 28px rgb(18 58 54 / 6%)}h2{font-size:1.35rem}h3{font-size:1.2rem;margin:0}.hint{margin:.4rem 0 1rem;color:var(--color-muted)}.heading{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}.filters{display:grid;grid-template-columns:minmax(12rem,1.5fr) repeat(2,minmax(10rem,1fr)) auto;gap:.8rem;align-items:end;margin:1.2rem 0}.filters label,.action-form label{display:grid;gap:.4rem;font-weight:700}.filters input,.filters select,.action-form input,.action-form textarea{width:100%;min-width:0;min-height:2.75rem;padding:.55rem .7rem;border:1px solid #9caea9;border-radius:.55rem;background:#fff;color:var(--color-ink);font:inherit}.action-form textarea{resize:vertical}.action,.secondary,.danger{min-height:2.75rem;padding:.6rem .95rem;border-radius:.6rem;font-weight:800;cursor:pointer}.action{background:var(--admin-primary);border:1px solid var(--admin-primary);color:#fff}.secondary{background:#fff;border:1px solid var(--admin-border);color:var(--admin-primary-dark)}.danger{background:#fff;border:1px solid #a62a30;color:#8d1d24}.action:disabled,.secondary:disabled,.danger:disabled{opacity:.55;cursor:wait}.result-count{margin:.7rem 0;color:var(--color-muted)}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:.75rem .55rem;border-top:1px solid #e2eae8;vertical-align:middle}tbody th span{display:block;color:var(--color-muted);font-weight:500;overflow-wrap:anywhere}.pagination{display:flex;justify-content:center;align-items:center;gap:1rem;margin:1rem 0}.detail{margin-top:1.5rem;padding-top:1.3rem;border-top:2px solid #e2eae8}.actions{display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0}.action-form{display:grid;gap:.8rem;padding:1rem;margin:1rem 0;background:#f5f8f7;border-radius:.8rem}.action-form h4,.history h4{margin:.2rem 0}.inline-error{color:var(--color-danger);font-weight:700}.consequence{color:var(--admin-primary-dark)}.history ol{padding-left:1.4rem}.history li{padding:.65rem 0;border-top:1px solid #e2eae8}.history li span{display:block;color:var(--color-muted);font-size:.9rem}.history li p{margin:.35rem 0}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #e6aa32;outline-offset:2px}@media(max-width:800px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.search-field{grid-column:1/-1}}@media(max-width:520px){.heading{flex-direction:column}.filters{grid-template-columns:1fr}.search-field{grid-column:auto}.pagination{gap:.5rem}.pagination span{font-size:.9rem}}
+.card{padding:clamp(1rem,3vw,1.5rem);background:#fff;border:1px solid var(--admin-border);border-radius:1rem;box-shadow:0 8px 28px rgb(18 58 54 / 6%)}h2{font-size:1.35rem}h3{font-size:1.2rem;margin:0}.hint{margin:.4rem 0 1rem;color:var(--color-muted)}.heading{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}.filters{display:grid;grid-template-columns:minmax(12rem,1.5fr) repeat(2,minmax(10rem,1fr)) auto;gap:.8rem;align-items:end;margin:1.2rem 0}.filters label,.action-form label{display:grid;gap:.4rem;font-weight:700}.filters input,.filters select,.action-form input,.action-form textarea{width:100%;min-width:0;min-height:2.75rem;padding:.55rem .7rem;border:1px solid #9caea9;border-radius:.55rem;background:#fff;color:var(--color-ink);font:inherit}.action-form textarea{resize:vertical}.action,.secondary,.danger{min-height:2.75rem;padding:.6rem .95rem;border-radius:.6rem;font-weight:800;cursor:pointer}.action{background:var(--admin-primary);border:1px solid var(--admin-primary);color:#fff}.secondary{background:#fff;border:1px solid var(--admin-border);color:var(--admin-primary-dark)}.danger{background:#fff;border:1px solid #a62a30;color:#8d1d24}.action:disabled,.secondary:disabled,.danger:disabled{opacity:.55;cursor:wait}.result-count{margin:.7rem 0;color:var(--color-muted)}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:.75rem .55rem;border-top:1px solid #e2eae8;vertical-align:middle}tbody th span{display:block;color:var(--color-muted);font-weight:500;overflow-wrap:anywhere}.pagination{display:flex;justify-content:center;align-items:center;gap:1rem;margin:1rem 0}.detail{margin-top:1.5rem;padding-top:1.3rem;border-top:2px solid #e2eae8}.actions{display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0}.action-form{display:grid;gap:.8rem;padding:1rem;margin:1rem 0;background:#f5f8f7;border-radius:.8rem}.action-form h4,.history h4{margin:.2rem 0}.inline-error{color:var(--color-danger);font-weight:700}.consequence{color:var(--admin-primary-dark)}.history ol{padding-left:1.4rem}.history li{padding:.65rem 0;border-top:1px solid #e2eae8}.history li span{display:block;color:var(--color-muted);font-size:.9rem}.history li p{margin:.35rem 0}.strike-summary{margin:1.3rem 0;padding:1rem;background:#f5f8f7;border:1px solid #dce7e4;border-radius:.85rem}.strike-heading{display:flex;justify-content:space-between;align-items:center;gap:1rem}.strike-heading h4,.incident-list h5{margin:.1rem 0}.strike-heading p{margin:.35rem 0;color:var(--color-muted)}.strike-counter{display:grid;place-items:center;min-width:3.25rem;min-height:3.25rem;border-radius:50%;background:#e8eeec;color:#244c45;font-weight:900}.strike-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;padding:0;margin:1rem 0;list-style:none}.strike-cards li{display:grid;justify-items:start;gap:.35rem;padding:.85rem;background:white;border:1px solid #cfd9d6;border-radius:.7rem}.strike-cards li.reached{background:#fff8e4;border-color:#d79c20}.strike-cards li:nth-child(3).reached{background:#fff0ef;border-color:#c3524d}.card-number{display:grid;place-items:center;width:1.8rem;height:1.8rem;border-radius:50%;background:#e8eeec;font-weight:900}.strike-cards li.reached .card-number{background:#f4d47d}.strike-cards li:nth-child(3).reached .card-number{background:#efb5b1}.strike-cards small{color:var(--color-muted)}.incident-list ol{padding-left:1.25rem}.incident-list li{padding:.55rem 0;border-top:1px solid #dce7e4}.incident-list li span{display:block;color:var(--color-muted);font-size:.9rem}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #e6aa32;outline-offset:2px}@media(max-width:800px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.search-field{grid-column:1/-1}}@media(max-width:520px){.heading{flex-direction:column}.filters{grid-template-columns:1fr}.search-field{grid-column:auto}.pagination{gap:.5rem}.pagination span{font-size:.9rem}.strike-cards{grid-template-columns:1fr}}
+.strike-cards li.permanent{background:#fff0ef;border-color:#c3524d}.incident-list li.excluded{opacity:.78}.incident-list li>div{min-width:0}.incident-list li>button,.incident-review-form{margin-top:.65rem}.small-button{min-height:2.25rem;padding:.4rem .7rem;font-size:.9rem}.incident-review-form{display:grid;gap:.6rem;padding:.75rem;background:#fff;border:1px solid #dce7e4;border-radius:.65rem}.incident-review-form label{display:grid;gap:.4rem;font-weight:700}.incident-review-form textarea{width:100%;padding:.55rem .7rem;border:1px solid #9caea9;border-radius:.5rem;font:inherit;resize:vertical}.incident-review-form .actions{margin:.2rem 0 0}
 </style>

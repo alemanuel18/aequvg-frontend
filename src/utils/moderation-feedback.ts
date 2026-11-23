@@ -20,18 +20,25 @@ const formatBlockedUntil = (value?: string) => {
 
 export const safeModerationFeedbackFields = (fields?: Record<string, string>): Record<string, string> => {
   if (fields?.blockedUntil) return { blockedUntil: fields.blockedUntil }
-  return {}
+  return {
+    ...(fields?.firstWarning === 'true' ? { firstWarning: 'true' } : {}),
+    ...(fields?.reviewChannel ? { reviewChannel: fields.reviewChannel.slice(0, 300) } : {})
+  }
 }
 
 export const getModerationFeedback = (code: string, fields?: Record<string, string>): ModerationFeedback | null => {
   if (code === 'OFFENSIVE_NAME') return {
-    title: 'Nombre no aceptado',
-    message: 'El nombre contiene lenguaje que no podemos aceptar. Revísalo e intenta de nuevo.',
+    title: fields?.firstWarning === 'true' ? 'Primera advertencia de moderación' : 'Nombre no aceptado',
+    message: fields?.firstWarning === 'true'
+      ? 'El nombre contiene lenguaje que no podemos aceptar. Esta es una advertencia; una segunda falta dentro de 12 meses bloquea la cuenta por 7 días.'
+      : 'El nombre contiene lenguaje que no podemos aceptar. Revísalo e intenta de nuevo.',
     offerContact: true
   }
   if (code === 'COMMENT_REJECTED_BY_MODERATION') return {
-    title: 'Comentario no publicado',
-    message: 'El comentario no cumple las reglas de convivencia y no se guardó. Puedes corregirlo e intentarlo otra vez.',
+    title: fields?.firstWarning === 'true' ? 'Primera advertencia de moderación' : 'Comentario no publicado',
+    message: fields?.firstWarning === 'true'
+      ? 'El comentario no cumple las reglas de convivencia y no se publicó. Esta es una advertencia; una segunda falta dentro de 12 meses bloquea la cuenta por 7 días.'
+      : 'El comentario no cumple las reglas de convivencia y no se guardó. Puedes corregirlo e intentarlo otra vez.',
     offerContact: true
   }
   if (code === 'COMMENT_MODERATION_UNAVAILABLE') return {
@@ -51,7 +58,7 @@ export const getModerationFeedback = (code: string, fields?: Record<string, stri
   }
   if (code === 'ACCOUNT_PERMANENTLY_BLOCKED') return {
     title: 'Se requiere revisión administrativa',
-    message: 'Tu cuenta está bloqueada y requiere una revisión de la Asociación antes de recuperar el acceso.',
+    message: 'Tu cuenta está bloqueada permanentemente. Puedes apelar después de seis meses escribiendo a asoquimica@uvg.edu.gt. La Asociación revisará el caso; no se desbloquea automáticamente.',
     offerContact: true
   }
   return null

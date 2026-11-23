@@ -97,12 +97,36 @@ export type StudentAdminStatusHistory = {
   createdAt: string
   actor: { id: number; name: string } | null
 }
+export type StudentModerationIncident = {
+  id: number
+  source: 'COMMENT_CREATE' | 'COMMENT_EDIT' | 'PROFILE_NAME_UPDATE'
+  policyVersion: string
+  ruleId: string
+  evidenceHash: string
+  occurrenceNumber: number
+  sanction: 'NONE' | 'TEMPORARY' | 'PERMANENT'
+  blockedUntil: string | null
+  reviewChannel: string | null
+  createdAt: string
+  countsTowardReincidence: boolean
+  reviewedAt: string | null
+  reviewReason: string | null
+  reviewedBy: { id: number; name: string } | null
+}
+export type ModerationPolicySummary = {
+  version: string
+  recurrenceWindowHours: number
+  sanctions: Array<{ after: number; action: 'TEMPORARY'; durationHours: number } | { after: number; action: 'PERMANENT' }>
+  permanentReviewChannel: string | null
+}
 export interface ManagedStudentAccount {
   id: number; name: string; firstNames: string; lastNames: string; email: string
   isStudent: boolean; status: StudentAccountStatus; blockedUntil: string | null; reviewChannel: string | null
   deletedAt: string | null; createdAt: string; updatedAt: string
 }
 export interface ManagedStudentAccountDetail extends ManagedStudentAccount {
+  moderationViolationCount: number
+  moderationIncidents: StudentModerationIncident[]
   statusHistory: StudentAdminStatusHistory[]
 }
 export interface ManagedStudentAccountList {
