@@ -139,10 +139,13 @@ test('administra una tesis y refleja cada cambio en la consulta pública', async
   }
   await page.getByLabel('Año').fill('2026')
   await page.getByLabel('Resumen').fill('Estudio de catalizadores de origen natural para reducir residuos en procesos de síntesis.')
-  await page.getByLabel('Publicar ahora').check()
-  await page.getByRole('button', { name: 'Publicar tesis' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Publicar', exact: true }).click()
+  await expect(page.getByLabel('Publicar ahora')).not.toBeChecked()
+  await page.getByRole('button', { name: 'Agregar enlace' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Agregar', exact: true }).click()
   const newAdminItem = page.locator('.thesis-item').filter({ hasText: originalTitle })
+  await expect(newAdminItem).toContainText('Borrador')
+  await newAdminItem.getByRole('button', { name: 'Publicar' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Publicar', exact: true }).click()
   await expect(newAdminItem).toContainText('Publicada')
   await expect(page.getByText('La tesis se publicó.')).toBeVisible()
 
@@ -223,7 +226,7 @@ test('muestra errores claros por URL insegura, duplicado y fallo de guardado', a
   await page.goto('/administrador/tesis')
 
   await page.getByLabel('Título').fill('Intento con URL insegura')
-  await page.getByLabel('Autor').fill('Autor de prueba')
+  await page.getByLabel('Nombre de Autor principal').fill('Autor de prueba')
   await page.getByLabel('Año').fill('2026')
   await page.getByLabel('Resumen').fill('Resumen breve de prueba.')
   const urlField = page.getByLabel(/URL del repositorio/)

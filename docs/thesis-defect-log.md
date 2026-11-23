@@ -1,7 +1,7 @@
 # Registro de defectos y repetición de pruebas: tesis
 
-Actualizado: 21 de noviembre de 2026
-Rama de trabajo S6-04: `feature/thesis-required-fields`
+Actualizado: 22 de noviembre de 2026
+Rama de verificación S6-10: `test/thesis-s6-10-manual-flow`
 
 ## Hallazgos
 
@@ -14,10 +14,14 @@ Rama de trabajo S6-04: `feature/thesis-required-fields`
 | QA-TH-05 | `docker compose exec` no encontró activo el servicio de backend; al intentar iniciar ese stack, PostgreSQL no pudo enlazar el puerto 5432 porque el stack local activo ya lo ocupaba. | Incidencia de entorno, no defecto del producto. | Ejecutar la integración dentro del backend activo conectado al PostgreSQL local. | `thesis.api.database.test.ts`: 3/3 pruebas aprobadas. El `afterAll` elimina los registros temporales. |
 | QA-TH-06 | La vista exigía autor y la API lo aceptaba vacío; además, la unicidad literal no cubría variantes normalizables de una URL. | Discrepancia de contrato de S6-04, vinculado a SCRUM-300. | Se sincronizó la obligatoriedad del autor y se normaliza la URL. La comprobación y el alta se serializan en una transacción PostgreSQL para evitar carreras entre variantes equivalentes. | Una corrida anterior omitió la integración por no activar `THESIS_DATABASE_TEST`. Repetición posterior: `docker compose exec -e THESIS_DATABASE_TEST=true backend bun run vitest run tests/integration/thesis.api.database.test.ts` — 1 archivo, 4/4 aprobadas; incluye dos altas concurrentes con resultados 201 y 409. Backend typecheck y suite aprobaron. |
 | QA-TH-07 | Se pidió cubrir un enlace UVG restringido, pero no se encontró uno en la colección de Química. | Caso externo no disponible; no es defecto del producto. | Consulta de solo lectura del estado de acceso de los 65 ítems de la colección. | Los 65 reportaron `open.access`. No se pudo probar acceso restringido o con embargo sin un ejemplo que UVG identifique. |
+| QA-TH-08 | La repetición S6-10 de Playwright falló porque `getByLabel('Autor')` encontró tanto el checkbox «Crear autor nuevo» como el nombre de autor principal. | Selector de prueba obsoleto tras el cambio del formulario, no defecto funcional. | Se apuntó al control específico `Nombre de Autor principal`. | Repetición de `tests/e2e/thesis-flow.spec.ts`: 5/5 aprobadas. |
+| QA-TH-09 | La primera integración PostgreSQL de S6-10 devolvió errores Prisma al usar el cliente generado previamente en el contenedor. | Deriva entre Prisma Client generado y el esquema actual montado; las migraciones de la base estaban al día. | Se ejecutó `bun run prisma:generate` en el contenedor backend y se repitió la integración. | `thesis.api.database.test.ts`: 7/7 aprobadas. No quedan datos de prueba; `afterAll` limpia registros temporales. |
 
 ## Defectos del producto
 
 No se encontraron defectos funcionales abiertos en los casos repetidos. La prueba de guardado fallido usa una respuesta 503 simulada; no representa una caída real de PostgreSQL. La suite automatizada de navegador usa API simulada y se complementa con la integración PostgreSQL local.
+
+Para S6-10, el registro manual es el flujo de publicación vigente. No se ejecutó ni se reporta como aprobada una prueba de sincronización UVG, importación automática o reintentos: esos comportamientos no fueron autorizados por la decisión atribuida a la Asociación en S6-08. La matriz actualizada está en [thesis-e2e-permissions.md](thesis-e2e-permissions.md) y el contrato de API está en [thesis-manual-flow-api.md](https://github.com/alemanuel18/aequvg-backend/blob/test/thesis-s6-10-manual-flow/docs/thesis-manual-flow-api.md).
 
 ## Pendientes fuera de esta repetición
 

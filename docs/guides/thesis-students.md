@@ -20,8 +20,8 @@ La consulta pública no requiere una cuenta de estudiante. Las tesis no tienen s
 
 ## Información para equipo técnico
 
-- [Contrato y modelo de enlaces](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-documentation/docs/thesis-links.md).
+- [Contrato API del catálogo y del flujo manual](https://github.com/alemanuel18/aequvg-backend/blob/test/thesis-s6-10-manual-flow/docs/thesis-manual-flow-api.md).
 - [Pruebas E2E, permisos y defectos](../thesis-e2e-permissions.md) y [registro de defectos con repeticiones](../thesis-defect-log.md).
-- [Investigación del repositorio y límites de automatización](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-documentation/docs/thesis-repository-research.md).
+- [Investigación del repositorio y límites de automatización](https://github.com/alemanuel18/aequvg-backend/blob/docs/thesis-automation-contract/docs/thesis-repository-research.md).
 
-Las capturas usan datos demostrativos de una API simulada; no representan una tesis real ni el acceso efectivo a UVG.
+Las tesis se incorporan manualmente al catálogo y solo aparecen cuando una persona autorizada las publica. Las capturas usan datos demostrativos de una API simulada; no representan una tesis real ni el acceso efectivo a UVG.
