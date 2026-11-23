@@ -23,7 +23,7 @@ test.describe('ACS · aceptación pública y administración', () => {
     expect(sizes.scroll).toBeLessThanOrEqual(sizes.client)
   })
 
-  test('administra borradores, genera slug y recupera el borrador tras recargar', async ({ page }) => {
+  test('administra borradores sin pedir slug y recupera el borrador tras recargar', async ({ page }) => {
     await loginAsAdmin(page)
     await page.goto('/administrador/blog')
     await expect(page.getByRole('heading', { name: 'Blog ACS' })).toBeVisible()
@@ -33,8 +33,12 @@ test.describe('ACS · aceptación pública y administración', () => {
     await expect(draftCard.locator('.blog-item__status')).toHaveText('Borrador')
 
     await page.getByRole('link', { name: /Nueva entrada/ }).click()
-    await page.getByLabel('Título', { exact: true }).fill('Encuentro de AsoQuímica con ACS')
-    await expect(page.getByLabel('Slug (opcional)')).toHaveValue('encuentro-de-asoquimica-con-acs')
+    await expect(page.locator('label[for="entry-title"] .required-indicator')).toHaveText('*')
+    await expect(page.locator('label[for="entry-summary"] .required-indicator')).toHaveText('*')
+    await expect(page.locator('.content-field .required-indicator')).toHaveText('*')
+    await expect(page.getByRole('textbox', { name: 'Contenido de la entrada' })).toHaveAttribute('aria-required', 'true')
+    await page.locator('#entry-title').fill('Encuentro de AsoQuímica con ACS')
+    await expect(page.getByLabel('Slug (opcional)')).toHaveCount(0)
     await expect(page.getByLabel('Jerarquía de título').locator('option')).toHaveText(['Párrafo', 'Título 1', 'Título 2', 'Título 3'])
     await expect(page.getByRole('button', { name: 'Negrita' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Cursiva' })).toBeVisible()
@@ -42,8 +46,8 @@ test.describe('ACS · aceptación pública y administración', () => {
     await page.getByLabel('Resumen').fill('Resumen de prueba para la entrada de aceptación ACS.')
     await page.getByRole('textbox', { name: 'Contenido de la entrada' }).fill('Contenido de prueba sobre nuestra colaboración con ACS y sus resultados.')
     await page.reload()
-    await expect(page.getByLabel('Título', { exact: true })).toHaveValue('Encuentro de AsoQuímica con ACS')
-    await expect(page.getByLabel('Slug (opcional)')).toHaveValue('encuentro-de-asoquimica-con-acs')
+    await expect(page.locator('#entry-title')).toHaveValue('Encuentro de AsoQuímica con ACS')
+    await expect(page.getByLabel('Slug (opcional)')).toHaveCount(0)
     await expect(page.getByRole('textbox', { name: 'Contenido de la entrada' })).toContainText('colaboración con ACS')
 
     const submitCreate = page.locator('form.entry-form').getByRole('button', { name: 'Crear entrada' })
@@ -54,7 +58,9 @@ test.describe('ACS · aceptación pública y administración', () => {
     await expect(createConfirmation).toBeHidden()
     await expect(submitCreate).toBeVisible()
     await submitCreate.click()
+    const createRequest = page.waitForRequest(request => request.url().endsWith('/api/v1/admin/blog') && request.method() === 'POST')
     await page.getByRole('dialog').getByRole('button', { name: 'Crear entrada' }).click()
+    expect((await createRequest).postDataJSON()).not.toHaveProperty('slug')
     await expect(page).toHaveURL(/\/administrador\/blog$/)
     const createdCard = page.locator('.blog-item').filter({ hasText: 'Encuentro de AsoQuímica con ACS' })
     await expect(createdCard.getByText('Borrador', { exact: true })).toBeVisible()
