@@ -133,7 +133,6 @@ const secondProject = { ...project, id: 21, title: 'Tesis de segunda página', s
 
 type MockThesis = {
   id: number
-  sourceIdentifier: string | null
   title: string
   author: string | null
   publicationYear: number | null
@@ -146,7 +145,6 @@ type MockThesis = {
 }
 const initialTheses = (): MockThesis[] => [{
   id: 1,
-  sourceIdentifier: '123456789/1',
   title: 'Tesis de ejemplo',
   author: 'Estudiante de prueba',
   publicationYear: 2025,
@@ -333,12 +331,17 @@ Bun.serve({
       if (request.method === 'POST') {
         const body = await request.json() as Partial<MockThesis>
         if (body.url?.includes('/fallo-guardado')) return json({ error: { code: 'THESIS_SAVE_FAILED', message: 'Fallo simulado al guardar.' } }, 503)
-        if (theses.some(thesis => thesis.url === body.url || (body.sourceIdentifier && thesis.sourceIdentifier === body.sourceIdentifier))) return json({ error: { code: 'THESIS_LINK_EXISTS', message: 'Ya existe una tesis con ese enlace o identificador.' } }, 409)
         let parsedUrl: URL
-        try { parsedUrl = new URL(body.url || '') } catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'Ingresa una URL válida que comience con http:// o https://.' } }, 422) }
-        if (!['http:', 'https:'].includes(parsedUrl.protocol) || !body.title || !body.author) return json({ error: { code: 'VALIDATION_ERROR', message: 'Revisa los datos de la tesis.' } }, 422)
+        try { parsedUrl = new URL(body.url?.trim() || '') } catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'La URL del repositorio debe comenzar con https://.' } }, 422) }
+        if (parsedUrl.protocol !== 'https:' || !parsedUrl.hostname) return json({ error: { code: 'INVALID_THESIS_URL', message: 'La URL del repositorio debe comenzar con https://.' } }, 422)
+        const normalizedUrl = parsedUrl.toString()
+        if (theses.some(thesis => new URL(thesis.url).toString() === normalizedUrl)) return json({ error: { code: 'THESIS_LINK_EXISTS', message: 'Ya existe una tesis con esa URL del repositorio.' } }, 409)
+        if (!body.title?.trim() || body.title.trim().length < 3) return json({ error: { code: 'THESIS_TITLE_REQUIRED', message: 'Escribe un título de al menos 3 caracteres.' } }, 422)
+        if (!body.author?.trim()) return json({ error: { code: 'THESIS_AUTHOR_REQUIRED', message: 'Escribe el autor de la tesis.' } }, 422)
+        if (!Number.isInteger(body.publicationYear) || Number(body.publicationYear) < 1900 || Number(body.publicationYear) > 9999) return json({ error: { code: 'THESIS_PUBLICATION_YEAR_REQUIRED', message: 'Ingresa un año de publicación válido (1900–9999).' } }, 422)
+        if (!body.summary?.trim()) return json({ error: { code: 'THESIS_SUMMARY_REQUIRED', message: 'Escribe el resumen de la tesis.' } }, 422)
         const now = new Date().toISOString()
-        const created: MockThesis = { id: nextThesisId++, sourceIdentifier: body.sourceIdentifier ?? null, title: body.title, author: body.author, publicationYear: body.publicationYear ?? null, summary: body.summary ?? null, url: body.url!, createdById: 1, createdAt: now, updatedAt: now, publishedAt: body.publishedAt ?? null }
+        const created: MockThesis = { id: nextThesisId++, title: body.title.trim(), author: body.author.trim(), publicationYear: Number(body.publicationYear), summary: body.summary.trim(), url: normalizedUrl, createdById: 1, createdAt: now, updatedAt: now, publishedAt: body.publishedAt ?? null }
         theses.unshift(created)
         return json(created, 201)
       }
@@ -348,9 +351,19 @@ Bun.serve({
       if (request.method === 'PUT') {
         const body = await request.json() as Partial<MockThesis>
         if (body.url !== undefined) {
-          try { const parsedUrl = new URL(body.url); if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('invalid protocol') }
-          catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'Ingresa una URL válida que comience con http:// o https://.' } }, 422) }
+          try {
+            const parsedUrl = new URL(body.url.trim())
+            if (parsedUrl.protocol !== 'https:' || !parsedUrl.hostname) throw new Error('invalid protocol')
+            body.url = parsedUrl.toString()
+          } catch { return json({ error: { code: 'INVALID_THESIS_URL', message: 'La URL del repositorio debe comenzar con https://.' } }, 422) }
+          if (theses.some((thesis, thesisIndex) => thesisIndex !== index && new URL(thesis.url).toString() === body.url)) return json({ error: { code: 'THESIS_LINK_EXISTS', message: 'Ya existe una tesis con esa URL del repositorio.' } }, 409)
         }
+        if (body.title !== undefined && body.title.trim().length < 3) return json({ error: { code: 'THESIS_TITLE_REQUIRED', message: 'Escribe un título de al menos 3 caracteres.' } }, 422)
+        if (body.author !== undefined && !body.author.trim()) return json({ error: { code: 'THESIS_AUTHOR_REQUIRED', message: 'Escribe el autor de la tesis.' } }, 422)
+        if (body.publicationYear !== undefined && (!Number.isInteger(body.publicationYear) || body.publicationYear < 1900 || body.publicationYear > 9999)) return json({ error: { code: 'THESIS_PUBLICATION_YEAR_REQUIRED', message: 'Ingresa un año de publicación válido (1900–9999).' } }, 422)
+        if (body.summary !== undefined && !body.summary?.trim()) return json({ error: { code: 'THESIS_SUMMARY_REQUIRED', message: 'Escribe el resumen de la tesis.' } }, 422)
+        if (body.title !== undefined) body.title = body.title.trim()
+        if (body.author !== undefined) body.author = body.author.trim()
         theses[index] = { ...theses[index]!, ...body, id, updatedAt: new Date().toISOString() }
         return json(theses[index])
       }
